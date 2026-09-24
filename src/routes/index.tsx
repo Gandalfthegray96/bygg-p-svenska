@@ -78,8 +78,7 @@ function Calculator() {
   const [tripWindow, setTripWindow] = useState<number>(DEFAULT_TRIP_WINDOW);
   const [rows, setRows] = useState<PortRow[]>([newRow()]);
   const [discount, setDiscount] = useState<number>(0);
-  const [roundStep, setRoundStep] = useState<RoundingStep>("none");
-  const [roundDir, setRoundDir] = useState<RoundingDir>("nearest");
+  const [manualPrice, setManualPrice] = useState<string>("");
   const [hydrated, setHydrated] = useState(false);
 
   // Load saved state (browser only)
