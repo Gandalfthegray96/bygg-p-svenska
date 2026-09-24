@@ -129,9 +129,10 @@ function Calculator() {
     const subtotal = labor + travel;
     const discountAmount = subtotal * (discount / 100);
     const afterDiscount = subtotal - discountAmount;
-    const finalPrice = roundPrice(afterDiscount, roundStep, roundDir);
-    return { hours, labor, trips, travel, subtotal, discountAmount, afterDiscount, finalPrice };
-  }, [rows, hourRate, tripFee, tripWindow, discount, roundStep, roundDir]);
+    const manual = parseManualPrice(manualPrice);
+    const finalPrice = manual !== null ? manual : afterDiscount;
+    return { hours, labor, trips, travel, subtotal, discountAmount, afterDiscount, manual, finalPrice };
+  }, [rows, hourRate, tripFee, tripWindow, discount, manualPrice]);
 
   const updateRow = (id: string, patch: Partial<PortRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
