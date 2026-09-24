@@ -89,19 +89,25 @@ function Calculator() {
 
   // Load saved state (browser only)
   useEffect(() => {
-    const savedHour = Number(localStorage.getItem(HOUR_RATE_KEY));
-    const savedTrip = Number(localStorage.getItem(TRIP_FEE_KEY));
-    const savedWindow = Number(localStorage.getItem(TRIP_WINDOW_KEY));
+    const readNum = (key: string): number | null => {
+      const raw = localStorage.getItem(key);
+      if (raw === null || raw === "") return null;
+      const n = Number(raw);
+      return Number.isNaN(n) ? null : n;
+    };
+    const savedHour = readNum(HOUR_RATE_KEY);
+    const savedTrip = readNum(TRIP_FEE_KEY);
+    const savedWindow = readNum(TRIP_WINDOW_KEY);
     const savedRows = loadJSON<PortRow[] | null>(ROWS_KEY, null);
-    const savedDiscount = Number(localStorage.getItem(DISCOUNT_KEY));
+    const savedDiscount = readNum(DISCOUNT_KEY);
     const savedStep = localStorage.getItem(ROUND_STEP_KEY) as RoundingStep | null;
     const savedDir = localStorage.getItem(ROUND_DIR_KEY) as RoundingDir | null;
 
-    if (!Number.isNaN(savedHour) && savedHour > 0) setHourRate(savedHour);
-    if (!Number.isNaN(savedTrip) && savedTrip >= 0) setTripFee(savedTrip);
-    if (!Number.isNaN(savedWindow) && savedWindow > 0) setTripWindow(savedWindow);
+    if (savedHour !== null && savedHour > 0) setHourRate(savedHour);
+    if (savedTrip !== null && savedTrip >= 0) setTripFee(savedTrip);
+    if (savedWindow !== null && savedWindow > 0) setTripWindow(savedWindow);
     if (Array.isArray(savedRows) && savedRows.length > 0) setRows(savedRows);
-    if (!Number.isNaN(savedDiscount)) setDiscount(savedDiscount);
+    if (savedDiscount !== null && savedDiscount >= 0) setDiscount(savedDiscount);
     if (savedStep) setRoundStep(savedStep);
     if (savedDir) setRoundDir(savedDir);
     setHydrated(true);
