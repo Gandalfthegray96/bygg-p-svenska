@@ -7,13 +7,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Räkna snabbt pris på förebyggande underhållsavtal: porter, antal, servestid, timpeng, framkörning, rabatt och avrundning.",
+          "Räkna snabbt pris på förebyggande underhållsavtal: objekt, servicetid, timpeng, framkörning, rabatt och manuellt slutpris.",
       },
       { property: "og:title", content: "Prisräknare Underhållsavtal" },
       {
         property: "og:description",
         content:
-          "Räkna pris på underhållsavtal: porter, servestid, timpeng, framkörning, rabatt och avrundning.",
+          "Räkna pris på underhållsavtal: objekt, servicetid, timpeng, framkörning, rabatt och manuellt slutpris.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -35,16 +35,12 @@ type PortRow = {
   minutes: number;
 };
 
-type RoundingStep = "none" | "10" | "50" | "100" | "1000";
-type RoundingDir = "nearest" | "up" | "down";
-
 const HOUR_RATE_KEY = "uc-hour-rate";
 const TRIP_FEE_KEY = "uc-trip-fee";
 const TRIP_WINDOW_KEY = "uc-trip-window";
 const ROWS_KEY = "uc-rows";
 const DISCOUNT_KEY = "uc-discount";
-const ROUND_STEP_KEY = "uc-round-step";
-const ROUND_DIR_KEY = "uc-round-dir";
+const MANUAL_PRICE_KEY = "uc-manual-price";
 
 const DEFAULT_HOUR_RATE = 975;
 const DEFAULT_TRIP_FEE = 745;
@@ -64,16 +60,22 @@ function loadJSON<T>(key: string, fallback: T): T {
   }
 }
 
-function roundPrice(value: number, step: RoundingStep, dir: RoundingDir): number {
-  if (step === "none") return value;
-  const s = Number(step);
-  if (dir === "up") return Math.ceil(value / s) * s;
-  if (dir === "down") return Math.floor(value / s) * s;
-  return Math.round(value / s) * s;
+function parseManualPrice(s: string): number | null {
+  const t = s.trim().replace(/\s/g, "").replace(/kr$/i, "").replace(",", ".");
+  if (t === "") return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-const fmtKr = (n: number) =>
-  new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 }).format(n) + " kr";
+const fmtKr = (n: number) => {
+  const dec = Number.isInteger(n) ? 0 : 2;
+  return (
+    new Intl.NumberFormat("sv-SE", {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: 2,
+    }).format(n) + " kr"
+  );
+};
 const fmtNum = (n: number) =>
   new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(n);
 
@@ -83,8 +85,7 @@ function Calculator() {
   const [tripWindow, setTripWindow] = useState<number>(DEFAULT_TRIP_WINDOW);
   const [rows, setRows] = useState<PortRow[]>([newRow()]);
   const [discount, setDiscount] = useState<number>(0);
-  const [roundStep, setRoundStep] = useState<RoundingStep>("none");
-  const [roundDir, setRoundDir] = useState<RoundingDir>("nearest");
+  const [manualPrice, setManualPrice] = useState<string>("");
   const [hydrated, setHydrated] = useState(false);
 
   // Load saved state (browser only)
@@ -100,16 +101,14 @@ function Calculator() {
     const savedWindow = readNum(TRIP_WINDOW_KEY);
     const savedRows = loadJSON<PortRow[] | null>(ROWS_KEY, null);
     const savedDiscount = readNum(DISCOUNT_KEY);
-    const savedStep = localStorage.getItem(ROUND_STEP_KEY) as RoundingStep | null;
-    const savedDir = localStorage.getItem(ROUND_DIR_KEY) as RoundingDir | null;
+    const savedManual = localStorage.getItem(MANUAL_PRICE_KEY);
 
     if (savedHour !== null && savedHour > 0) setHourRate(savedHour);
     if (savedTrip !== null && savedTrip >= 0) setTripFee(savedTrip);
     if (savedWindow !== null && savedWindow > 0) setTripWindow(savedWindow);
     if (Array.isArray(savedRows) && savedRows.length > 0) setRows(savedRows);
     if (savedDiscount !== null && savedDiscount >= 0) setDiscount(savedDiscount);
-    if (savedStep) setRoundStep(savedStep);
-    if (savedDir) setRoundDir(savedDir);
+    if (savedManual !== null) setManualPrice(savedManual);
     setHydrated(true);
   }, []);
 
@@ -121,9 +120,9 @@ function Calculator() {
     localStorage.setItem(TRIP_WINDOW_KEY, String(tripWindow));
     localStorage.setItem(ROWS_KEY, JSON.stringify(rows));
     localStorage.setItem(DISCOUNT_KEY, String(discount));
-    localStorage.setItem(ROUND_STEP_KEY, roundStep);
-    localStorage.setItem(ROUND_DIR_KEY, roundDir);
-  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, roundStep, roundDir]);
+    if (manualPrice) localStorage.setItem(MANUAL_PRICE_KEY, manualPrice);
+    else localStorage.removeItem(MANUAL_PRICE_KEY);
+  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, manualPrice]);
 
   const calc = useMemo(() => {
     const totalMinutes = rows.reduce(
@@ -137,9 +136,10 @@ function Calculator() {
     const subtotal = labor + travel;
     const discountAmount = subtotal * (discount / 100);
     const afterDiscount = subtotal - discountAmount;
-    const finalPrice = roundPrice(afterDiscount, roundStep, roundDir);
-    return { hours, labor, trips, travel, subtotal, discountAmount, afterDiscount, finalPrice };
-  }, [rows, hourRate, tripFee, tripWindow, discount, roundStep, roundDir]);
+    const manual = parseManualPrice(manualPrice);
+    const finalPrice = manual !== null ? manual : afterDiscount;
+    return { hours, labor, trips, travel, subtotal, discountAmount, afterDiscount, manual, finalPrice };
+  }, [rows, hourRate, tripFee, tripWindow, discount, manualPrice]);
 
   const updateRow = (id: string, patch: Partial<PortRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -216,7 +216,7 @@ function Calculator() {
                   </label>
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Servestid per st (min)
+                      Servicetid per st (min)
                     </span>
                     <input
                       type="number"
@@ -238,7 +238,7 @@ function Calculator() {
         {/* Rabatt & pris */}
         <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <h2 className="mb-3 font-semibold text-foreground">Rabatt & pris</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">
                 Rabatt (%)
@@ -257,36 +257,33 @@ function Calculator() {
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                Avrunda till
+                Manuellt slutpris (kr)
               </span>
-              <select
-                value={roundStep}
-                onChange={(e) => setRoundStep(e.target.value as RoundingStep)}
-                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="none">Ingen avrundning</option>
-                <option value="10">10 kr</option>
-                <option value="50">50 kr</option>
-                <option value="100">100 kr</option>
-                <option value="1000">1 000 kr</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                Riktning
-              </span>
-              <select
-                value={roundDir}
-                onChange={(e) => setRoundDir(e.target.value as RoundingDir)}
-                disabled={roundStep === "none"}
-                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-              >
-                <option value="nearest">Närmaste</option>
-                <option value="up">Uppåt</option>
-                <option value="down">Nedåt</option>
-              </select>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Lämna tomt för beräknat pris"
+                  value={manualPrice}
+                  onChange={(e) => setManualPrice(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                />
+                {parseManualPrice(manualPrice) !== null && (
+                  <button
+                    type="button"
+                    onClick={() => setManualPrice("")}
+                    className="shrink-0 rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                  >
+                    Rensa
+                  </button>
+                )}
+              </div>
             </label>
           </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Skriv in en summa (även decimaler, t.ex. 8 893,50) för att sätta slutpriset
+            manuellt. Lämna fältet tomt för att använda det beräknade priset.
+          </p>
         </section>
 
         {/* Sammanställning */}
@@ -294,7 +291,7 @@ function Calculator() {
           <h2 className="mb-3 font-semibold text-foreground">Sammanställning</h2>
           <dl className="space-y-2 text-sm">
             <div className="flex items-baseline justify-between">
-              <dt className="text-muted-foreground">Total servestid</dt>
+              <dt className="text-muted-foreground">Total servicetid</dt>
               <dd className="font-medium text-foreground">
                 {fmtNum(calc.hours)} h <span className="text-muted-foreground">({Math.round(calc.hours * 60)} min)</span>
               </dd>
@@ -327,17 +324,14 @@ function Calculator() {
 
           <div className="mt-4 rounded-xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Pris{" "}
-              {roundStep !== "none"
-                ? `(avrundat ${roundDir === "up" ? "uppåt" : roundDir === "down" ? "nedåt" : "till"} ${new Intl.NumberFormat("sv-SE").format(Number(roundStep))} kr)`
-                : ""}
+              {parseManualPrice(manualPrice) !== null ? "Pris (manuellt)" : "Pris"}
             </p>
             <p className="mt-1 text-3xl font-bold tabular-nums text-primary">
               {fmtKr(calc.finalPrice)}
             </p>
-            {roundStep !== "none" && calc.finalPrice !== calc.afterDiscount && (
+            {parseManualPrice(manualPrice) !== null && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Exakt: {fmtKr(calc.afterDiscount)}
+                Beräknat: {fmtKr(calc.afterDiscount)}
               </p>
             )}
           </div>
