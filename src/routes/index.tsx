@@ -94,16 +94,14 @@ function Calculator() {
     const savedWindow = readNum(TRIP_WINDOW_KEY);
     const savedRows = loadJSON<PortRow[] | null>(ROWS_KEY, null);
     const savedDiscount = readNum(DISCOUNT_KEY);
-    const savedStep = localStorage.getItem(ROUND_STEP_KEY) as RoundingStep | null;
-    const savedDir = localStorage.getItem(ROUND_DIR_KEY) as RoundingDir | null;
+    const savedManual = localStorage.getItem(MANUAL_PRICE_KEY);
 
     if (savedHour !== null && savedHour > 0) setHourRate(savedHour);
     if (savedTrip !== null && savedTrip >= 0) setTripFee(savedTrip);
     if (savedWindow !== null && savedWindow > 0) setTripWindow(savedWindow);
     if (Array.isArray(savedRows) && savedRows.length > 0) setRows(savedRows);
     if (savedDiscount !== null && savedDiscount >= 0) setDiscount(savedDiscount);
-    if (savedStep) setRoundStep(savedStep);
-    if (savedDir) setRoundDir(savedDir);
+    if (savedManual !== null) setManualPrice(savedManual);
     setHydrated(true);
   }, []);
 
@@ -115,9 +113,9 @@ function Calculator() {
     localStorage.setItem(TRIP_WINDOW_KEY, String(tripWindow));
     localStorage.setItem(ROWS_KEY, JSON.stringify(rows));
     localStorage.setItem(DISCOUNT_KEY, String(discount));
-    localStorage.setItem(ROUND_STEP_KEY, roundStep);
-    localStorage.setItem(ROUND_DIR_KEY, roundDir);
-  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, roundStep, roundDir]);
+    if (manualPrice) localStorage.setItem(MANUAL_PRICE_KEY, manualPrice);
+    else localStorage.removeItem(MANUAL_PRICE_KEY);
+  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, manualPrice]);
 
   const calc = useMemo(() => {
     const totalMinutes = rows.reduce(
