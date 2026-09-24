@@ -209,7 +209,7 @@ function Calculator() {
                   </label>
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Servestid per st (min)
+                      Servicetid per st (min)
                     </span>
                     <input
                       type="number"
@@ -250,36 +250,33 @@ function Calculator() {
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                Avrunda till
+                Manuellt slutpris (kr)
               </span>
-              <select
-                value={roundStep}
-                onChange={(e) => setRoundStep(e.target.value as RoundingStep)}
-                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="none">Ingen avrundning</option>
-                <option value="10">10 kr</option>
-                <option value="50">50 kr</option>
-                <option value="100">100 kr</option>
-                <option value="1000">1 000 kr</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                Riktning
-              </span>
-              <select
-                value={roundDir}
-                onChange={(e) => setRoundDir(e.target.value as RoundingDir)}
-                disabled={roundStep === "none"}
-                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-              >
-                <option value="nearest">Närmaste</option>
-                <option value="up">Uppåt</option>
-                <option value="down">Nedåt</option>
-              </select>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Lämna tomt för beräknat pris"
+                  value={manualPrice}
+                  onChange={(e) => setManualPrice(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                />
+                {parseManualPrice(manualPrice) !== null && (
+                  <button
+                    type="button"
+                    onClick={() => setManualPrice("")}
+                    className="shrink-0 rounded-lg border border-input px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                  >
+                    Rensa
+                  </button>
+                )}
+              </div>
             </label>
           </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Skriv in en summa (även decimaler, t.ex. 8 893,50) för att sätta slutpriset
+            manuellt. Lämna fältet tomt för att använda det beräknade priset.
+          </p>
         </section>
 
         {/* Sammanställning */}
@@ -287,7 +284,7 @@ function Calculator() {
           <h2 className="mb-3 font-semibold text-foreground">Sammanställning</h2>
           <dl className="space-y-2 text-sm">
             <div className="flex items-baseline justify-between">
-              <dt className="text-muted-foreground">Total servestid</dt>
+              <dt className="text-muted-foreground">Total servicetid</dt>
               <dd className="font-medium text-foreground">
                 {fmtNum(calc.hours)} h <span className="text-muted-foreground">({Math.round(calc.hours * 60)} min)</span>
               </dd>
