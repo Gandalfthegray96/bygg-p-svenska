@@ -35,16 +35,12 @@ type PortRow = {
   minutes: number;
 };
 
-type RoundingStep = "none" | "10" | "50" | "100" | "1000";
-type RoundingDir = "nearest" | "up" | "down";
-
 const HOUR_RATE_KEY = "uc-hour-rate";
 const TRIP_FEE_KEY = "uc-trip-fee";
 const TRIP_WINDOW_KEY = "uc-trip-window";
 const ROWS_KEY = "uc-rows";
 const DISCOUNT_KEY = "uc-discount";
-const ROUND_STEP_KEY = "uc-round-step";
-const ROUND_DIR_KEY = "uc-round-dir";
+const MANUAL_PRICE_KEY = "uc-manual-price";
 
 const DEFAULT_HOUR_RATE = 975;
 const DEFAULT_TRIP_FEE = 745;
@@ -64,16 +60,15 @@ function loadJSON<T>(key: string, fallback: T): T {
   }
 }
 
-function roundPrice(value: number, step: RoundingStep, dir: RoundingDir): number {
-  if (step === "none") return value;
-  const s = Number(step);
-  if (dir === "up") return Math.ceil(value / s) * s;
-  if (dir === "down") return Math.floor(value / s) * s;
-  return Math.round(value / s) * s;
+function parseManualPrice(s: string): number | null {
+  const t = s.trim().replace(/\s/g, "").replace(/kr$/i, "").replace(",", ".");
+  if (t === "") return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 const fmtKr = (n: number) =>
-  new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 }).format(n) + " kr";
+  new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(n) + " kr";
 const fmtNum = (n: number) =>
   new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(n);
 
