@@ -201,7 +201,7 @@ function Calculator() {
                       type="number"
                       min={0}
                       inputMode="numeric"
-                      value={row.qty === 0 && row.qty !== undefined ? row.qty : row.qty}
+                      value={row.qty}
                       onChange={(e) =>
                         updateRow(row.id, { qty: Number(e.target.value) || 0 })
                       }
