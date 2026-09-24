@@ -67,8 +67,15 @@ function parseManualPrice(s: string): number | null {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
-const fmtKr = (n: number) =>
-  new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(n) + " kr";
+const fmtKr = (n: number) => {
+  const dec = Number.isInteger(n) ? 0 : 2;
+  return (
+    new Intl.NumberFormat("sv-SE", {
+      minimumFractionDigits: dec,
+      maximumFractionDigits: 2,
+    }).format(n) + " kr"
+  );
+};
 const fmtNum = (n: number) =>
   new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(n);
 
