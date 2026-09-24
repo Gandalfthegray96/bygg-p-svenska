@@ -7,7 +7,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Räkna snabbt pris på förebyggande underhållsavtal: porter, antal, servestid, timpeng, framkörning, rabatt och avrundning.",
+          "Räkna snabbt pris på förebyggande underhållsavtal: objekt, servicetid, timpeng, framkörning, rabatt och manuellt slutpris.",
       },
       { property: "og:title", content: "Prisräknare Underhållsavtal" },
       {
@@ -231,7 +231,7 @@ function Calculator() {
         {/* Rabatt & pris */}
         <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <h2 className="mb-3 font-semibold text-foreground">Rabatt & pris</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">
                 Rabatt (%)
