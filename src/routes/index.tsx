@@ -163,15 +163,15 @@ function Calculator() {
       </header>
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 py-5">
-        {/* Porter */}
+        {/* Objekt */}
         <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold text-foreground">Porter</h2>
+            <h2 className="font-semibold text-foreground">Objekt</h2>
             <button
               onClick={() => setRows((prev) => [...prev, newRow()])}
               className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              + Lägg till port
+              + Lägg till objekt
             </button>
           </div>
 
@@ -185,13 +185,13 @@ function Calculator() {
                   <input
                     value={row.name}
                     onChange={(e) => updateRow(row.id, { name: e.target.value })}
-                    placeholder="Portnamn, t.ex. Port A1"
+                    placeholder="Objektnamn, t.ex. Port A1"
                     className="min-w-0 flex-1 rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                   />
                   {rows.length > 1 && (
                     <button
                       onClick={() => setRows((prev) => prev.filter((r) => r.id !== row.id))}
-                      aria-label={`Ta bort ${row.name || "port"}`}
+                      aria-label={`Ta bort ${row.name || "objekt"}`}
                       className="shrink-0 rounded-lg border border-input px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
                     >
                       ✕
@@ -375,21 +375,22 @@ function Calculator() {
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                Antal framkörn./h
+                Framkörning per 8 h
               </span>
               <input
                 type="number"
                 min={1}
                 inputMode="numeric"
-                value={tripWindow}
-                onChange={(e) => setTripWindow(Number(e.target.value) || 1)}
-                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                value={1}
+                readOnly
+                aria-label="En framkörning per åtta timmar"
+                className="w-full rounded-lg border border-input bg-muted px-3 py-2 text-sm text-foreground outline-none"
               />
             </label>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            En framkörning räknas per {tripWindow} h påbörjad tid. Ändra värdena här om
-            era priser ändras — de sparas i appen.
+            En framkörning räknas per 8 h påbörjad tid. Timpeng och framkörningsavgift
+            sparas i appen när de ändras.
           </p>
         </section>
       </main>
