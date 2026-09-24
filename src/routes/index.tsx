@@ -317,17 +317,14 @@ function Calculator() {
 
           <div className="mt-4 rounded-xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Pris{" "}
-              {roundStep !== "none"
-                ? `(avrundat ${roundDir === "up" ? "uppåt" : roundDir === "down" ? "nedåt" : "till"} ${new Intl.NumberFormat("sv-SE").format(Number(roundStep))} kr)`
-                : ""}
+              {parseManualPrice(manualPrice) !== null ? "Pris (manuellt)" : "Pris"}
             </p>
             <p className="mt-1 text-3xl font-bold tabular-nums text-primary">
               {fmtKr(calc.finalPrice)}
             </p>
-            {roundStep !== "none" && calc.finalPrice !== calc.afterDiscount && (
+            {parseManualPrice(manualPrice) !== null && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Exakt: {fmtKr(calc.afterDiscount)}
+                Beräknat: {fmtKr(calc.afterDiscount)}
               </p>
             )}
           </div>
