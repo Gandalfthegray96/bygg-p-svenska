@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Räkna pris på underhållsavtal: porter, servestid, timpeng, framkörning, rabatt och avrundning.",
+          "Räkna pris på underhållsavtal: objekt, servicetid, timpeng, framkörning, rabatt och manuellt slutpris.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
