@@ -250,6 +250,41 @@ function Calculator() {
                     />
                   </label>
                 </div>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Tillverkningsnummer
+                    </span>
+                    <input
+                      value={row.mfgNo}
+                      onChange={(e) => updateRow(row.id, { mfgNo: e.target.value })}
+                      placeholder="T.ex. 123456"
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Fabrikat
+                    </span>
+                    <input
+                      value={row.make}
+                      onChange={(e) => updateRow(row.id, { make: e.target.value })}
+                      placeholder="T.ex. Crawford"
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Besiktningsnummer
+                    </span>
+                    <input
+                      value={row.inspNo}
+                      onChange={(e) => updateRow(row.id, { inspNo: e.target.value })}
+                      placeholder="T.ex. B-2024-01"
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                </div>
               </div>
             ))}
           </div>
