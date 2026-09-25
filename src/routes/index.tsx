@@ -33,6 +33,9 @@ type PortRow = {
   name: string;
   qty: number;
   minutes: number;
+  mfgNo: string;
+  make: string;
+  inspNo: string;
 };
 
 const HOUR_RATE_KEY = "uc-hour-rate";
@@ -47,7 +50,23 @@ const DEFAULT_TRIP_FEE = 745;
 const DEFAULT_TRIP_WINDOW = 8;
 
 function newRow(): PortRow {
-  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30 };
+  return {
+    id: Math.random().toString(36).slice(2),
+    name: "",
+    qty: 1,
+    minutes: 30,
+    mfgNo: "",
+    make: "",
+    inspNo: "",
+  };
+}
+
+function normalizeRow(r: Partial<PortRow>): PortRow {
+  return {
+    ...newRow(),
+    ...r,
+    id: r.id ?? newRow().id,
+  };
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
