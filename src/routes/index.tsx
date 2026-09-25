@@ -125,7 +125,8 @@ function Calculator() {
     if (savedHour !== null && savedHour > 0) setHourRate(savedHour);
     if (savedTrip !== null && savedTrip >= 0) setTripFee(savedTrip);
     if (savedWindow !== null && savedWindow > 0) setTripWindow(savedWindow);
-    if (Array.isArray(savedRows) && savedRows.length > 0) setRows(savedRows);
+    if (Array.isArray(savedRows) && savedRows.length > 0)
+      setRows(savedRows.map(normalizeRow));
     if (savedDiscount !== null && savedDiscount >= 0) setDiscount(savedDiscount);
     if (savedManual !== null) setManualPrice(savedManual);
     setHydrated(true);
