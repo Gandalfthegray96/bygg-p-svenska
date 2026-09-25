@@ -33,6 +33,9 @@ type PortRow = {
   name: string;
   qty: number;
   minutes: number;
+  mfgNo: string;
+  make: string;
+  inspNo: string;
 };
 
 const HOUR_RATE_KEY = "uc-hour-rate";
@@ -47,7 +50,23 @@ const DEFAULT_TRIP_FEE = 745;
 const DEFAULT_TRIP_WINDOW = 8;
 
 function newRow(): PortRow {
-  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30 };
+  return {
+    id: Math.random().toString(36).slice(2),
+    name: "",
+    qty: 1,
+    minutes: 30,
+    mfgNo: "",
+    make: "",
+    inspNo: "",
+  };
+}
+
+function normalizeRow(r: Partial<PortRow>): PortRow {
+  return {
+    ...newRow(),
+    ...r,
+    id: r.id ?? newRow().id,
+  };
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -106,7 +125,8 @@ function Calculator() {
     if (savedHour !== null && savedHour > 0) setHourRate(savedHour);
     if (savedTrip !== null && savedTrip >= 0) setTripFee(savedTrip);
     if (savedWindow !== null && savedWindow > 0) setTripWindow(savedWindow);
-    if (Array.isArray(savedRows) && savedRows.length > 0) setRows(savedRows);
+    if (Array.isArray(savedRows) && savedRows.length > 0)
+      setRows(savedRows.map(normalizeRow));
     if (savedDiscount !== null && savedDiscount >= 0) setDiscount(savedDiscount);
     if (savedManual !== null) setManualPrice(savedManual);
     setHydrated(true);
@@ -226,6 +246,41 @@ function Calculator() {
                       onChange={(e) =>
                         updateRow(row.id, { minutes: Number(e.target.value) || 0 })
                       }
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                </div>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Tillverkningsnummer
+                    </span>
+                    <input
+                      value={row.mfgNo}
+                      onChange={(e) => updateRow(row.id, { mfgNo: e.target.value })}
+                      placeholder="T.ex. 123456"
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Fabrikat
+                    </span>
+                    <input
+                      value={row.make}
+                      onChange={(e) => updateRow(row.id, { make: e.target.value })}
+                      placeholder="T.ex. Crawford"
+                      className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Besiktningsnummer
+                    </span>
+                    <input
+                      value={row.inspNo}
+                      onChange={(e) => updateRow(row.id, { inspNo: e.target.value })}
+                      placeholder="T.ex. B-2024-01"
                       className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
                     />
                   </label>
