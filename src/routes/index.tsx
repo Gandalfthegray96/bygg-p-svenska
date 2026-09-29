@@ -438,6 +438,48 @@ function Calculator() {
           </div>
         </section>
 
+        {/* Kund & mejl */}
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-foreground">Kund & mejl</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                Beställare / kundnamn
+              </span>
+              <input
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="T.ex. AB Exempel"
+                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                Kundens e-postadress
+              </span>
+              <input
+                type="email"
+                inputMode="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="kund@foretag.se"
+                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={openMail}
+            className="mt-3 w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            ✉ Mejla avtal till kund
+          </button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Öppnar din mejlapp (t.ex. Outlook) med mottagare, ämne och en fin text
+            ifyllda. Bifoga avtalet och kalkylen från "Mina filer" innan du skickar.
+          </p>
+        </section>
+
         {/* Prisuppgifter */}
         <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <h2 className="mb-3 font-semibold text-foreground">Prisuppgifter</h2>
