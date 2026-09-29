@@ -150,7 +150,11 @@ function Calculator() {
     localStorage.setItem(DISCOUNT_KEY, String(discount));
     if (manualPrice) localStorage.setItem(MANUAL_PRICE_KEY, manualPrice);
     else localStorage.removeItem(MANUAL_PRICE_KEY);
-  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, manualPrice]);
+    if (customerEmail) localStorage.setItem(CUSTOMER_EMAIL_KEY, customerEmail);
+    else localStorage.removeItem(CUSTOMER_EMAIL_KEY);
+    if (customerName) localStorage.setItem(CUSTOMER_NAME_KEY, customerName);
+    else localStorage.removeItem(CUSTOMER_NAME_KEY);
+  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, manualPrice, customerEmail, customerName]);
 
   const calc = useMemo(() => {
     const totalMinutes = rows.reduce(
