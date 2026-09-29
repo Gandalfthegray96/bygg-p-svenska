@@ -176,6 +176,40 @@ function Calculator() {
   const updateRow = (id: string, patch: Partial<PortRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
+  const openMail = () => {
+    const subject = `Underhållsavtal – ${customerName || "UK Portservice"}`;
+    const lines = [
+      `Hej${customerName ? " " + customerName : ""}!`,
+      "",
+      "Tack för att ni valt UK Portservice!",
+      "",
+      "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalet och kalkylen bifogas i detta mejl.",
+      "",
+      "Sammanfattning:",
+      ...rows
+        .filter((r) => r.name || r.qty > 0)
+        .map(
+          (r) =>
+            `• ${r.name || "Objekt"} – ${r.qty} st, ${r.minutes} min/st` +
+            (r.make ? `, fabrikat: ${r.make}` : "") +
+            (r.mfgNo ? `, tillv.nr: ${r.mfgNo}` : "") +
+            (r.inspNo ? `, besikt.nr: ${r.inspNo}` : "")
+        ),
+      `• Total servicetid: ${fmtNum(calc.hours)} h`,
+      `• Framkörning: ${calc.trips} st × ${fmtKr(tripFee)}`,
+      discount > 0 ? `• Rabatt: ${fmtNum(discount)} %` : "",
+      "",
+      `Pris: ${fmtKr(calc.finalPrice)}`,
+      "",
+      "Återkom gärna om ni har frågor eller vill justera något.",
+      "",
+      "Med vänliga hälsningar,",
+      "UK Portservice",
+    ].filter((l) => l !== "");
+    const href = `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
+    window.location.href = href;
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28">
       <header className="border-b border-border bg-card">
