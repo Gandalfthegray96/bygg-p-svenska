@@ -107,6 +107,8 @@ function Calculator() {
   const [rows, setRows] = useState<PortRow[]>([newRow()]);
   const [discount, setDiscount] = useState<number>(0);
   const [manualPrice, setManualPrice] = useState<string>("");
+  const [customerEmail, setCustomerEmail] = useState<string>("");
+  const [customerName, setCustomerName] = useState<string>("");
   const [hydrated, setHydrated] = useState(false);
 
   // Load saved state (browser only)
