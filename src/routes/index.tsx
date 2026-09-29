@@ -44,6 +44,8 @@ const TRIP_WINDOW_KEY = "uc-trip-window";
 const ROWS_KEY = "uc-rows";
 const DISCOUNT_KEY = "uc-discount";
 const MANUAL_PRICE_KEY = "uc-manual-price";
+const CUSTOMER_EMAIL_KEY = "uc-customer-email";
+const CUSTOMER_NAME_KEY = "uc-customer-name";
 
 const DEFAULT_HOUR_RATE = 975;
 const DEFAULT_TRIP_FEE = 745;
