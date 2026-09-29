@@ -125,6 +125,8 @@ function Calculator() {
     const savedRows = loadJSON<PortRow[] | null>(ROWS_KEY, null);
     const savedDiscount = readNum(DISCOUNT_KEY);
     const savedManual = localStorage.getItem(MANUAL_PRICE_KEY);
+    const savedEmail = localStorage.getItem(CUSTOMER_EMAIL_KEY);
+    const savedName = localStorage.getItem(CUSTOMER_NAME_KEY);
 
     if (savedHour !== null && savedHour > 0) setHourRate(savedHour);
     if (savedTrip !== null && savedTrip >= 0) setTripFee(savedTrip);
@@ -133,6 +135,8 @@ function Calculator() {
       setRows(savedRows.map(normalizeRow));
     if (savedDiscount !== null && savedDiscount >= 0) setDiscount(savedDiscount);
     if (savedManual !== null) setManualPrice(savedManual);
+    if (savedEmail !== null) setCustomerEmail(savedEmail);
+    if (savedName !== null) setCustomerName(savedName);
     setHydrated(true);
   }, []);
 
