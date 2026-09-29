@@ -44,6 +44,8 @@ const TRIP_WINDOW_KEY = "uc-trip-window";
 const ROWS_KEY = "uc-rows";
 const DISCOUNT_KEY = "uc-discount";
 const MANUAL_PRICE_KEY = "uc-manual-price";
+const CUSTOMER_EMAIL_KEY = "uc-customer-email";
+const CUSTOMER_NAME_KEY = "uc-customer-name";
 
 const DEFAULT_HOUR_RATE = 975;
 const DEFAULT_TRIP_FEE = 745;
@@ -105,6 +107,8 @@ function Calculator() {
   const [rows, setRows] = useState<PortRow[]>([newRow()]);
   const [discount, setDiscount] = useState<number>(0);
   const [manualPrice, setManualPrice] = useState<string>("");
+  const [customerEmail, setCustomerEmail] = useState<string>("");
+  const [customerName, setCustomerName] = useState<string>("");
   const [hydrated, setHydrated] = useState(false);
 
   // Load saved state (browser only)
@@ -121,6 +125,8 @@ function Calculator() {
     const savedRows = loadJSON<PortRow[] | null>(ROWS_KEY, null);
     const savedDiscount = readNum(DISCOUNT_KEY);
     const savedManual = localStorage.getItem(MANUAL_PRICE_KEY);
+    const savedEmail = localStorage.getItem(CUSTOMER_EMAIL_KEY);
+    const savedName = localStorage.getItem(CUSTOMER_NAME_KEY);
 
     if (savedHour !== null && savedHour > 0) setHourRate(savedHour);
     if (savedTrip !== null && savedTrip >= 0) setTripFee(savedTrip);
@@ -129,6 +135,8 @@ function Calculator() {
       setRows(savedRows.map(normalizeRow));
     if (savedDiscount !== null && savedDiscount >= 0) setDiscount(savedDiscount);
     if (savedManual !== null) setManualPrice(savedManual);
+    if (savedEmail !== null) setCustomerEmail(savedEmail);
+    if (savedName !== null) setCustomerName(savedName);
     setHydrated(true);
   }, []);
 
@@ -142,7 +150,11 @@ function Calculator() {
     localStorage.setItem(DISCOUNT_KEY, String(discount));
     if (manualPrice) localStorage.setItem(MANUAL_PRICE_KEY, manualPrice);
     else localStorage.removeItem(MANUAL_PRICE_KEY);
-  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, manualPrice]);
+    if (customerEmail) localStorage.setItem(CUSTOMER_EMAIL_KEY, customerEmail);
+    else localStorage.removeItem(CUSTOMER_EMAIL_KEY);
+    if (customerName) localStorage.setItem(CUSTOMER_NAME_KEY, customerName);
+    else localStorage.removeItem(CUSTOMER_NAME_KEY);
+  }, [hydrated, hourRate, tripFee, tripWindow, rows, discount, manualPrice, customerEmail, customerName]);
 
   const calc = useMemo(() => {
     const totalMinutes = rows.reduce(
@@ -163,6 +175,40 @@ function Calculator() {
 
   const updateRow = (id: string, patch: Partial<PortRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+
+  const openMail = () => {
+    const subject = `Underhållsavtal – ${customerName || "UK Portservice"}`;
+    const lines = [
+      `Hej${customerName ? " " + customerName : ""}!`,
+      "",
+      "Tack för att ni valt UK Portservice!",
+      "",
+      "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalet och kalkylen bifogas i detta mejl.",
+      "",
+      "Sammanfattning:",
+      ...rows
+        .filter((r) => r.name || r.qty > 0)
+        .map(
+          (r) =>
+            `• ${r.name || "Objekt"} – ${r.qty} st, ${r.minutes} min/st` +
+            (r.make ? `, fabrikat: ${r.make}` : "") +
+            (r.mfgNo ? `, tillv.nr: ${r.mfgNo}` : "") +
+            (r.inspNo ? `, besikt.nr: ${r.inspNo}` : "")
+        ),
+      `• Total servicetid: ${fmtNum(calc.hours)} h`,
+      `• Framkörning: ${calc.trips} st × ${fmtKr(tripFee)}`,
+      discount > 0 ? `• Rabatt: ${fmtNum(discount)} %` : "",
+      "",
+      `Pris: ${fmtKr(calc.finalPrice)}`,
+      "",
+      "Återkom gärna om ni har frågor eller vill justera något.",
+      "",
+      "Med vänliga hälsningar,",
+      "UK Portservice",
+    ].filter((l) => l !== "");
+    const href = `mailto:${encodeURIComponent(customerEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
+    window.location.href = href;
+  };
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -390,6 +436,48 @@ function Calculator() {
               </p>
             )}
           </div>
+        </section>
+
+        {/* Kund & mejl */}
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-foreground">Kund & mejl</h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                Beställare / kundnamn
+              </span>
+              <input
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="T.ex. AB Exempel"
+                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                Kundens e-postadress
+              </span>
+              <input
+                type="email"
+                inputMode="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="kund@foretag.se"
+                className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={openMail}
+            className="mt-3 w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            ✉ Mejla avtal till kund
+          </button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Öppnar din mejlapp (t.ex. Outlook) med mottagare, ämne och en fin text
+            ifyllda. Bifoga avtalet och kalkylen från "Mina filer" innan du skickar.
+          </p>
         </section>
 
         {/* Prisuppgifter */}
