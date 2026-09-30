@@ -8,6 +8,8 @@
 - [ ] Moln-lagring (Lovable Cloud) + kundmappar med versioner v1/v2/v3
 - [ ] Publicering så appen kan installeras på Android-startskärmen
 
+- [ ] Mejlets ämne: "Avtalsförslag <avtalsnr>"
+
 ## Klart
 - [x] Objekt-fält: Tillverkningsnummer, Fabrikat, Besiktningsnummer
 - [x] Manuellt slutpris-fält (justeringsfält enligt kalkylmallen väntar på bygget ovan)
