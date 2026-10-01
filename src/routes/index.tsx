@@ -208,7 +208,7 @@ function App() {
                       <TextField label="Fabrikat" value={row.make} onChange={(v) => updateRow(row.id, { make: v })} />
                       <TextField label="Besiktningsnummer" value={row.inspNo} onChange={(v) => updateRow(row.id, { inspNo: v })} />
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round(k.unitPrices[i] * 100) / 100)} per tillfälle</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per tillfälle</p>
                   </div>
                 ))}
               </div>

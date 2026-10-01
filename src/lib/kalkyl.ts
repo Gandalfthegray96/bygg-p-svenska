@@ -93,7 +93,7 @@ export function calculate(a: Avtal) {
   const total5 = perVisit * TOTAL_VISITS;
   const totalQty = a.rows.reduce((s, r) => s + Math.max(0, r.qty), 0);
   const unitPrices = a.rows.map((r, i) =>
-    totalMinutes > 0 && r.qty > 0 ? ((rowMins[i] / totalMinutes) * perVisit) / r.qty : 0
+    totalMinutes > 0 && r.qty > 0 ? (((rowMins[i] ?? 0) / totalMinutes) * perVisit) / r.qty : 0
   );
   return { rowMins, totalMinutes, hours, trips, travel, laborGross, discountAmount, laborNet, adjust, perVisit, perYear, total5, totalQty, unitPrices };
 }
