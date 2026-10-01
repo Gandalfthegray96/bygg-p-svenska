@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, TOTAL_VISITS } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
@@ -259,7 +259,7 @@ function App() {
 
           {tab === "avtal" && (
             <div className="-mx-4 overflow-x-auto">
-              <div className="origin-top-left" style={{ zoom: "var(--doc-zoom, 0.45)" } as React.CSSProperties}>
+              <div className="origin-top-left" style={{ zoom: "var(--doc-zoom, 0.45)" } as CSSProperties}>
                 <Preview a={a} />
               </div>
             </div>
