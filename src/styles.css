@@ -205,3 +205,4 @@
   .doc-page:last-child { page-break-after: auto; break-after: auto; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+@media (min-width: 640px) { :root { --doc-zoom: 0.8; } }

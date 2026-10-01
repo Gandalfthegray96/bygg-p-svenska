@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Avtalsflödet: beräkning i src/lib/kalkyl.ts, dokumentet i src/components/avtal/Preview.tsx (PDF via webbläsarens utskrift), Excel via xlsx i src/lib/excel.ts, versioner i localStorage (src/lib/avtal-store.ts) — enkelt offline tills molnet aktiveras.
