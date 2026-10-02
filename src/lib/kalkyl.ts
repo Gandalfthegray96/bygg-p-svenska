@@ -3,6 +3,7 @@ export type ObjRow = {
   name: string;
   qty: number;
   minutes: number;
+  visitsPerYear: number;
   mfgNo: string;
   make: string;
   inspNo: string;
@@ -38,12 +39,10 @@ export type Avtal = {
   adjust: string;
 };
 
-export const VISITS_PER_YEAR = 2;
 export const YEARS = 5;
-export const TOTAL_VISITS = VISITS_PER_YEAR * YEARS;
 
 export function newRow(): ObjRow {
-  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30, mfgNo: "", make: "", inspNo: "" };
+  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30, visitsPerYear: 2, mfgNo: "", make: "", inspNo: "" };
 }
 
 export function emptyCustomer(): Customer {
@@ -78,24 +77,69 @@ export function parseAmount(s: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+export type VisitCalc = {
+  /** 1-baserat besöksnummer */
+  index: number;
+  /** index i a.rows för objekt som ingår i besöket */
+  rowIdx: number[];
+  minutes: number;
+  trips: number;
+  travel: number;
+  laborGross: number;
+  laborNet: number;
+  /** pris för besöket exkl. moms (framkörning + arbete netto + utjämning) */
+  price: number;
+};
+
+/**
+ * Central kalkyl – enda källan för alla prisberäkningar (UI, PDF, Excel, mejl).
+ * Besök k innehåller alla objekt med besök/år >= k.
+ * Framkörning: 1 per påbörjat 8-timmarspass per besök (en adress).
+ * Rabatt gäller bara arbetet. Utjämning läggs på varje besök.
+ */
 export function calculate(a: Avtal) {
   const rowMins = a.rows.map((r) => Math.max(0, r.qty) * Math.max(0, r.minutes));
   const totalMinutes = rowMins.reduce((s, m) => s + m, 0);
   const hours = totalMinutes / 60;
-  const trips = totalMinutes > 0 ? Math.ceil(totalMinutes / 480) : 0;
-  const travel = trips * a.tripFee;
-  const laborGross = hours * a.hourRate;
-  const discountAmount = laborGross * (a.discount / 100);
-  const laborNet = laborGross - discountAmount;
   const adjust = parseAmount(a.adjust);
-  const perVisit = travel + laborNet + adjust;
-  const perYear = perVisit * VISITS_PER_YEAR;
-  const total5 = perVisit * TOTAL_VISITS;
+  const freqs = a.rows.map((r) => Math.max(0, Math.floor(r.visitsPerYear || 0)));
+  const maxVisits = freqs.length ? Math.max(...freqs) : 0;
+
+  const visits: VisitCalc[] = [];
+  for (let v = 1; v <= maxVisits; v++) {
+    const rowIdx = a.rows.map((_, i) => i).filter((i) => (freqs[i] ?? 0) >= v && (rowMins[i] ?? 0) > 0);
+    const minutes = rowIdx.reduce((s, i) => s + (rowMins[i] ?? 0), 0);
+    const trips = minutes > 0 ? Math.ceil(minutes / 480) : 0;
+    const travel = trips * a.tripFee;
+    const laborGross = (minutes / 60) * a.hourRate;
+    const laborNet = laborGross * (1 - a.discount / 100);
+    const price = travel + laborNet + adjust;
+    visits.push({ index: v, rowIdx, minutes, trips, travel, laborGross, laborNet, price });
+  }
+
+  const perYear = visits.reduce((s, v) => s + v.price, 0);
+  const total5 = perYear * YEARS;
   const totalQty = a.rows.reduce((s, r) => s + Math.max(0, r.qty), 0);
-  const unitPrices = a.rows.map((r, i) =>
-    totalMinutes > 0 && r.qty > 0 ? (((rowMins[i] ?? 0) / totalMinutes) * perVisit) / r.qty : 0
-  );
-  return { rowMins, totalMinutes, hours, trips, travel, laborGross, discountAmount, laborNet, adjust, perVisit, perYear, total5, totalQty, unitPrices };
+  const laborGrossTotal = visits.reduce((s, v) => s + v.laborGross, 0);
+  const laborNetTotal = visits.reduce((s, v) => s + v.laborNet, 0);
+  const travelTotal = visits.reduce((s, v) => s + v.travel, 0);
+  const discountAmount = laborGrossTotal - laborNetTotal;
+
+  /** Styckespris per år: objektets andel (minuter) av varje besök det ingår i, delat på antal */
+  const unitPrices = a.rows.map((r, i) => {
+    if (r.qty <= 0) return 0;
+    let year = 0;
+    for (const v of visits) {
+      if (v.minutes > 0 && v.rowIdx.includes(i)) year += ((rowMins[i] ?? 0) / v.minutes) * v.price;
+    }
+    return year / r.qty;
+  });
+
+  return {
+    rowMins, totalMinutes, hours, adjust, freqs, maxVisits, visits,
+    perYear, total5, totalQty, unitPrices,
+    laborGrossTotal, laborNetTotal, travelTotal, discountAmount,
+  };
 }
 
 export const fmtKr = (n: number) => {
