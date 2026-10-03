@@ -1,4 +1,6 @@
-import { type Avtal, calculate, TOTAL_VISITS, VISITS_PER_YEAR } from "./kalkyl";
+import { type Avtal, calculate, YEARS } from "./kalkyl";
+
+type Cell = string | number | { f: string } | null;
 
 export function fileBase(a: Avtal, rev?: number) {
   const c = a.customer;
@@ -13,58 +15,65 @@ export async function downloadExcel(a: Avtal, rev?: number) {
   const n = a.rows.length;
   const first = 8;
   const last = first + n - 1;
+  const g0 = last + 3; // första summeringsraden per besök (efter blankrad + Totalt-rad)
+  const minCell = (g: number) => `E${g0 + 2 * g}`;
+  const priceCell = (g: number) => `E${g0 + 2 * g + 1}`;
 
-  const kalkyl: (string | number | { f: string } | null)[][] = [
-    ["Kalkyl förebyggande underhåll – 5 år"],
+  const kalkyl: Cell[][] = [
+    ["Kalkyl förebyggande underhåll – pris per servicebesök"],
     ["Offertnummer", c.avtalNr],
     ["Kund", c.bestallare],
     ["Projekt / övrig info", c.coverTitle],
     [],
-    ["Timpris (kr/h)", a.hourRate, "Framkörning (kr/st)", a.tripFee, "Rabatt timpris (%)", a.discount / 100, "Utjämning/tillfälle (kr)", k.adjust],
-    ["Produkt", "Antal", "Tid (min)", "Total min", "Styckespris (kr)", "Fabrikat", "Tillverkningsnr", "Besiktningsnr"],
+    ["Timpris (kr/h)", a.hourRate, "Framkörning (kr/st)", a.tripFee, "Rabatt timpris (%)", a.discount / 100, "Utjämning per besök (kr)", k.adjust],
+    ["Produkt", "Antal", "Besök/år", "Tid (min)", "Total min", "Styckpris besök 1 (kr)", "Fabrikat", "Tillverkningsnr", "Besiktningsnr"],
   ];
   a.rows.forEach((r, i) => {
     const row = first + i;
-    kalkyl.push([
-      r.name, r.qty, r.minutes, { f: `B${row}*C${row}` },
-      { f: `IF(AND($D$${last + 2}>0,B${row}>0),D${row}/$D$${last + 2}*$D$${last + 7}/B${row},0)` },
-      r.make, r.mfgNo, r.inspNo,
-    ]);
+    const unit = k.visits.length > 0 ? { f: `IF($E$${g0}>0,E${row}/$E$${g0}*$E$${g0 + 1}/B${row},0)` } : 0;
+    kalkyl.push([r.name, r.qty, r.visits, r.minutes, { f: `B${row}*D${row}` }, unit, r.make, r.mfgNo, r.inspNo]);
   });
-  const t = last + 2;
   kalkyl.push(
     [],
-    ["Totalt", { f: `SUM(B${first}:B${last})` }, "", { f: `SUM(D${first}:D${last})` }],
-    ["Framkörningar (st)", "", "", { f: `IF(D${t}>0,ROUNDUP(D${t}/480,0),0)` }],
-    ["Framkörning (kr)", "", "", { f: `D${t + 1}*D6` }],
-    ["Arbete brutto (kr)", "", "", { f: `D${t}/60*B6` }],
-    ["Arbete netto (kr)", "", "", { f: `D${t + 3}*(1-F6)` }],
-    ["Kostnad per tillfälle exkl. moms", "", "", { f: `D${t + 2}+D${t + 4}+H6` }],
-    ["Kostnad per år exkl. moms", "", "", { f: `D${t + 5}*${VISITS_PER_YEAR}` }],
-    ["Kostnad 5 år exkl. moms", "", "", { f: `D${t + 5}*${TOTAL_VISITS}` }],
+    ["Totalt", { f: `SUM(B${first}:B${last})` }, "", "", { f: `SUM(E${first}:E${last})` }],
   );
 
-  const ws1 = XLSX.utils.aoa_to_sheet(kalkyl as never);
-  ws1["!cols"] = [{ wch: 32 }, { wch: 10 }, { wch: 18 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
+  k.visits.forEach((v, g) => {
+    kalkyl.push(
+      [`Besök ${v.k}: total min (objekt med ≥${v.k} besök/år)`, "", "", "", { f: `SUMPRODUCT(($C$${first}:$C$${last}>=${v.k})*$E$${first}:$E$${last})` }],
+      [`Besök ${v.k}: pris per besök exkl. moms`, "", "", "", { f: `IF(${minCell(g)}>0,${minCell(g)}/60*$B$6*(1-$F$6)+ROUNDUP(${minCell(g)}/480,0)*$D$6+$H$6,0)` }],
+    );
+  });
 
-  const utskrift: (string | number)[][] = [
+  if (k.visits.length > 0) {
+    const yearRow = g0 + 2 * k.visits.length;
+    kalkyl.push(
+      ["Kostnad per år exkl. moms", "", "", "", { f: k.visits.map((_, g) => priceCell(g)).join("+") }],
+      [`Kostnad ${YEARS} år exkl. moms`, "", "", "", { f: `E${yearRow}*${YEARS}` }],
+    );
+  }
+
+  const ws1 = XLSX.utils.aoa_to_sheet(kalkyl as never);
+  ws1["!cols"] = [{ wch: 40 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
+
+  const visitLabel = (vk: number) => (k.visits.length > 1 ? `Kostnad servicebesök ${vk} exkl. moms` : "Kostnad per servicebesök exkl. moms");
+  const utskrift: Cell[][] = [
     ["Bilaga 1. Kostnad"],
     [],
     ["Kund", c.bestallare],
     ["Offertnummer", c.avtalNr],
     ["Projekt", c.coverTitle],
     [],
-    ["Objekt", "Antal"],
-    ...a.rows.map((r) => [r.name || "Objekt", r.qty]),
+    ["Objekt", "Antal", "Besök/år"],
+    ...a.rows.map((r) => [r.name || "Objekt", r.qty, r.visits]),
     [],
     ["Totalt antal objekt", k.totalQty],
-    ["Servicetillfällen per år", VISITS_PER_YEAR],
-    ["Kostnad per tillfälle exkl. moms", Math.round(k.perVisit * 100) / 100],
-    ["Kostnad per år exkl. moms", Math.round(k.perYear * 100) / 100],
-    ["Kostnad 5 år garantiservice exkl. moms", Math.round(k.total5 * 100) / 100],
+    ...(a.show.visit ? k.visits.map((v) => [visitLabel(v.k), Math.round(v.perVisit * 100) / 100]) : []),
+    ...(a.show.year ? [["Kostnad per år exkl. moms", Math.round(k.perYear * 100) / 100]] : []),
+    ...(a.show.total5 ? [["Kostnad 5 år garantiservice exkl. moms", Math.round(k.total5 * 100) / 100]] : []),
   ];
-  const ws2 = XLSX.utils.aoa_to_sheet(utskrift);
-  ws2["!cols"] = [{ wch: 40 }, { wch: 18 }];
+  const ws2 = XLSX.utils.aoa_to_sheet(utskrift as never);
+  ws2["!cols"] = [{ wch: 40 }, { wch: 14 }, { wch: 10 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws1, "Kalkyl");
