@@ -227,23 +227,33 @@ function App() {
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">Rabatten gäller bara arbetet, inte framkörningen. Skriv ett minus framför för att dra av, t.ex. -893 eller -1,50.</p>
               </Card>
-              <Card title="Sammanställning per tillfälle">
+              <Card title="Sammanställning per besök">
                 <dl className="space-y-2 text-sm">
                   {[
                     ["Total servicetid", `${fmtNum(k.hours)} h (${k.totalMinutes} min)`],
-                    [`Framkörning (${k.trips} × ${fmtKr(a.tripFee)})`, fmtKr(k.travel)],
-                    ["Arbete brutto", fmtKr(k.laborGross)],
-                    ...(a.discount > 0 ? [[`Rabatt ${fmtNum(a.discount)} %`, `−${fmtKr(k.discountAmount)}`]] : []),
-                    ["Arbete netto", fmtKr(k.laborNet)],
-                    ...(k.adjust !== 0 ? [["Utjämning", (k.adjust > 0 ? "+" : "−") + fmtKr(Math.abs(k.adjust))]] : []),
+                    ...(a.discount > 0 ? [[`Rabatt ${fmtNum(a.discount)} % på arbetet`, `−${fmtKr(k.discountAmount)} per år`]] : []),
+                    ...(k.adjust !== 0 ? [["Utjämning per besök", (k.adjust > 0 ? "+" : "−") + fmtKr(Math.abs(k.adjust))]] : []),
                   ].map(([l, v]) => (
                     <div key={l} className="flex items-baseline justify-between"><dt className="text-muted-foreground">{l}</dt><dd className="font-medium text-foreground">{v}</dd></div>
                   ))}
                 </dl>
+                <div className="mt-3 space-y-2">
+                  {k.visits.map((v) => (
+                    <div key={v.index} className="rounded-xl border border-border bg-background/60 p-3">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-sm font-semibold text-foreground">Servicebesök {v.index}</span>
+                        <span className="text-lg font-bold tabular-nums text-primary">{fmtKr(v.price)}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {v.rowIdx.length} objekt · {fmtNum(v.minutes / 60)} h · framkörning {v.trips} × {fmtKr(a.tripFee)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
                 <div className="mt-4 rounded-xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per tillfälle exkl. moms</p>
-                  <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perVisit)}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Per år: {fmtKr(k.perYear)} · 5 år ({TOTAL_VISITS} tillfällen): <b className="text-foreground">{fmtKr(k.total5)}</b></p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per år exkl. moms</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perYear)}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{YEARS} år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
                 </div>
               </Card>
               <Card title="Prisuppgifter">
@@ -279,7 +289,7 @@ function App() {
                         <li key={v.version} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
                           <span className="font-semibold text-foreground">v{v.version}</span>
                           <span className="flex-1 truncate text-muted-foreground">
-                            {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perVisit)}
+                            {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perYear)}/år
                           </span>
                           <button className="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
                             onClick={() => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</button>
