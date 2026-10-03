@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { Preview } from "@/components/avtal/Preview";
-import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, TOTAL_VISITS } from "@/lib/kalkyl";
+import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, YEARS } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
 import { downloadExcel, fileBase } from "@/lib/excel";
 
@@ -108,8 +108,9 @@ function App() {
       "",
       "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalet och kalkylen finns bifogade i detta mejl.",
       "",
-      `Avtalet omfattar ${k.totalQty} objekt med 2 servicebesök per år.`,
-      `Kostnad per servicetillfälle: ${fmtKr(k.perVisit)} exkl. moms.`,
+      `Avtalet omfattar ${k.totalQty} objekt med ${k.maxVisits} servicebesök per år.`,
+      ...k.visits.map((v) => `Servicebesök ${v.index}: ${fmtKr(v.price)} exkl. moms.`),
+      `Kostnad per år: ${fmtKr(k.perYear)} exkl. moms.`,
       "",
       "Återkom gärna om ni har frågor eller vill justera något.",
       "",
@@ -182,7 +183,7 @@ function App() {
                   <TextField label="Adress" value={c.anlAdress} onChange={(v) => setC({ anlAdress: v })} />
                   <TextField label="Kontaktperson" value={c.kontaktperson} onChange={(v) => setC({ kontaktperson: v })} />
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år (2) fylls i automatiskt.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år ({k.maxVisits}) fylls i automatiskt.</p>
               </Card>
             </>
           )}
@@ -199,16 +200,17 @@ function App() {
                           className="shrink-0 rounded-lg border border-input px-2.5 py-2 text-sm text-muted-foreground hover:text-destructive">✕</button>
                       )}
                     </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="mt-2 grid grid-cols-3 gap-2">
                       <NumField label="Antal" value={row.qty} onChange={(n) => updateRow(row.id, { qty: n })} />
                       <NumField label="Servicetid per st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
+                      <NumField label="Besök per år" value={row.visitsPerYear} onChange={(n) => updateRow(row.id, { visitsPerYear: n })} />
                     </div>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <TextField label="Tillverkningsnummer" value={row.mfgNo} onChange={(v) => updateRow(row.id, { mfgNo: v })} />
                       <TextField label="Fabrikat" value={row.make} onChange={(v) => updateRow(row.id, { make: v })} />
                       <TextField label="Besiktningsnummer" value={row.inspNo} onChange={(v) => updateRow(row.id, { inspNo: v })} />
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per tillfälle</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
                   </div>
                 ))}
               </div>
