@@ -1,6 +1,6 @@
 import cover from "@/assets/avtal-cover.jpg.asset.json";
 import header from "@/assets/avtal-header.jpg.asset.json";
-import { type Avtal, calculate, fmtKr } from "@/lib/kalkyl";
+import { type Avtal, calculate, fmtKr, VISITS_PER_YEAR } from "@/lib/kalkyl";
 
 function Field({ label, value, wide }: { label: string; value?: string | number; wide?: boolean }) {
   return (
@@ -87,7 +87,7 @@ export function Preview({ a }: { a: Avtal }) {
           <Field label="Kontaktperson:" value={c.kontaktperson} wide />
           <div className="doc-field">
             <span className="doc-label">Antal objekt:</span><span className="doc-line doc-line-s">{k.totalQty}</span>
-            <span className="doc-label">Servicebesök/år</span><span className="doc-line doc-line-s">{k.maxVisits}</span>
+            <span className="doc-label">Servicebesök/år</span><span className="doc-line doc-line-s">{VISITS_PER_YEAR}</span>
           </div>
         </div>
         <Footer />
@@ -153,21 +153,19 @@ export function Preview({ a }: { a: Avtal }) {
         </div>
         <table className="doc-table">
           <thead>
-            <tr><th>Objekt</th><th>Fabrikat</th><th>Tillv.nr</th><th>Besikt.nr</th><th className="r">Antal</th><th className="r">Besök/år</th></tr>
+            <tr><th>Objekt</th><th>Fabrikat</th><th>Tillv.nr</th><th>Besikt.nr</th><th className="r">Antal</th></tr>
           </thead>
           <tbody>
             {a.rows.map((r) => (
-              <tr key={r.id}><td>{r.name || "Objekt"}</td><td>{r.make}</td><td>{r.mfgNo}</td><td>{r.inspNo}</td><td className="r">{r.qty}</td><td className="r">{r.visitsPerYear}</td></tr>
+              <tr key={r.id}><td>{r.name || "Objekt"}</td><td>{r.make}</td><td>{r.mfgNo}</td><td>{r.inspNo}</td><td className="r">{r.qty}</td></tr>
             ))}
           </tbody>
         </table>
         <table className="doc-table doc-sum">
           <tbody>
             <tr><td>Totalt antal objekt</td><td className="r">{k.totalQty} st</td></tr>
-            <tr><td>Servicetillfällen per år</td><td className="r">{k.maxVisits}</td></tr>
-            {k.visits.map((v) => (
-              <tr key={v.index}><td>Kostnad servicebesök {v.index} exkl. moms</td><td className="r">{fmtKr(v.price)}</td></tr>
-            ))}
+            <tr><td>Servicetillfällen per år</td><td className="r">{VISITS_PER_YEAR}</td></tr>
+            <tr><td>Kostnad per tillfälle exkl. moms</td><td className="r">{fmtKr(k.perVisit)}</td></tr>
             <tr><td>Kostnad per år exkl. moms</td><td className="r">{fmtKr(k.perYear)}</td></tr>
             <tr className="b"><td>Kostnad 5 år garantiservice exkl. moms</td><td className="r">{fmtKr(k.total5)}</td></tr>
           </tbody>

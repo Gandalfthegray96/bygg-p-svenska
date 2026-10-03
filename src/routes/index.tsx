@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { Preview } from "@/components/avtal/Preview";
-import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, YEARS } from "@/lib/kalkyl";
+import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, TOTAL_VISITS } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
 import { downloadExcel, fileBase } from "@/lib/excel";
 
@@ -108,9 +108,8 @@ function App() {
       "",
       "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalet och kalkylen finns bifogade i detta mejl.",
       "",
-      `Avtalet omfattar ${k.totalQty} objekt med ${k.maxVisits} servicebesök per år.`,
-      ...k.visits.map((v) => `Servicebesök ${v.index}: ${fmtKr(v.price)} exkl. moms.`),
-      `Kostnad per år: ${fmtKr(k.perYear)} exkl. moms.`,
+      `Avtalet omfattar ${k.totalQty} objekt med 2 servicebesök per år.`,
+      `Kostnad per servicetillfälle: ${fmtKr(k.perVisit)} exkl. moms.`,
       "",
       "Återkom gärna om ni har frågor eller vill justera något.",
       "",
@@ -183,7 +182,7 @@ function App() {
                   <TextField label="Adress" value={c.anlAdress} onChange={(v) => setC({ anlAdress: v })} />
                   <TextField label="Kontaktperson" value={c.kontaktperson} onChange={(v) => setC({ kontaktperson: v })} />
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år ({k.maxVisits}) fylls i automatiskt.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år (2) fylls i automatiskt.</p>
               </Card>
             </>
           )}
@@ -200,17 +199,16 @@ function App() {
                           className="shrink-0 rounded-lg border border-input px-2.5 py-2 text-sm text-muted-foreground hover:text-destructive">✕</button>
                       )}
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-2">
+                    <div className="mt-2 grid grid-cols-2 gap-2">
                       <NumField label="Antal" value={row.qty} onChange={(n) => updateRow(row.id, { qty: n })} />
                       <NumField label="Servicetid per st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
-                      <NumField label="Besök per år" value={row.visitsPerYear} onChange={(n) => updateRow(row.id, { visitsPerYear: n })} />
                     </div>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <TextField label="Tillverkningsnummer" value={row.mfgNo} onChange={(v) => updateRow(row.id, { mfgNo: v })} />
                       <TextField label="Fabrikat" value={row.make} onChange={(v) => updateRow(row.id, { make: v })} />
                       <TextField label="Besiktningsnummer" value={row.inspNo} onChange={(v) => updateRow(row.id, { inspNo: v })} />
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per tillfälle</p>
                   </div>
                 ))}
               </div>
@@ -227,33 +225,23 @@ function App() {
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">Rabatten gäller bara arbetet, inte framkörningen. Skriv ett minus framför för att dra av, t.ex. -893 eller -1,50.</p>
               </Card>
-              <Card title="Sammanställning per besök">
+              <Card title="Sammanställning per tillfälle">
                 <dl className="space-y-2 text-sm">
                   {[
                     ["Total servicetid", `${fmtNum(k.hours)} h (${k.totalMinutes} min)`],
-                    ...(a.discount > 0 ? [[`Rabatt ${fmtNum(a.discount)} % på arbetet`, `−${fmtKr(k.discountAmount)} per år`]] : []),
-                    ...(k.adjust !== 0 ? [["Utjämning per besök", (k.adjust > 0 ? "+" : "−") + fmtKr(Math.abs(k.adjust))]] : []),
+                    [`Framkörning (${k.trips} × ${fmtKr(a.tripFee)})`, fmtKr(k.travel)],
+                    ["Arbete brutto", fmtKr(k.laborGross)],
+                    ...(a.discount > 0 ? [[`Rabatt ${fmtNum(a.discount)} %`, `−${fmtKr(k.discountAmount)}`]] : []),
+                    ["Arbete netto", fmtKr(k.laborNet)],
+                    ...(k.adjust !== 0 ? [["Utjämning", (k.adjust > 0 ? "+" : "−") + fmtKr(Math.abs(k.adjust))]] : []),
                   ].map(([l, v]) => (
                     <div key={l} className="flex items-baseline justify-between"><dt className="text-muted-foreground">{l}</dt><dd className="font-medium text-foreground">{v}</dd></div>
                   ))}
                 </dl>
-                <div className="mt-3 space-y-2">
-                  {k.visits.map((v) => (
-                    <div key={v.index} className="rounded-xl border border-border bg-background/60 p-3">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-sm font-semibold text-foreground">Servicebesök {v.index}</span>
-                        <span className="text-lg font-bold tabular-nums text-primary">{fmtKr(v.price)}</span>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {v.rowIdx.length} objekt · {fmtNum(v.minutes / 60)} h · framkörning {v.trips} × {fmtKr(a.tripFee)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
                 <div className="mt-4 rounded-xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per år exkl. moms</p>
-                  <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perYear)}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">{YEARS} år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per tillfälle exkl. moms</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perVisit)}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Per år: {fmtKr(k.perYear)} · 5 år ({TOTAL_VISITS} tillfällen): <b className="text-foreground">{fmtKr(k.total5)}</b></p>
                 </div>
               </Card>
               <Card title="Prisuppgifter">
@@ -289,7 +277,7 @@ function App() {
                         <li key={v.version} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
                           <span className="font-semibold text-foreground">v{v.version}</span>
                           <span className="flex-1 truncate text-muted-foreground">
-                            {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perYear)}/år
+                            {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perVisit)}
                           </span>
                           <button className="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
                             onClick={() => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</button>
