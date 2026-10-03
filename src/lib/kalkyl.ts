@@ -3,10 +3,13 @@ export type ObjRow = {
   name: string;
   qty: number;
   minutes: number;
+  visits: number;
   mfgNo: string;
   make: string;
   inspNo: string;
 };
+
+export type ShowPrices = { visit: boolean; year: boolean; total5: boolean };
 
 export type Customer = {
   avtalNr: string;
@@ -36,14 +39,19 @@ export type Avtal = {
   tripFee: number;
   discount: number;
   adjust: string;
+  show: ShowPrices;
 };
 
-export const VISITS_PER_YEAR = 2;
 export const YEARS = 5;
-export const TOTAL_VISITS = VISITS_PER_YEAR * YEARS;
+export const MAX_VISITS = 12;
 
 export function newRow(): ObjRow {
-  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30, mfgNo: "", make: "", inspNo: "" };
+  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30, visits: 2, mfgNo: "", make: "", inspNo: "" };
+}
+
+export function clampVisits(n: unknown): number {
+  const v = Math.round(Number(n) || 1);
+  return Math.min(MAX_VISITS, Math.max(1, v));
 }
 
 export function emptyCustomer(): Customer {
@@ -56,7 +64,15 @@ export function emptyCustomer(): Customer {
 }
 
 export function emptyAvtal(): Avtal {
-  return { customer: emptyCustomer(), rows: [newRow()], hourRate: 975, tripFee: 745, discount: 0, adjust: "" };
+  return {
+    customer: emptyCustomer(),
+    rows: [newRow()],
+    hourRate: 975,
+    tripFee: 745,
+    discount: 0,
+    adjust: "",
+    show: { visit: true, year: true, total5: true },
+  };
 }
 
 export function normalizeAvtal(a: Partial<Avtal> | null | undefined): Avtal {
@@ -66,7 +82,8 @@ export function normalizeAvtal(a: Partial<Avtal> | null | undefined): Avtal {
     ...base,
     ...a,
     customer: { ...base.customer, ...(a.customer ?? {}) },
-    rows: Array.isArray(a.rows) && a.rows.length ? a.rows.map((r) => ({ ...newRow(), ...r })) : base.rows,
+    show: { ...base.show, ...(a.show ?? {}) },
+    rows: Array.isArray(a.rows) && a.rows.length ? a.rows.map((r) => ({ ...newRow(), ...r, visits: clampVisits(r.visits) })) : base.rows,
   };
 }
 
@@ -78,24 +95,58 @@ export function parseAmount(s: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+export type VisitCalc = {
+  k: number;
+  minutes: number;
+  hours: number;
+  trips: number;
+  travel: number;
+  laborGross: number;
+  laborNet: number;
+  perVisit: number;
+};
+
+/**
+ * Central kalkyl: pris per servicebesök.
+ * Besök k omfattar objekten med ≥ k besök/år. Pris per besök =
+ * framkörning (per påbörjad 8 h) + arbete netto (rabatten gäller bara arbete) + utjämning.
+ * Ett avtal gäller en adress, därför räknas framkörning per besök – inte per adress.
+ */
 export function calculate(a: Avtal) {
+  const rowVisits = a.rows.map((r) => clampVisits(r.visits));
   const rowMins = a.rows.map((r) => Math.max(0, r.qty) * Math.max(0, r.minutes));
   const totalMinutes = rowMins.reduce((s, m) => s + m, 0);
-  const hours = totalMinutes / 60;
-  const trips = totalMinutes > 0 ? Math.ceil(totalMinutes / 480) : 0;
-  const travel = trips * a.tripFee;
-  const laborGross = hours * a.hourRate;
-  const discountAmount = laborGross * (a.discount / 100);
-  const laborNet = laborGross - discountAmount;
-  const adjust = parseAmount(a.adjust);
-  const perVisit = travel + laborNet + adjust;
-  const perYear = perVisit * VISITS_PER_YEAR;
-  const total5 = perVisit * TOTAL_VISITS;
   const totalQty = a.rows.reduce((s, r) => s + Math.max(0, r.qty), 0);
-  const unitPrices = a.rows.map((r, i) =>
-    totalMinutes > 0 && r.qty > 0 ? (((rowMins[i] ?? 0) / totalMinutes) * perVisit) / r.qty : 0
-  );
-  return { rowMins, totalMinutes, hours, trips, travel, laborGross, discountAmount, laborNet, adjust, perVisit, perYear, total5, totalQty, unitPrices };
+  const maxVisits = rowVisits.reduce((m, v) => Math.max(m, v), 1);
+  const adjust = parseAmount(a.adjust);
+
+  const visits: VisitCalc[] = [];
+  for (let k = 1; k <= maxVisits; k++) {
+    const minutes = rowMins.reduce((s, m, i) => (rowVisits[i] >= k ? s + m : s), 0);
+    if (minutes <= 0) continue;
+    const trips = Math.ceil(minutes / 480);
+    const travel = trips * a.tripFee;
+    const laborGross = (minutes / 60) * a.hourRate;
+    const laborNet = laborGross * (1 - a.discount / 100);
+    visits.push({ k, minutes, hours: minutes / 60, trips, travel, laborGross, laborNet, perVisit: travel + laborNet + adjust });
+  }
+
+  const perYear = visits.reduce((s, v) => s + v.perVisit, 0);
+  const total5 = perYear * YEARS;
+
+  // Styckpris per rad och år: radens andel av varje besök den ingår i, delat på antal
+  const unitPrices = a.rows.map((r, i) => {
+    if (r.qty <= 0) return 0;
+    let sum = 0;
+    for (const v of visits) {
+      if (rowVisits[i] < v.k) continue;
+      const visitMins = rowMins.reduce((s, m, j) => (rowVisits[j] >= v.k ? s + m : s), 0);
+      if (visitMins > 0) sum += ((rowMins[i] / visitMins) * v.perVisit) / r.qty;
+    }
+    return sum;
+  });
+
+  return { rowMins, rowVisits, totalMinutes, totalQty, maxVisits, adjust, visits, perYear, total5, unitPrices };
 }
 
 export const fmtKr = (n: number) => {
