@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { Preview } from "@/components/avtal/Preview";
-import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, TOTAL_VISITS } from "@/lib/kalkyl";
+import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
 import { downloadExcel, fileBase } from "@/lib/excel";
 
@@ -54,11 +54,11 @@ function TextField({ label, value, onChange, type = "text", placeholder }: { lab
   );
 }
 
-function NumField({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
+function NumField({ label, value, onChange, min = 0, max }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
-      <input type="number" min={0} inputMode="decimal" value={value} onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))} className={inputCls} />
+      <input type="number" min={min} max={max} inputMode="decimal" value={value} onChange={(e) => { let n = Number(e.target.value) || 0; if (max !== undefined) n = Math.min(max, n); onChange(Math.max(min, n)); }} className={inputCls} />
     </label>
   );
 }
@@ -108,8 +108,9 @@ function App() {
       "",
       "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalet och kalkylen finns bifogade i detta mejl.",
       "",
-      `Avtalet omfattar ${k.totalQty} objekt med 2 servicebesök per år.`,
-      `Kostnad per servicetillfälle: ${fmtKr(k.perVisit)} exkl. moms.`,
+      `Avtalet omfattar ${k.totalQty} objekt med ${k.maxVisits} servicebesök per år.`,
+      ...k.visits.map((v) => `${k.visits.length > 1 ? `Servicebesök ${v.k}` : "Kostnad per servicebesök"}: ${fmtKr(v.perVisit)} exkl. moms.`),
+      `Kostnad per år: ${fmtKr(k.perYear)} exkl. moms.`,
       "",
       "Återkom gärna om ni har frågor eller vill justera något.",
       "",
@@ -182,7 +183,7 @@ function App() {
                   <TextField label="Adress" value={c.anlAdress} onChange={(v) => setC({ anlAdress: v })} />
                   <TextField label="Kontaktperson" value={c.kontaktperson} onChange={(v) => setC({ kontaktperson: v })} />
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år (2) fylls i automatiskt.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år ({k.maxVisits}) fylls i automatiskt.</p>
               </Card>
             </>
           )}
@@ -199,16 +200,17 @@ function App() {
                           className="shrink-0 rounded-lg border border-input px-2.5 py-2 text-sm text-muted-foreground hover:text-destructive">✕</button>
                       )}
                     </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                       <NumField label="Antal" value={row.qty} onChange={(n) => updateRow(row.id, { qty: n })} />
                       <NumField label="Servicetid per st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
+                      <NumField label="Besök per år" value={row.visits} min={1} max={12} onChange={(n) => updateRow(row.id, { visits: n })} />
                     </div>
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <TextField label="Tillverkningsnummer" value={row.mfgNo} onChange={(v) => updateRow(row.id, { mfgNo: v })} />
                       <TextField label="Fabrikat" value={row.make} onChange={(v) => updateRow(row.id, { make: v })} />
                       <TextField label="Besiktningsnummer" value={row.inspNo} onChange={(v) => updateRow(row.id, { inspNo: v })} />
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per tillfälle</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
                   </div>
                 ))}
               </div>
@@ -221,27 +223,47 @@ function App() {
               <Card title="Rabatt & utjämning">
                 <div className="grid grid-cols-2 gap-2">
                   <NumField label="Rabatt på timpris (%)" value={a.discount} onChange={(n) => setA((p) => ({ ...p, discount: Math.min(100, n) }))} />
-                  <TextField label="Utjämning per tillfälle (kr)" value={a.adjust} placeholder="T.ex. 150 eller -893" onChange={(v) => setA((p) => ({ ...p, adjust: v }))} />
+                  <TextField label="Utjämning per besök (kr)" value={a.adjust} placeholder="T.ex. 150 eller -893" onChange={(v) => setA((p) => ({ ...p, adjust: v }))} />
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Rabatten gäller bara arbetet, inte framkörningen. Skriv ett minus framför för att dra av, t.ex. -893 eller -1,50.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Rabatten gäller bara arbetet, inte framkörningen. Skriv ett minus framför för att dra av, t.ex. -893 eller -1,50. Utjämningen läggs på varje servicebesök.</p>
               </Card>
-              <Card title="Sammanställning per tillfälle">
-                <dl className="space-y-2 text-sm">
-                  {[
-                    ["Total servicetid", `${fmtNum(k.hours)} h (${k.totalMinutes} min)`],
-                    [`Framkörning (${k.trips} × ${fmtKr(a.tripFee)})`, fmtKr(k.travel)],
-                    ["Arbete brutto", fmtKr(k.laborGross)],
-                    ...(a.discount > 0 ? [[`Rabatt ${fmtNum(a.discount)} %`, `−${fmtKr(k.discountAmount)}`]] : []),
-                    ["Arbete netto", fmtKr(k.laborNet)],
-                    ...(k.adjust !== 0 ? [["Utjämning", (k.adjust > 0 ? "+" : "−") + fmtKr(Math.abs(k.adjust))]] : []),
-                  ].map(([l, v]) => (
-                    <div key={l} className="flex items-baseline justify-between"><dt className="text-muted-foreground">{l}</dt><dd className="font-medium text-foreground">{v}</dd></div>
+              <Card title="Sammanställning per servicebesök">
+                {k.visits.length === 0 && <p className="text-sm text-muted-foreground">Ange servicetid för objekten för att se priset.</p>}
+                <div className="space-y-3">
+                  {k.visits.map((v) => (
+                    <div key={v.k} className="rounded-xl border border-border p-3">
+                      <div className="flex items-baseline justify-between">
+                        <h3 className="font-semibold text-foreground">{k.visits.length > 1 ? `Servicebesök ${v.k}` : "Servicebesök"}</h3>
+                        <p className="text-lg font-bold tabular-nums text-primary">{fmtKr(v.perVisit)}</p>
+                      </div>
+                      <dl className="mt-2 space-y-1 text-sm">
+                        {[
+                          ["Total servicetid", `${fmtNum(v.hours)} h (${v.minutes} min)`],
+                          [`Framkörning (${v.trips} × ${fmtKr(a.tripFee)})`, fmtKr(v.travel)],
+                          ["Arbete brutto", fmtKr(v.laborGross)],
+                          ...(a.discount > 0 ? [[`Rabatt ${fmtNum(a.discount)} %`, `−${fmtKr(v.laborGross - v.laborNet)}`]] : []),
+                          ...(k.adjust !== 0 ? [["Utjämning", (k.adjust > 0 ? "+" : "−") + fmtKr(Math.abs(k.adjust))]] : []),
+                        ].map(([l, val]) => (
+                          <div key={l} className="flex items-baseline justify-between"><dt className="text-muted-foreground">{l}</dt><dd className="font-medium text-foreground">{val}</dd></div>
+                        ))}
+                      </dl>
+                    </div>
                   ))}
-                </dl>
+                </div>
                 <div className="mt-4 rounded-xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per tillfälle exkl. moms</p>
-                  <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perVisit)}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Per år: {fmtKr(k.perYear)} · 5 år ({TOTAL_VISITS} tillfällen): <b className="text-foreground">{fmtKr(k.total5)}</b></p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per år exkl. moms</p>
+                  <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perYear)}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">5 år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
+                </div>
+              </Card>
+              <Card title="Priser i avtalet (Bilaga 1)">
+                <div className="space-y-2 text-sm">
+                  {([["visit", "Per servicebesök"], ["year", "Per år"], ["total5", "Hela 5-årsperioden (används vid försäljning av port)"]] as const).map(([key, label]) => (
+                    <label key={key} className="flex items-center gap-2">
+                      <input type="checkbox" checked={a.show[key]} onChange={(e) => setA((p) => ({ ...p, show: { ...p.show, [key]: e.target.checked } as Avtal["show"] }))} className="h-4 w-4 accent-primary" />
+                      <span className="text-foreground">{label}</span>
+                    </label>
+                  ))}
                 </div>
               </Card>
               <Card title="Prisuppgifter">
@@ -277,7 +299,7 @@ function App() {
                         <li key={v.version} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
                           <span className="font-semibold text-foreground">v{v.version}</span>
                           <span className="flex-1 truncate text-muted-foreground">
-                            {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perVisit)}
+                            {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perYear)} per år
                           </span>
                           <button className="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
                             onClick={() => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</button>
