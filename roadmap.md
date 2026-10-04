@@ -2,7 +2,7 @@
 
 ## Öppet
 - [x] Masterplan steg 1: stabil grund — granskad 2026-10-01
-- [ ] Masterplan steg 2: affärsregler — väntar på svar från användaren
+- [x] Masterplan steg 2: affärsregler — beslutade och genomförda 2026-10-03 (pris per servicebesök, besök/år per objekt 1–12, utjämning per besök, ett avtal per adress, valbara priser i Bilaga 1)
 - [ ] Steg 3–9 (kundregister, objektregister, avtal, export, UI, moln, roller) — i tur och ordning
 - [ ] SharePoint-koppling (eget Microsoft-konto per användare, via telefonerna): öppna connect_client-kortet för microsoft_sharepoint — PÅGÅR
 - [x] Bygg hela avtalsflödet (avtal FU_Avtal_-25_Q4 + försättsblad Fsb_Q2-22 mottagna) — kund → objekt → pris → förhandsgranskning → PDF
