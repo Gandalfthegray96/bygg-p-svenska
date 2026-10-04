@@ -122,7 +122,7 @@ export function calculate(a: Avtal) {
 
   const visits: VisitCalc[] = [];
   for (let k = 1; k <= maxVisits; k++) {
-    const minutes = rowMins.reduce((s, m, i) => (rowVisits[i] >= k ? s + m : s), 0);
+    const minutes = rowMins.reduce((s, m, i) => (rowVisits[i]! >= k ? s + m : s), 0);
     if (minutes <= 0) continue;
     const trips = Math.ceil(minutes / 480);
     const travel = trips * a.tripFee;
@@ -139,9 +139,9 @@ export function calculate(a: Avtal) {
     if (r.qty <= 0) return 0;
     let sum = 0;
     for (const v of visits) {
-      if (rowVisits[i] < v.k) continue;
-      const visitMins = rowMins.reduce((s, m, j) => (rowVisits[j] >= v.k ? s + m : s), 0);
-      if (visitMins > 0) sum += ((rowMins[i] / visitMins) * v.perVisit) / r.qty;
+      if (rowVisits[i]! < v.k) continue;
+      const visitMins = rowMins.reduce((s, m, j) => (rowVisits[j]! >= v.k ? s + m : s), 0);
+      if (visitMins > 0) sum += ((rowMins[i]! / visitMins) * v.perVisit) / r.qty;
     }
     return sum;
   });
