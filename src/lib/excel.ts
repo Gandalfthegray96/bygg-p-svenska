@@ -78,5 +78,8 @@ export async function downloadExcel(a: Avtal, rev?: number) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws1, "Kalkyl");
   XLSX.utils.book_append_sheet(wb, ws2, "Utskrift");
-  XLSX.writeFile(wb, `Kalkyl_${fileBase(a, rev)}.xlsx`);
+  const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const { saveFile } = await import("./save-file");
+  await saveFile(new Blob([buf], { type: mime }), `Kalkyl_${fileBase(a, rev)}.xlsx`, mime, ".xlsx");
 }

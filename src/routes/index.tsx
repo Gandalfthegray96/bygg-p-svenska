@@ -97,6 +97,7 @@ function App() {
     const prev = document.title;
     document.title = `Avtal_${fileBase(a, currentVersion)}`;
     setTab("avtal");
+    setToast('Välj "Spara som PDF" och sedan mapp, t.ex. OneDrive');
     setTimeout(() => { window.print(); document.title = prev; }, 150);
   };
 
