@@ -1,4 +1,4 @@
-import { type Avtal } from "./kalkyl";
+import { type Avtal, calculate } from "./kalkyl";
 
 export function fileBase(a: Avtal, rev?: number) {
   const c = a.customer;
@@ -47,7 +47,7 @@ export async function downloadExcel(a: Avtal, rev?: number) {
     s = setCell(s, `C${row}`, r ? r.minutes : null);
   }
   s = setCell(s, "B21", (a.discount || 0) / 100);
-  s = setCell(s, "D23", a.adjust || 0);
+  s = setCell(s, "D23", calculate(a).adjust);
   zip.file(sheetPath, s);
 
   // Excel räknar om alla formler när filen öppnas
