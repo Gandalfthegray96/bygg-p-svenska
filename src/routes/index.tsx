@@ -8,30 +8,41 @@ import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
 
 function PdfPreview({ a }: { a: Avtal }) {
-  const [url, setUrl] = useState("");
+  const [pages, setPages] = useState<string[]>([]);
+  const [err, setErr] = useState(false);
   useEffect(() => {
-    let u = "";
     let alive = true;
     const t = setTimeout(async () => {
       try {
-        const b = await buildAvtalPdf(a);
-        if (!alive) return;
-        u = URL.createObjectURL(new Blob([b as BlobPart], { type: "application/pdf" }));
-        setUrl(u);
-      } catch { /* */ }
-    }, 300);
-    return () => { alive = false; clearTimeout(t); if (u) URL.revokeObjectURL(u); };
+        const bytes = await buildAvtalPdf(a);
+        const pdfjs = await import("pdfjs-dist");
+        const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+        pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+        const doc = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
+        const out: string[] = [];
+        for (let i = 1; i <= doc.numPages; i++) {
+          const page = await doc.getPage(i);
+          const vp = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement("canvas");
+          canvas.width = vp.width;
+          canvas.height = vp.height;
+          await page.render({ canvas, canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
+          out.push(canvas.toDataURL("image/jpeg", 0.85));
+        }
+        if (alive) { setPages(out); setErr(false); }
+      } catch (e) { console.error(e); if (alive) setErr(true); }
+    }, 400);
+    return () => { alive = false; clearTimeout(t); };
   }, [a]);
-  return url
-    ? (
-      <div className="flex flex-col items-start gap-3 rounded-lg border border-border p-6">
-        <p className="text-sm text-muted-foreground">Avtalet är klart att granska. Det öppnas i en ny flik.</p>
-        <a href={url} target="_blank" rel="noopener" className="rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground">
-          Öppna avtalet i ny flik
-        </a>
-      </div>
-    )
-    : <p className="text-sm text-muted-foreground">Skapar avtalet …</p>;
+  if (err) return <p className="text-sm text-destructive">Kunde inte visa avtalet. Använd PDF-knappen nedan.</p>;
+  if (!pages.length) return <p className="text-sm text-muted-foreground">Skapar avtalet …</p>;
+  return (
+    <div className="space-y-3">
+      {pages.map((src, i) => (
+        <img key={i} src={src} alt={`Avtal sida ${i + 1}`} className="w-full rounded border border-border shadow-sm" />
+      ))}
+    </div>
+  );
 }
 
 
