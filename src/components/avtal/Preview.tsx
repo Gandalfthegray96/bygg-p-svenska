@@ -40,6 +40,21 @@ function Footer() {
   );
 }
 
+export function CoverPreview({ a }: { a: Avtal }) {
+  const c = a.customer;
+  return (
+    <section className="doc-page doc-cover" style={{ backgroundImage: `url(${cover.url})` }}>
+      <div className="doc-cover-text">
+        <p className="doc-tagline">Din <i>kompletta</i><br />portpartner</p>
+        <h1>Förebyggande Underhållsavtal</h1>
+        <p className="doc-cover-customer">{c.bestallare}</p>
+        <p className="doc-cover-title">{c.coverTitle}</p>
+        <p className="doc-cover-nr">{c.avtalNr}</p>
+      </div>
+    </section>
+  );
+}
+
 export function Preview({ a }: { a: Avtal }) {
   const c = a.customer;
   const k = calculate(a);
@@ -47,15 +62,7 @@ export function Preview({ a }: { a: Avtal }) {
   return (
     <div className="doc-root">
       {/* Försättsblad */}
-      <section className="doc-page doc-cover" style={{ backgroundImage: `url(${cover.url})` }}>
-        <div className="doc-cover-text">
-          <p className="doc-tagline">Din <i>kompletta</i><br />portpartner</p>
-          <h1>OFFERT</h1>
-          <p className="doc-cover-customer">{c.bestallare}</p>
-          <p className="doc-cover-title">{c.coverTitle}</p>
-          <p className="doc-cover-nr">{c.avtalNr}</p>
-        </div>
-      </section>
+      <CoverPreview a={a} />
 
       {/* Sida 1 */}
       <section className="doc-page">
