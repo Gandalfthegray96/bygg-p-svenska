@@ -192,7 +192,7 @@
 .doc-cover-text { position: absolute; left: 20mm; top: 64mm; width: 90mm; }
 .doc-tagline { color: var(--doc-blue); font-size: 26pt; font-weight: 700; line-height: 1.1; margin: 0 0 6mm; background: var(--doc-paper); }
 .doc-tagline i { font-family: "Brush Script MT", cursive; font-weight: 400; }
-.doc-cover h1 { font-size: 30pt; font-weight: 700; margin: 0 0 6mm; }
+.doc-cover h1 { max-width: 120mm; font-size: 24pt; font-weight: 700; line-height: 1.12; margin: 0 0 6mm; }
 .doc-cover-customer { font-size: 14pt; font-weight: 700; margin-bottom: 18mm !important; }
 .doc-cover-title, .doc-cover-nr { font-size: 12pt; font-weight: 700; }
 

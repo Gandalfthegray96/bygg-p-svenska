@@ -11,3 +11,4 @@
 
 - Avtalsflödet: beräkning i src/lib/kalkyl.ts, dokumentet i src/components/avtal/Preview.tsx (PDF via webbläsarens utskrift), Excel via xlsx i src/lib/excel.ts, versioner i localStorage (src/lib/avtal-store.ts) — enkelt offline tills molnet aktiveras.
 - Kalkylmodell: calculate() räknar pris per servicebesök — besök k omfattar objekt med ≥ k besök/år (besök/år per objekt, 1–12); framkörning per påbörjad 8 h per besök (ett avtal = en adress), rabatt bara på arbete, utjämning på varje besök. UI, PDF, mejl och Excel använder samma calculate().
+- The cover is rendered by the shared CoverPreview component in both its editor tab and the printable agreement so both views always match.

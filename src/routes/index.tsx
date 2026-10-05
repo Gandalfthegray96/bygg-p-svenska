@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
-import { Preview } from "@/components/avtal/Preview";
+import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -23,9 +23,10 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "kund" | "objekt" | "pris" | "avtal" | "sparade";
+type Tab = "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade";
 const TABS: { id: Tab; label: string }[] = [
   { id: "kund", label: "Kund" },
+  { id: "forsatt", label: "Försätt" },
   { id: "objekt", label: "Objekt" },
   { id: "pris", label: "Pris" },
   { id: "avtal", label: "Avtal" },
@@ -154,9 +155,6 @@ function App() {
                   <TextField label="Datum" type="date" value={c.datum} onChange={(v) => setC({ datum: v })} />
                   <TextField label="Rev." value={c.rev} onChange={(v) => setC({ rev: v })} />
                 </div>
-                <div className="mt-2">
-                  <TextField label="Rubrik på försättsbladet" value={c.coverTitle} onChange={(v) => setC({ coverTitle: v })} />
-                </div>
               </Card>
               <Card title="Avtal mellan parter">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -185,6 +183,24 @@ function App() {
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år ({k.maxVisits}) fylls i automatiskt.</p>
               </Card>
+            </>
+          )}
+
+          {tab === "forsatt" && (
+            <>
+              <Card title="Försättsblad">
+                <div className="space-y-2">
+                  <TextField label="Kundnamn" value={c.bestallare} onChange={(v) => setC({ bestallare: v })} placeholder="T.ex. AB Exempel" />
+                  <TextField label="Beskrivning" value={c.coverTitle} onChange={(v) => setC({ coverTitle: v })} placeholder="T.ex. Service av portar" />
+                  <TextField label="Offertnummer" value={c.avtalNr} onChange={(v) => setC({ avtalNr: v })} />
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">Slogan, loggor och rubriken ”Förebyggande Underhållsavtal” följer originalet och ändras inte.</p>
+              </Card>
+              <div className="-mx-4 overflow-x-auto">
+                <div className="origin-top-left" style={{ zoom: "var(--doc-zoom, 0.45)" } as CSSProperties}>
+                  <div className="doc-root"><CoverPreview a={a} /></div>
+                </div>
+              </div>
             </>
           )}
 
