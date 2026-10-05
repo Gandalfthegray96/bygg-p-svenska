@@ -103,26 +103,9 @@ function App() {
 
   const openMail = () => {
     const subject = `Avtalsförslag ${c.avtalNr}`.trim();
-    const lines = [
-      `Hej${c.erRef ? " " + c.erRef : ""}!`,
-      "",
-      "Tack för att ni valt UK Portservice!",
-      "",
-      "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalet och kalkylen finns bifogade i detta mejl.",
-      "",
-      `Avtalet omfattar ${k.totalQty} objekt med ${k.maxVisits} servicebesök per år.`,
-      ...k.visits.map((v) => `${k.visits.length > 1 ? `Servicebesök ${v.k}` : "Kostnad per servicebesök"}: ${fmtKr(v.perVisit)} exkl. moms.`),
-      `Kostnad per år: ${fmtKr(k.perYear)} exkl. moms.`,
-      "",
-      "Återkom gärna om ni har frågor eller vill justera något.",
-      "",
-      "Med vänliga hälsningar,",
-      c.varRef || "",
-      "UK Portservice AB",
-      "Tel 031-23 08 60 · info@ukportservice.se",
-    ];
-    window.location.href = `mailto:${encodeURIComponent(c.epost)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
-    setToast("Mejlprogrammet öppnas – glöm inte bifoga PDF och Excel");
+    const body = (c.mejlText ?? "").trim() || defaultMailText(c.erRef);
+    window.location.href = `mailto:${encodeURIComponent(c.epost)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
 
   return (

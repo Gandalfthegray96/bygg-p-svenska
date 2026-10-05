@@ -26,6 +26,8 @@ export type Customer = {
   postort: string;
   markning: string;
   epostFaktura: string;
+  /** Egen mejltext; tom = standardtext */
+  mejlText?: string;
   anlObjekt: string;
   anlAdress: string;
   kontaktperson: string;
