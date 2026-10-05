@@ -160,6 +160,17 @@ function App() {
                   <TextField label="E-post faktura" type="email" value={c.epostFaktura} onChange={(v) => setC({ epostFaktura: v })} />
                 </div>
               </Card>
+              <Card title="Mejltext till kund">
+                <textarea
+                  className="min-h-40 w-full rounded-md border border-input bg-background p-2 text-sm text-foreground"
+                  value={c.mejlText ?? defaultMailText(c.erRef)}
+                  onChange={(e) => setC({ mejlText: e.target.value })}
+                />
+                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Inga priser eller signatur – din egen signatur läggs till av mejlprogrammet.</span>
+                  <button type="button" className="underline" onClick={() => setC({ mejlText: undefined })}>Återställ</button>
+                </div>
+              </Card>
               <Card title="Anläggning">
                 <div className="grid grid-cols-1 gap-2">
                   <TextField label="Objekt" value={c.anlObjekt} onChange={(v) => setC({ anlObjekt: v })} />
