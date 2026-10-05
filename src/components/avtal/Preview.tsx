@@ -2,6 +2,17 @@ import cover from "@/assets/avtal-cover.jpg.asset.json";
 import header from "@/assets/avtal-header.jpg.asset.json";
 import { type Avtal, calculate, fmtKr } from "@/lib/kalkyl";
 
+// Bilaga 2 – Prislista 2026 Q2 (fasta listpriser, påverkar inte kalkylen)
+const PRISLISTA: [string, string][] = [
+  ["Framkörning ordinarie timdebitering", "745,00 kr"],
+  ["Ordinarie (07.00 – 16.00) timdebitering", "975,00 kr"],
+  ["Ordinarie planerad övertid", "1 367,00 kr"],
+  ["Timdebitering ordinarie planerad helg", "1 901,00 kr"],
+  ["Timdebitering jour", "1 945,00 kr"],
+  ["Utryckningskostnad jour (avtalskund)", "6 405,00 kr"],
+  ["Utryckningskostnad jour (ej avtalskund)", "9 150,00 kr"],
+];
+
 function Field({ label, value, wide }: { label: string; value?: string | number; wide?: boolean }) {
   return (
     <div className={`doc-field ${wide ? "doc-field-wide" : ""}`}>
@@ -129,33 +140,7 @@ export function Preview({ a }: { a: Avtal }) {
         <Footer />
       </section>
 
-      {/* Sida 3 */}
-      <section className="doc-page">
-        <PageHead a={a} page="3 av 3" />
-        <h3>SEKRETESS</h3>
-        <p>Varje part förbinder sig att iakttaga absolut sekretess rörande den andra partens tekniska och affärsmässiga förhållanden, både under och efter avtalstiden. Det gäller priser, kalkyler, offerter och annan konfidentiell information som har delats under samarbetet. Ingen part får vidarebefordra eller avslöja denna information för tredje part, om inte den andra parten givit sitt godkännande.</p>
-        <h3>ÖVRIGT</h3>
-        <p>Entreprenören ansvarar inte för person- eller egendomsskador som uppstår till följd av användning eller felaktig hantering av portar, grindar, bommar, dockningssystem, entrédörrar eller liknande utrustning, utöver vad som uttryckligen följer av tvingande lag.</p>
-        <p>Om en part inte kan fullfölja avtalet på grund av exempelvis arbetskonflikt, maskinhaveri eller någon annan händelse som parten inte kan kontrollera, befrias den parten från sitt åtagande från den tidpunkt då hindret anmäls och en begäran om befrielse görs, tills hindret är åtgärdat.</p>
-        <p>Tvister rörande tolkning eller tillämpning av detta avtal skall avgöras av allmän domstol enligt gällande svensk lag.</p>
-        <p>Avtalet får inte överlåtas utan motpartens skriftliga godkännande.</p>
-        <h3>BILAGOR</h3>
-        <p>Bilaga 1. Kostnad<br />Bilaga 2. Prislista</p>
-        <h3>AVTALSTID/UPPSÄGNING/FÖRLÄNGNING</h3>
-        <p>Avtalet gäller tills vidare från och med datum för undertecknande. Avtalet gäller tills någon av parterna skriftligen säger upp det, då upphör avtalet utan uppsägningstid.</p>
-        <p><b>Detta avtal är upprättat i två exemplar varav parterna har tagit var sitt.</b></p>
-        <table className="doc-sign">
-          <thead><tr><th>Beställare</th><th>UK Portservice AB</th></tr></thead>
-          <tbody>
-            {["Ort och datum:", "Namnförtydligande:", "Underskrift:"].map((l) => (
-              <tr key={l}><td>{l}</td><td>{l}</td></tr>
-            ))}
-          </tbody>
-        </table>
-        <Footer />
-      </section>
-
-      {/* Bilaga 1 */}
+      {/* Bilaga 1 – placeras före signatursidan */}
       <section className="doc-page">
         <PageHead a={a} page="Bilaga 1" />
         <h2>Bilaga 1. Kostnad</h2>
@@ -183,6 +168,52 @@ export function Preview({ a }: { a: Avtal }) {
             {a.show.total5 && <tr className="b"><td>Kostnad 5 år garantiservice exkl. moms</td><td className="r">{fmtKr(k.total5)}</td></tr>}
           </tbody>
         </table>
+        <Footer />
+      </section>
+
+      {/* Sida 3 – signatursida */}
+      <section className="doc-page">
+        <PageHead a={a} page="3 av 3" />
+        <h3>SEKRETESS</h3>
+        <p>Varje part förbinder sig att iakttaga absolut sekretess rörande den andra partens tekniska och affärsmässiga förhållanden, både under och efter avtalstiden. Det gäller priser, kalkyler, offerter och annan konfidentiell information som har delats under samarbetet. Ingen part får vidarebefordra eller avslöja denna information för tredje part, om inte den andra parten givit sitt godkännande.</p>
+        <h3>ÖVRIGT</h3>
+        <p>Entreprenören ansvarar inte för person- eller egendomsskador som uppstår till följd av användning eller felaktig hantering av portar, grindar, bommar, dockningssystem, entrédörrar eller liknande utrustning, utöver vad som uttryckligen följer av tvingande lag.</p>
+        <p>Om en part inte kan fullfölja avtalet på grund av exempelvis arbetskonflikt, maskinhaveri eller någon annan händelse som parten inte kan kontrollera, befrias den parten från sitt åtagande från den tidpunkt då hindret anmäls och en begäran om befrielse görs, tills hindret är åtgärdat.</p>
+        <p>Tvister rörande tolkning eller tillämpning av detta avtal skall avgöras av allmän domstol enligt gällande svensk lag.</p>
+        <p>Avtalet får inte överlåtas utan motpartens skriftliga godkännande.</p>
+        <h3>BILAGOR</h3>
+        <p>Bilaga 1. Kostnad<br />Bilaga 2. Prislista</p>
+        <h3>AVTALSTID/UPPSÄGNING/FÖRLÄNGNING</h3>
+        <p>Avtalet gäller tills vidare från och med datum för undertecknande. Avtalet gäller tills någon av parterna skriftligen säger upp det, då upphör avtalet utan uppsägningstid.</p>
+        <p><b>Detta avtal är upprättat i två exemplar varav parterna har tagit var sitt.</b></p>
+        <table className="doc-sign">
+          <thead><tr><th>Beställare</th><th>UK Portservice AB</th></tr></thead>
+          <tbody>
+            {["Ort och datum:", "Namnförtydligande:", "Underskrift:"].map((l) => (
+              <tr key={l}><td>{l}</td><td>{l}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <Footer />
+      </section>
+
+      {/* Bilaga 2 – Prislista, alltid sista bladet */}
+      <section className="doc-page">
+        <img src={header.url} alt="UK Port Service – Försäljning, Montage, Service" className="doc-header" />
+        <h2>PRISLISTA</h2>
+        <p><b>Bilaga 2</b></p>
+        <h3>Ordinarie priser, framkörning, utryckningskostnader och timpriser</h3>
+        <table className="doc-table doc-sum">
+          <tbody>
+            {PRISLISTA.map(([t, p]) => (
+              <tr key={t}><td>{t}</td><td className="r">{p}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <p><b>Avtalskunder erhåller 10% rabatt på ordinarie timpriser och 10% på material</b><br />(gäller samtliga lagerförda reservdelar)</p>
+        <p>Betalningstid: 30 dagar netto.<br />Material faktureras vid leverans.<br />Arbete faktureras löpande.</p>
+        <p>Leveransvillkor: Allmänna leveransbestämmelser Port 19 och Port 07A.</p>
+        <p>Priserna gäller från och med avtalsdatum tillsvidare. Vi förbehåller oss rätten att justera priser utan föregående avisering till följd av förändringar i kostnader, råvarupriser eller andra marknadsförhållanden.</p>
         <Footer />
       </section>
     </div>
