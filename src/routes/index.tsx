@@ -37,6 +37,18 @@ const inputCls = "w-full rounded-lg border border-input bg-card px-3 py-2 text-s
 const btnPrimary = "rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90";
 const btnOutline = "rounded-lg border border-input px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent";
 
+function defaultMailText(erRef: string) {
+  return [
+    `Hej${erRef ? " " + erRef : ""}!`,
+    "",
+    "Tack för att ni valt UK Portservice!",
+    "",
+    "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalsförslaget finns bifogat i detta mejl.",
+    "",
+    "Återkom gärna om ni har frågor eller vill justera något.",
+  ].join("\n");
+}
+
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -103,26 +115,9 @@ function App() {
 
   const openMail = () => {
     const subject = `Avtalsförslag ${c.avtalNr}`.trim();
-    const lines = [
-      `Hej${c.erRef ? " " + c.erRef : ""}!`,
-      "",
-      "Tack för att ni valt UK Portservice!",
-      "",
-      "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalet och kalkylen finns bifogade i detta mejl.",
-      "",
-      `Avtalet omfattar ${k.totalQty} objekt med ${k.maxVisits} servicebesök per år.`,
-      ...k.visits.map((v) => `${k.visits.length > 1 ? `Servicebesök ${v.k}` : "Kostnad per servicebesök"}: ${fmtKr(v.perVisit)} exkl. moms.`),
-      `Kostnad per år: ${fmtKr(k.perYear)} exkl. moms.`,
-      "",
-      "Återkom gärna om ni har frågor eller vill justera något.",
-      "",
-      "Med vänliga hälsningar,",
-      c.varRef || "",
-      "UK Portservice AB",
-      "Tel 031-23 08 60 · info@ukportservice.se",
-    ];
-    window.location.href = `mailto:${encodeURIComponent(c.epost)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
-    setToast("Mejlprogrammet öppnas – glöm inte bifoga PDF och Excel");
+    const body = (c.mejlText ?? "").trim() || defaultMailText(c.erRef);
+    window.location.href = `mailto:${encodeURIComponent(c.epost)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
 
   return (
@@ -175,6 +170,17 @@ function App() {
                   <TextField label="Postnummer/Ort" value={c.postort} onChange={(v) => setC({ postort: v })} />
                   <TextField label="Märkning faktura" value={c.markning} onChange={(v) => setC({ markning: v })} />
                   <TextField label="E-post faktura" type="email" value={c.epostFaktura} onChange={(v) => setC({ epostFaktura: v })} />
+                </div>
+              </Card>
+              <Card title="Mejltext till kund">
+                <textarea
+                  className="min-h-40 w-full rounded-md border border-input bg-background p-2 text-sm text-foreground"
+                  value={c.mejlText ?? defaultMailText(c.erRef)}
+                  onChange={(e) => setC({ mejlText: e.target.value })}
+                />
+                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Inga priser eller signatur – din egen signatur läggs till av mejlprogrammet.</span>
+                  <button type="button" className="underline" onClick={() => setC({ mejlText: undefined })}>Återställ</button>
                 </div>
               </Card>
               <Card title="Anläggning">
