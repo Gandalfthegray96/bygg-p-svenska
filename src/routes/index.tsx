@@ -23,7 +23,14 @@ function PdfPreview({ a }: { a: Avtal }) {
     return () => { alive = false; clearTimeout(t); if (u) URL.revokeObjectURL(u); };
   }, [a]);
   return url
-    ? <iframe title="Avtal" src={url} className="h-[80vh] w-full rounded-lg border border-border" />
+    ? (
+      <div className="flex flex-col items-start gap-3 rounded-lg border border-border p-6">
+        <p className="text-sm text-muted-foreground">Avtalet är klart att granska. Det öppnas i en ny flik.</p>
+        <a href={url} target="_blank" rel="noopener" className="rounded-md bg-primary px-5 py-3 font-semibold text-primary-foreground">
+          Öppna avtalet i ny flik
+        </a>
+      </div>
+    )
     : <p className="text-sm text-muted-foreground">Skapar avtalet …</p>;
 }
 
