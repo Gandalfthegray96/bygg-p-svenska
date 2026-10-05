@@ -32,7 +32,7 @@ const shiftRef = (ref: string, from: number, n: number) =>
 
 /** Flyttar ner alla rader ≥ from med n steg (cellreferenser, matrisformler, formler på samma blad). */
 function shiftRows(xml: string, from: number, n: number): string {
-  return xml.replace(/<row r="(\d+)"([\s\S]*?)(?:<\/row>|(?<=\/)>)/g, (whole, rs: string) => {
+  return xml.replace(/<row r="(\d+)"[^>]*?(?:\/>|>[\s\S]*?<\/row>)/g, (whole, rs: string) => {
     if (Number(rs) < from) return whole;
     return whole
       .replace(/<row r="\d+"/, `<row r="${Number(rs) + n}"`)
@@ -54,12 +54,19 @@ function getRow(xml: string, r: number): string {
 
 /** Fyller i er originalmall (FU_GS_5år) — endast inmatningscellerna; vid fler än 10 objekt utökas tabellen med fler rader. */
 export async function downloadExcel(a: Avtal, rev?: number) {
+  const res = await fetch("/excel/kalkyl-mall.xlsx");
+  const blob = await buildExcel(a, await res.arrayBuffer());
+  const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const { saveFile } = await import("./save-file");
+  await saveFile(blob, `Kalkyl_${fileBase(a, rev)}.xlsx`, mime, ".xlsx");
+}
+
+export async function buildExcel(a: Avtal, template: ArrayBuffer): Promise<Blob> {
   const { default: JSZip } = await import("jszip");
   const c = a.customer;
   const count = Math.max(MALL_ROWS, a.rows.length);
   const extra = count - MALL_ROWS;
-  const res = await fetch("/excel/kalkyl-mall.xlsx");
-  const zip = await JSZip.loadAsync(await res.arrayBuffer());
+  const zip = await JSZip.loadAsync(template);
 
   const sheetPath = "xl/worksheets/sheet1.xml";
   let s = await zip.file(sheetPath)!.async("string");
@@ -135,7 +142,5 @@ export async function downloadExcel(a: Avtal, rev?: number) {
   zip.file("xl/_rels/workbook.xml.rels", rels);
 
   const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-  const blob = await zip.generateAsync({ type: "blob", mimeType: mime, compression: "DEFLATE" });
-  const { saveFile } = await import("./save-file");
-  await saveFile(blob, `Kalkyl_${fileBase(a, rev)}.xlsx`, mime, ".xlsx");
+  return zip.generateAsync({ type: "blob", mimeType: mime, compression: "DEFLATE" });
 }
