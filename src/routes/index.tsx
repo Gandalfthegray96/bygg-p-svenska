@@ -4,6 +4,29 @@ import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
 import { downloadExcel, fileBase } from "@/lib/excel";
+import { buildAvtalPdf } from "@/lib/pdf-avtal";
+import { saveFile } from "@/lib/save-file";
+
+function PdfPreview({ a }: { a: Avtal }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    let u = "";
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const b = await buildAvtalPdf(a);
+        if (!alive) return;
+        u = URL.createObjectURL(new Blob([b as BlobPart], { type: "application/pdf" }));
+        setUrl(u);
+      } catch { /* */ }
+    }, 300);
+    return () => { alive = false; clearTimeout(t); if (u) URL.revokeObjectURL(u); };
+  }, [a]);
+  return url
+    ? <iframe title="Avtal" src={url} className="h-[80vh] w-full rounded-lg border border-border" />
+    : <p className="text-sm text-muted-foreground">Skapar avtalet …</p>;
+}
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -105,12 +128,13 @@ function App() {
     setToast(`Sparat som v${v} under ${c.bestallare || "Namnlös kund"}`);
   };
 
-  const onPdf = () => {
-    const prev = document.title;
-    document.title = `Avtal_${fileBase(a, currentVersion)}`;
-    setTab("avtal");
-    setToast('Välj "Spara som PDF" och sedan mapp, t.ex. OneDrive');
-    setTimeout(() => { window.print(); document.title = prev; }, 150);
+  const onPdf = async () => {
+    try {
+      const bytes = await buildAvtalPdf(a);
+      await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, currentVersion)}.pdf`, "application/pdf", ".pdf");
+    } catch {
+      setToast("Kunde inte skapa PDF:en");
+    }
   };
 
   const openMail = () => {
@@ -305,13 +329,7 @@ function App() {
             </>
           )}
 
-          {tab === "avtal" && (
-            <div className="-mx-4 overflow-x-auto">
-              <div className="origin-top-left" style={{ zoom: "var(--doc-zoom, 0.45)" } as CSSProperties}>
-                <Preview a={a} />
-              </div>
-            </div>
-          )}
+          {tab === "avtal" && <PdfPreview a={a} />}
 
           {tab === "sparade" && (
             <Card title="Sparade avtal per kund">
