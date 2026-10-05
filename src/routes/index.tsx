@@ -121,9 +121,8 @@ function App() {
       "UK Portservice AB",
       "Tel 031-23 08 60 · info@ukportservice.se",
     ];
-    const url = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(c.epost)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
-    window.open(url, "_blank", "noopener");
-    setToast("Outlook öppnas – glöm inte bifoga PDF och Excel");
+    window.location.href = `mailto:${encodeURIComponent(c.epost)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
+    setToast("Mejlprogrammet öppnas – glöm inte bifoga PDF och Excel");
   };
 
   return (
