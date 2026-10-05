@@ -56,6 +56,7 @@ export async function buildAvtalPdf(a: Avtal): Promise<Uint8Array> {
   const fa = fu.getForm();
   fill(fa, {
     "Avtal nr": c.avtalNr, Datum: c.datum, Rev: c.rev, Rev_2: c.rev, Rev_3: c.rev,
+    Entreprenör: "UK Portservice AB", "Orgnr Entr": "55 65 50 - 8339",
     Beställare: c.bestallare, "Orgnr Best": c.orgNr, "Vår Referens": c.varRef,
     "Er Referens": c.erRef, Adress: c.adress, Telefon: c.telefon, PostnummerOrt: c.postort,
     Epost: c.epost, "Märkning Faktura": c.markning, Befattning: c.befattning, "Epost Faktura": c.epostFaktura,
