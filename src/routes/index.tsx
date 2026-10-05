@@ -37,6 +37,18 @@ const inputCls = "w-full rounded-lg border border-input bg-card px-3 py-2 text-s
 const btnPrimary = "rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90";
 const btnOutline = "rounded-lg border border-input px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent";
 
+function defaultMailText(erRef: string) {
+  return [
+    `Hej${erRef ? " " + erRef : ""}!`,
+    "",
+    "Tack för att ni valt UK Portservice!",
+    "",
+    "Här kommer ert avtalsförslag för förebyggande underhåll. Avtalsförslaget finns bifogat i detta mejl.",
+    "",
+    "Återkom gärna om ni har frågor eller vill justera något.",
+  ].join("\n");
+}
+
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
