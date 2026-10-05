@@ -26,7 +26,7 @@ function PdfPreview({ a }: { a: Avtal }) {
           const canvas = document.createElement("canvas");
           canvas.width = vp.width;
           canvas.height = vp.height;
-          await page.render({ canvas, canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
+          await page.render({ canvasContext: canvas.getContext("2d")!, viewport: vp }).promise;
           out.push(canvas.toDataURL("image/jpeg", 0.85));
         }
         if (alive) { setPages(out); setErr(false); }
