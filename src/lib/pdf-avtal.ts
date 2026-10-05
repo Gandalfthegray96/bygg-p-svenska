@@ -62,6 +62,10 @@ export async function buildAvtalPdf(a: Avtal): Promise<Uint8Array> {
     Epost: c.epost, "Märkning Faktura": c.markning, Befattning: c.befattning, "Epost Faktura": c.epostFaktura,
     Objekt: c.anlObjekt, "Adress Obj": c.anlAdress, Kontaktperson: c.kontaktperson,
     "Antal objekt": String(k.totalQty), Servicebesökår: String(k.maxVisits),
+    // Signatursidan: vänster = kundens namnförtydligande (Er referens),
+    // höger = UK Portservice (Vår referens) med ort och dagens datum
+    "Namnförtydligande": c.erRef, "Namnförtydligande UK": c.varRef,
+    "Ort & Datum": `Västra Frölunda ${new Date().toISOString().slice(0, 10)}`,
   });
   fa.flatten();
 
