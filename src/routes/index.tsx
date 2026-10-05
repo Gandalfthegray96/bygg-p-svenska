@@ -191,6 +191,8 @@ function App() {
               <Card title="Försättsblad">
                 <div className="space-y-2">
                   <TextField label="Kundnamn" value={c.bestallare} onChange={(v) => setC({ bestallare: v })} placeholder="T.ex. AB Exempel" />
+                  <TextField label="Adress" value={c.anlAdress} onChange={(v) => setC({ anlAdress: v })} placeholder="T.ex. Portgatan 1, Göteborg" />
+                  <TextField label="Objekt" value={c.anlObjekt} onChange={(v) => setC({ anlObjekt: v })} placeholder="T.ex. Portar vid lastbrygga" />
                   <TextField label="Beskrivning" value={c.coverTitle} onChange={(v) => setC({ coverTitle: v })} placeholder="T.ex. Service av portar" />
                   <TextField label="Offertnummer" value={c.avtalNr} onChange={(v) => setC({ avtalNr: v })} />
                 </div>

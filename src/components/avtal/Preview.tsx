@@ -47,7 +47,11 @@ export function CoverPreview({ a }: { a: Avtal }) {
       <div className="doc-cover-text">
         <p className="doc-tagline">Din <i>kompletta</i><br />portpartner</p>
         <h1>Förebyggande Underhållsavtal</h1>
-        <p className="doc-cover-customer">{c.bestallare}</p>
+        <p className="doc-cover-customer">
+          {c.bestallare}
+          {c.anlAdress && <><br />{c.anlAdress}</>}
+          {c.anlObjekt && <><br />{c.anlObjekt}</>}
+        </p>
         <p className="doc-cover-title">{c.coverTitle}</p>
         <p className="doc-cover-nr">{c.avtalNr}</p>
       </div>
