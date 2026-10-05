@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Öppet
+- [x] Avtals-PDF byggs av originalfilerna (försättsblad, avtal, prislista) — endast befintliga fält fylls i; ordning: Fsb, sida 1–2, Bilaga 1, signatursida, Prislista
 - [x] Redigerbart försättsblad i egen flik: behåll slogan och loggor, fast rubrik "Förebyggande Underhållsavtal", redigerbara kunduppgifter
 - [x] Masterplan steg 1: stabil grund — granskad 2026-10-01
 - [x] Masterplan steg 2: affärsregler — beslutade och genomförda 2026-10-03 (pris per servicebesök, besök/år per objekt 1–12, utjämning per besök, ett avtal per adress, valbara priser i Bilaga 1)

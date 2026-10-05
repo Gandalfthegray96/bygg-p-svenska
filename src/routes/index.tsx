@@ -4,6 +4,29 @@ import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
 import { downloadExcel, fileBase } from "@/lib/excel";
+import { buildAvtalPdf } from "@/lib/pdf-avtal";
+import { saveFile } from "@/lib/save-file";
+
+function PdfPreview({ a }: { a: Avtal }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    let u = "";
+    let alive = true;
+    const t = setTimeout(async () => {
+      try {
+        const b = await buildAvtalPdf(a);
+        if (!alive) return;
+        u = URL.createObjectURL(new Blob([b as BlobPart], { type: "application/pdf" }));
+        setUrl(u);
+      } catch { /* */ }
+    }, 300);
+    return () => { alive = false; clearTimeout(t); if (u) URL.revokeObjectURL(u); };
+  }, [a]);
+  return url
+    ? <iframe title="Avtal" src={url} className="h-[80vh] w-full rounded-lg border border-border" />
+    : <p className="text-sm text-muted-foreground">Skapar avtalet …</p>;
+}
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
