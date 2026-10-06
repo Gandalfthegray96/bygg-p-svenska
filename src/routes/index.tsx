@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
-import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal } from "@/lib/kalkyl";
+import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
@@ -284,7 +284,7 @@ function App() {
                 {a.rows.map((row, i) => (
                   <div key={row.id} className="rounded-xl border border-border bg-background/60 p-3">
                     <div className="flex items-center gap-2">
-                      <input value={row.name} onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Objektnamn, t.ex. Port A1" className={`min-w-0 flex-1 ${inputCls}`} />
+                      <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`min-w-0 flex-1 ${inputCls}`} />
                       {a.rows.length > 1 && (
                         <button onClick={() => setA((p) => ({ ...p, rows: p.rows.filter((r) => r.id !== row.id) }))} aria-label={`Ta bort ${row.name || "objekt"}`}
                           className="shrink-0 rounded-lg border border-input px-2.5 py-2 text-sm text-muted-foreground hover:text-destructive">✕</button>
@@ -300,10 +300,15 @@ function App() {
                       <TextField label="Fabrikat" value={row.make} onChange={(v) => updateRow(row.id, { make: v })} />
                       <TextField label="Besiktningsnummer" value={row.inspNo} onChange={(v) => updateRow(row.id, { inspNo: v })} />
                     </div>
+                    <label className="mt-2 block">
+                      <span className="mb-1 block text-xs font-medium text-muted-foreground">Notering (intern – visas inte för kund)</span>
+                      <textarea value={row.note} rows={2} onChange={(e) => updateRow(row.id, { note: e.target.value })} placeholder="T.ex. sitter mot godsmottagningen" className={inputCls} />
+                    </label>
                     <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
                   </div>
                 ))}
               </div>
+              <datalist id="objekt-typer">{OBJEKT_TYPER.map((t) => <option key={t} value={t} />)}</datalist>
               <button onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))} className={`mt-3 w-full ${btnPrimary}`}>+ Lägg till objekt</button>
             </Card>
           )}
