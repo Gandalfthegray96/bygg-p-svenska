@@ -18,4 +18,4 @@
 ## Klart
 - [x] Objekt-fält: Tillverkningsnummer, Fabrikat, Besiktningsnummer
 - [x] Manuellt slutpris-fält (justeringsfält enligt kalkylmallen väntar på bygget ovan)
-- [ ] Ifyllda fält i avtals-PDF:en med Arial
+- [x] Ifyllda fält i avtals-PDF:en med Arial
