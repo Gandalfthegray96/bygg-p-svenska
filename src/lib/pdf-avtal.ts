@@ -1,7 +1,16 @@
 // Bygger avtalet av era ORIGINAL-PDF:er (public/pdf/). Endast befintliga formulärfält fylls i —
 // layout och text i originalen ändras aldrig. Bilaga 1 (Kostnad) är det enda bladet som skapas.
 import { PDFDocument, StandardFonts, rgb, type PDFForm } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { type Avtal, calculate } from "@/lib/kalkyl";
+
+// Arial-kompatibelt typsnitt (Liberation Sans, samma mått som Arial) för ifyllda fält
+let arialBytes: ArrayBuffer | undefined;
+async function arial(doc: PDFDocument) {
+  arialBytes ??= await (await fetch("/pdf/arial.ttf")).arrayBuffer();
+  doc.registerFontkit(fontkit);
+  return doc.embedFont(arialBytes, { subset: true });
+}
 
 const load = async (p: string) => PDFDocument.load(await (await fetch(p)).arrayBuffer());
 
@@ -73,6 +82,7 @@ export async function buildAvtalPdf(a: Avtal): Promise<Uint8Array> {
   const ff = fsb.getForm();
   fill(ff, { Kund: c.bestallare, "Kund 2": c.anlAdress, Projekt: c.coverTitle, Objekt: c.anlObjekt, "Dokument beteckning": c.avtalNr });
   try { ff.getDropdown("Typ av dokument").select("Förebyggande Underhållsavtal"); } catch { /* */ }
+  ff.updateFieldAppearances(await arial(fsb));
   ff.flatten();
 
   const fa = fu.getForm();
@@ -89,6 +99,7 @@ export async function buildAvtalPdf(a: Avtal): Promise<Uint8Array> {
     "Namnförtydligande": c.erRef, "Namnförtydligande UK": c.varRef,
     "Ort & Datum": `Västra Frölunda ${new Date().toISOString().slice(0, 10)}`,
   });
+  fa.updateFieldAppearances(await arial(fu));
   fa.flatten();
 
   const out = await PDFDocument.create();
