@@ -109,10 +109,32 @@ function TextField({ label, value, onChange, type = "text", placeholder }: { lab
 }
 
 function NumField({ label, value, onChange, min = 0, max }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number }) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => {
+    setText((t) => (t === "" || Number(t) === value ? t : String(value)));
+  }, [value]);
+  const clamp = (n: number) => { if (max !== undefined) n = Math.min(max, n); return Math.max(min, n); };
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
-      <input type="number" min={min} max={max} inputMode="decimal" value={value} onChange={(e) => { let n = Number(e.target.value) || 0; if (max !== undefined) n = Math.min(max, n); onChange(Math.max(min, n)); }} className={inputCls} />
+      <input
+        type="number" min={min} max={max} inputMode="decimal" value={text}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => {
+          const t = e.target.value;
+          setText(t);
+          if (t === "") return;
+          const n = Number(t);
+          if (!Number.isNaN(n) && n >= min) onChange(clamp(n));
+        }}
+        onBlur={() => {
+          const n = Number(text);
+          const v = text === "" || Number.isNaN(n) ? min : clamp(n);
+          setText(String(v));
+          onChange(v);
+        }}
+        className={inputCls}
+      />
     </label>
   );
 }
