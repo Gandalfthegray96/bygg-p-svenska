@@ -300,6 +300,10 @@ function App() {
                       <TextField label="Fabrikat" value={row.make} onChange={(v) => updateRow(row.id, { make: v })} />
                       <TextField label="Besiktningsnummer" value={row.inspNo} onChange={(v) => updateRow(row.id, { inspNo: v })} />
                     </div>
+                    <label className="mt-2 block">
+                      <span className="mb-1 block text-xs font-medium text-muted-foreground">Notering (intern – visas inte för kund)</span>
+                      <textarea value={row.note} rows={2} onChange={(e) => updateRow(row.id, { note: e.target.value })} placeholder="T.ex. sitter mot godsmottagningen" className={inputCls} />
+                    </label>
                     <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
                   </div>
                 ))}
