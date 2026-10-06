@@ -43,7 +43,7 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
     page.drawText(v, { x: tx, y: y - rh + 6, size: fs, font: f, color });
   };
   const cell = (x: number, w: number, fill?: typeof dark) =>
-    page.drawRectangle({ x, y: y - rh, width: w, height: rh, color: fill, borderColor: black, borderWidth: 0.6 });
+    page.drawRectangle({ x, y: y - rh, width: w, height: rh, ...(fill ? { color: fill } : {}), borderColor: black, borderWidth: 0.6 });
 
   for (const l of [c.bestallare, c.avtalNr, c.coverTitle]) { txt(l || "", x0, wA + wB, "left", bold); y -= rh; }
   y -= rh * 2;
