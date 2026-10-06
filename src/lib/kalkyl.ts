@@ -7,7 +7,14 @@ export type ObjRow = {
   mfgNo: string;
   make: string;
   inspNo: string;
+  /** Intern notering — visas aldrig för kund */
+  note: string;
 };
+
+export const OBJEKT_TYPER = [
+  "Takskjutport", "Snabbrullport", "Rullport", "Vikport", "Lastbrygga", "Vädertätning", "Brandport",
+  "Skjutgrind", "Slaggrind", "Bom", "Automatisk dörr", "Jalusi", "Dockning", "Lasthus",
+] as const;
 
 export type ShowPrices = { visit: boolean; year: boolean; total5: boolean };
 
@@ -48,7 +55,7 @@ export const YEARS = 5;
 export const MAX_VISITS = 12;
 
 export function newRow(): ObjRow {
-  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30, visits: 2, mfgNo: "", make: "", inspNo: "" };
+  return { id: Math.random().toString(36).slice(2), name: "", qty: 1, minutes: 30, visits: 2, mfgNo: "", make: "", inspNo: "", note: "" };
 }
 
 export function clampVisits(n: unknown): number {
