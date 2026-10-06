@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
-import { type CustomerFolder, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion } from "@/lib/avtal-store";
+import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
+import { Copy, FileSpreadsheet, FileText, FolderOpen, Mail, Plus, RotateCcw, Save, Search, Trash2, X } from "lucide-react";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
@@ -39,7 +40,7 @@ function PdfPreview({ a }: { a: Avtal }) {
   return (
     <div className="space-y-3">
       {pages.map((src, i) => (
-        <img key={i} src={src} alt={`Avtal sida ${i + 1}`} className="w-full rounded border border-border shadow-sm" />
+        <img key={i} src={src} alt={`Avtal sida ${i + 1}`} className="w-full rounded-xl border border-glass-border shadow-lg" />
       ))}
     </div>
   );
@@ -74,9 +75,9 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "sparade", label: "Sparade" },
 ];
 
-const inputCls = "w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring";
-const btnPrimary = "rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90";
-const btnOutline = "rounded-lg border border-input px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent";
+const inputCls = "w-full rounded-xl border border-input/70 bg-glass-strong px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary/50 focus:bg-card focus:ring-4 focus:ring-ring/15";
+const btnPrimary = "inline-flex items-center justify-center gap-2 rounded-xl bg-primary shadow-lg shadow-primary/25 px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90";
+const btnOutline = "inline-flex items-center justify-center gap-2 rounded-xl border border-glass-border bg-glass-strong px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent";
 
 function defaultMailText(erRef: string) {
   return [
@@ -92,8 +93,8 @@ function defaultMailText(erRef: string) {
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <h2 className="mb-3 font-semibold text-foreground">{title}</h2>
+    <section className="glass rounded-3xl p-5">
+      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
       {children}
     </section>
   );
@@ -139,6 +140,29 @@ function NumField({ label, value, onChange, min = 0, max }: { label: string; val
   );
 }
 
+const STATUS: Record<Status, { label: string; cls: string }> = {
+  utkast: { label: "Utkast", cls: "bg-muted text-muted-foreground" },
+  skickat: { label: "Skickat", cls: "bg-info/15 text-info" },
+  signerat: { label: "Signerat", cls: "bg-success/15 text-success" },
+};
+
+function ConfirmDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm" onClick={onCancel}>
+      <div role="dialog" aria-modal="true" className="glass w-full max-w-sm rounded-3xl bg-glass-strong p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive"><RotateCcw size={22} /></div>
+        <h2 className="text-lg font-bold text-foreground">Vill du verkligen börja om?</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Allt du fyllt i rensas. Osparade ändringar försvinner, men sparade versioner ligger kvar.</p>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button className={`${btnOutline} py-2.5`} onClick={onCancel}>Avbryt</button>
+          <button className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground" onClick={onConfirm}>Ja, börja om</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [a, setA] = useState<Avtal>(emptyAvtal);
   const [hydrated, setHydrated] = useState(false);
@@ -146,6 +170,9 @@ function App() {
   const [store, setStore] = useState<Record<string, CustomerFolder>>({});
   const [currentVersion, setCurrentVersion] = useState<number | undefined>();
   const [toast, setToast] = useState("");
+  const [confirmNew, setConfirmNew] = useState(false);
+  const [search, setSearch] = useState("");
+  const startNew = () => { setA(emptyAvtal()); setCurrentVersion(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
 
   useEffect(() => {
     const d = loadDraft();
@@ -185,26 +212,34 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <div className="no-print pb-28">
-        <header className="sticky top-0 z-10 border-b border-border bg-card">
-          <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-            <img src="/icon-512.png" alt="" className="h-8 w-8 rounded-lg" />
-            <div className="min-w-0">
+        <header className="sticky top-0 z-10 px-3 pt-3">
+          <div className="glass mx-auto max-w-2xl rounded-3xl">
+          <div className="flex items-center gap-3 px-4 py-3">
+            <img src="/icon-512.png" alt="" className="h-9 w-9 rounded-xl shadow" />
+            <div className="min-w-0 flex-1">
               <h1 className="truncate text-base font-bold leading-tight text-foreground">{c.bestallare || "Nytt avtal"}</h1>
               <p className="text-xs text-muted-foreground">
                 {c.avtalNr ? `Avtal ${c.avtalNr}` : "Inget avtalsnummer"}{currentVersion ? ` · v${currentVersion}` : ""}
               </p>
             </div>
+            <div className="hidden shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tabular-nums text-primary sm:block">
+              {k.totalQty} objekt · {fmtKr(k.perYear)}/år
+            </div>
+            <button onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
+              className="shrink-0 rounded-xl border border-glass-border bg-glass-strong p-2 text-muted-foreground transition hover:text-primary"><Plus size={18} /></button>
           </div>
-          <nav className="mx-auto flex max-w-2xl overflow-x-auto px-2">
+          <nav className="mx-3 mb-3 flex gap-1 overflow-x-auto rounded-2xl bg-foreground/5 p-1">
             {TABS.map((t) => (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex-1 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+                className={`flex-1 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition ${tab === t.id ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
                 {t.label}
               </button>
             ))}
           </nav>
+          </div>
+          <p className="mt-2 text-center text-xs font-semibold tabular-nums text-muted-foreground sm:hidden">{k.totalQty} objekt · {fmtKr(k.perYear)}/år</p>
         </header>
 
         <main className="mx-auto max-w-2xl space-y-5 px-4 py-5">
@@ -282,12 +317,15 @@ function App() {
             <Card title="Objekt">
               <div className="space-y-3">
                 {a.rows.map((row, i) => (
-                  <div key={row.id} className="rounded-xl border border-border bg-background/60 p-3">
+                  <div key={row.id} className="rounded-2xl border border-glass-border bg-glass-strong p-3 shadow-sm">
                     <div className="flex items-center gap-2">
                       <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`min-w-0 flex-1 ${inputCls}`} />
+                      <button onClick={() => setA((p) => { const idx = p.rows.findIndex((r) => r.id === row.id); const rows = [...p.rows]; rows.splice(idx + 1, 0, { ...row, id: newRow().id }); return { ...p, rows }; })}
+                        aria-label={`Kopiera ${row.name || "objekt"}`} title="Kopiera objekt"
+                        className="shrink-0 rounded-xl border border-input/70 bg-glass-strong p-2.5 text-muted-foreground transition hover:text-primary"><Copy size={16} /></button>
                       {a.rows.length > 1 && (
                         <button onClick={() => setA((p) => ({ ...p, rows: p.rows.filter((r) => r.id !== row.id) }))} aria-label={`Ta bort ${row.name || "objekt"}`}
-                          className="shrink-0 rounded-lg border border-input px-2.5 py-2 text-sm text-muted-foreground hover:text-destructive">✕</button>
+                          className="shrink-0 rounded-xl border border-input/70 bg-glass-strong p-2.5 text-muted-foreground transition hover:text-destructive"><Trash2 size={16} /></button>
                       )}
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -309,7 +347,7 @@ function App() {
                 ))}
               </div>
               <datalist id="objekt-typer">{OBJEKT_TYPER.map((t) => <option key={t} value={t} />)}</datalist>
-              <button onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))} className={`mt-3 w-full ${btnPrimary}`}>+ Lägg till objekt</button>
+              <button onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))} className={`mt-3 w-full ${btnPrimary}`}><Plus size={18} /> Lägg till objekt</button>
             </Card>
           )}
 
@@ -326,7 +364,7 @@ function App() {
                 {k.visits.length === 0 && <p className="text-sm text-muted-foreground">Ange servicetid för objekten för att se priset.</p>}
                 <div className="space-y-3">
                   {k.visits.map((v) => (
-                    <div key={v.k} className="rounded-xl border border-border p-3">
+                    <div key={v.k} className="rounded-2xl border border-glass-border bg-glass-strong p-3">
                       <div className="flex items-baseline justify-between">
                         <h3 className="font-semibold text-foreground">{k.visits.length > 1 ? `Servicebesök ${v.k}` : "Servicebesök"}</h3>
                         <p className="text-lg font-bold tabular-nums text-primary">{fmtKr(v.perVisit)}</p>
@@ -345,7 +383,7 @@ function App() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 rounded-xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
+                <div className="mt-4 rounded-2xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per år exkl. moms</p>
                   <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perYear)}</p>
                   <p className="mt-2 text-sm text-muted-foreground">5 år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
@@ -378,44 +416,57 @@ function App() {
 
           {tab === "sparade" && (
             <Card title="Sparade avtal per kund">
+              <div className="relative mb-4">
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök kund eller avtalsnummer" className={`${inputCls} pl-9`} />
+              </div>
               {Object.keys(store).length === 0 && <p className="text-sm text-muted-foreground">Inga sparade avtal ännu. Tryck "Spara version" nedan.</p>}
               <div className="space-y-4">
-                {Object.values(store).sort((x, y) => x.name.localeCompare(y.name, "sv")).map((f) => (
+                {Object.values(store)
+                  .map((f) => { const q = search.trim().toLowerCase(); return q && !f.name.toLowerCase().includes(q) ? { ...f, versions: f.versions.filter((v) => (v.data.customer.avtalNr || "").toLowerCase().includes(q)) } : f; })
+                  .filter((f) => f.versions.length > 0)
+                  .sort((x, y) => x.name.localeCompare(y.name, "sv")).map((f) => (
                   <div key={f.name}>
-                    <h3 className="mb-1 text-sm font-semibold text-foreground">📁 {f.name}</h3>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><FolderOpen size={16} className="text-primary" /> {f.name}</h3>
                     <ul className="space-y-1">
                       {[...f.versions].reverse().map((v) => (
-                        <li key={v.version} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
+                        <li key={v.version} className="flex flex-wrap items-center gap-2 rounded-2xl border border-glass-border bg-glass-strong px-3 py-2 text-sm">
                           <span className="font-semibold text-foreground">v{v.version}</span>
                           <span className="flex-1 truncate text-muted-foreground">
                             {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perYear)} per år
                           </span>
-                          <button className="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
+                          <select value={v.status ?? "utkast"} aria-label="Status"
+                            onChange={(e) => { setVersionStatus(f.name, v.version, e.target.value as Status); setStore(loadStore()); }}
+                            className={`rounded-full border-0 px-2.5 py-1 text-xs font-semibold outline-none ${STATUS[v.status ?? "utkast"].cls}`}>
+                            {(Object.keys(STATUS) as Status[]).map((s) => <option key={s} value={s}>{STATUS[s].label}</option>)}
+                          </select>
+                          <button className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
                             onClick={() => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</button>
-                          <button className="rounded-md border border-input px-2 py-1 text-xs text-muted-foreground hover:text-destructive"
-                            onClick={() => { if (confirm(`Ta bort ${f.name} v${v.version}?`)) { deleteVersion(f.name, v.version); setStore(loadStore()); } }}>✕</button>
+                          <button className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive" aria-label="Ta bort version"
+                            onClick={() => { if (confirm(`Ta bort ${f.name} v${v.version}?`)) { deleteVersion(f.name, v.version); setStore(loadStore()); } }}><X size={14} /></button>
                         </li>
                       ))}
                     </ul>
                   </div>
                 ))}
               </div>
-              <button className={`mt-4 w-full ${btnOutline}`} onClick={() => { if (confirm("Börja på ett nytt tomt avtal? Osparade ändringar försvinner.")) { setA(emptyAvtal()); setCurrentVersion(undefined); setTab("kund"); } }}>
-                + Nytt avtal
+              <button className={`mt-4 w-full ${btnOutline}`} onClick={() => setConfirmNew(true)}>
+                <RotateCcw size={16} /> Nytt avtal
               </button>
             </Card>
           )}
         </main>
 
-        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-card/95 backdrop-blur">
-          <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2 px-3 py-2">
-            <button onClick={onSave} className={`${btnOutline} px-1 py-2 text-xs`}>💾 Spara version</button>
-            <button onClick={onPdf} className={`${btnOutline} px-1 py-2 text-xs`}>📄 PDF</button>
-            <button onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} px-1 py-2 text-xs`}>📊 Excel</button>
-            <button onClick={openMail} className={`${btnPrimary} px-1 py-2 text-xs`}>✉ Mejla</button>
+        <div className="fixed inset-x-0 bottom-0 z-10 px-3 pb-3">
+          <div className="glass mx-auto grid max-w-2xl grid-cols-4 gap-2 rounded-3xl p-2">
+            <button onClick={onSave} className={`${btnOutline} flex-col gap-1 px-1 py-2 text-xs`}><Save size={18} />Spara</button>
+            <button onClick={onPdf} className={`${btnOutline} flex-col gap-1 px-1 py-2 text-xs`}><FileText size={18} />PDF</button>
+            <button onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} flex-col gap-1 px-1 py-2 text-xs`}><FileSpreadsheet size={18} />Excel</button>
+            <button onClick={openMail} className={`${btnPrimary} flex-col gap-1 px-1 py-2 text-xs`}><Mail size={18} />Mejla</button>
           </div>
         </div>
-        {toast && <div className="fixed inset-x-4 bottom-20 z-20 mx-auto max-w-sm rounded-lg bg-foreground px-4 py-2 text-center text-sm text-background">{toast}</div>}
+        <ConfirmDialog open={confirmNew} onCancel={() => setConfirmNew(false)} onConfirm={startNew} />
+        {toast && <div className="fixed inset-x-4 bottom-28 z-20 mx-auto max-w-sm rounded-lg bg-foreground px-4 py-2 text-center text-sm text-background">{toast}</div>}
       </div>
 
       <div className="hidden print-only">

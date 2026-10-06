@@ -1,6 +1,7 @@
 import { type Avtal, normalizeAvtal } from "./kalkyl";
 
-export type Version = { version: number; savedAt: string; data: Avtal };
+export type Status = "utkast" | "skickat" | "signerat";
+export type Version = { version: number; savedAt: string; data: Avtal; status?: Status };
 export type CustomerFolder = { name: string; versions: Version[] };
 
 const STORE_KEY = "uc-avtal-store";
@@ -49,4 +50,12 @@ export function loadDraft(): Avtal | null {
 
 export function saveDraft(a: Avtal) {
   localStorage.setItem(DRAFT_KEY, JSON.stringify(a));
+}
+
+export function setVersionStatus(name: string, version: number, status: Status) {
+  const store = loadStore();
+  const v = store[name]?.versions.find((x) => x.version === version);
+  if (!v) return;
+  v.status = status;
+  saveStore(store);
 }
