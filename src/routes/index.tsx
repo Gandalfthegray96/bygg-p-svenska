@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Archive, Building2, Coins, Copy, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
+import { Archive, Building2, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -228,8 +228,6 @@ function App() {
     setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
 
-  const tabIndex = TABS.findIndex((t) => t.id === tab);
-  const activeTab = TABS[tabIndex]!;
 
   return (
     <div className="min-h-screen">
@@ -368,23 +366,30 @@ function App() {
             )}
 
             {tab === "objekt" && (
-              <Card title="Objekt">
-                <div className="space-y-3">
+              <section className="ds-panel">
+                <h2 className="font-display text-[15px] font-semibold text-foreground">Objekt</h2>
+                <p className="mb-4 text-xs text-muted-foreground">Lägg till portar och utrustning som ingår i avtalet.</p>
+                <div className="space-y-2">
                   {a.rows.map((row, i) => (
-                    <div key={row.id} className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                    <div key={row.id} className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-glass)]">
                       <div className="flex items-center gap-2">
-                        <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`min-w-0 flex-1 ${inputCls}`} />
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">{i + 1}</span>
+                        <div className="relative min-w-0 flex-1">
+                          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                          <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`${inputCls} pl-9 font-medium`} />
+                        </div>
+                        <span className="hidden shrink-0 rounded-md bg-accent px-2.5 py-1.5 text-sm font-semibold tabular-nums text-accent-foreground sm:block">{fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)}/år</span>
                         <Button variant="ghost" onClick={() => setA((p) => { const idx = p.rows.findIndex((r) => r.id === row.id); const rows = [...p.rows]; rows.splice(idx + 1, 0, { ...row, id: newRow().id }); return { ...p, rows }; })}
                           aria-label={`Kopiera ${row.name || "objekt"}`} title="Kopiera objekt"
-                          className="shrink-0 rounded-md border border-input/70 bg-card p-2.5 text-info transition hover:text-info"><Copy size={16} /></Button>
+                          className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"><Copy size={16} /></Button>
                         {a.rows.length > 1 && (
                           <Button variant="ghost" onClick={() => setA((p) => ({ ...p, rows: p.rows.filter((r) => r.id !== row.id) }))} aria-label={`Ta bort ${row.name || "objekt"}`}
-                            className="shrink-0 rounded-md border border-input/70 bg-card p-2.5 text-muted-foreground transition hover:text-destructive"><Trash2 size={16} /></Button>
+                            className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 size={16} /></Button>
                         )}
                       </div>
-                      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="mt-3 grid grid-cols-3 gap-2">
                         <NumField label="Antal" value={row.qty} onChange={(n) => updateRow(row.id, { qty: n })} />
-                        <NumField label="Servicetid per st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
+                        <NumField label="Servicetid/st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
                         <NumField label="Besök per år" value={row.visits} min={1} max={12} onChange={(n) => updateRow(row.id, { visits: n })} />
                       </div>
                       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -396,13 +401,21 @@ function App() {
                         <span className="mb-1 block text-xs font-medium text-muted-foreground">Notering (intern – visas inte för kund)</span>
                         <textarea value={row.note} rows={2} onChange={(e) => updateRow(row.id, { note: e.target.value })} placeholder="T.ex. sitter mot godsmottagningen" className={inputCls} />
                       </label>
-                      <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
+                      <p className="mt-2 text-xs text-muted-foreground sm:hidden">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
                     </div>
                   ))}
                 </div>
                 <datalist id="objekt-typer">{OBJEKT_TYPER.map((t) => <option key={t} value={t} />)}</datalist>
-                <Button variant="ghost" onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))} className={`mt-3 w-full ${btnPrimary}`}><Plus size={18} /> Lägg till objekt</Button>
-              </Card>
+                <button type="button" onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent py-2.5 text-sm font-medium text-accent-foreground transition hover:bg-accent/70">
+                  <Plus size={16} /> Lägg till objekt
+                </button>
+                <dl className="mt-3 ml-auto max-w-sm divide-y divide-border overflow-hidden rounded-xl border border-border bg-card text-sm">
+                  <div className="flex justify-between px-4 py-2.5"><dt className="text-muted-foreground">Antal objekt</dt><dd className="tabular-nums text-foreground">{k.totalQty}</dd></div>
+                  <div className="flex justify-between px-4 py-2.5"><dt className="text-muted-foreground">Servicebesök per år</dt><dd className="tabular-nums text-foreground">{k.maxVisits}</dd></div>
+                  <div className="flex justify-between px-4 py-3"><dt className="font-semibold text-foreground">Totalt per år</dt><dd className="font-semibold tabular-nums text-foreground">{fmtKr(k.perYear)}</dd></div>
+                </dl>
+              </section>
             )}
 
             {tab === "pris" && (
