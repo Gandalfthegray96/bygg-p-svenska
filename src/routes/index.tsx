@@ -229,7 +229,7 @@ function App() {
   };
 
   const tabIndex = TABS.findIndex((t) => t.id === tab);
-  const activeTab = TABS[tabIndex];
+  const activeTab = TABS[tabIndex] ?? TABS[0];
 
   return (
     <div className="min-h-screen">
