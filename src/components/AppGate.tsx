@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Eye, EyeOff, Lock } from "lucide-react";
 
 const UNLOCK_KEY = "ukp-gate";
-const envPw = import.meta.env.VITE_APP_PASSWORD as string | undefined;
+const envPw = import.meta.env['VITE_APP_PASSWORD'] as string | undefined;
 const PASSWORD = envPw || (import.meta.env.DEV ? "admin" : "");
 
 async function hash(s: string) {
