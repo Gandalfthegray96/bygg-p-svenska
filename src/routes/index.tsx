@@ -234,7 +234,7 @@ function App() {
       <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
         {/* Sidomeny */}
         <nav aria-label="Avtalssteg" className="sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-1.5 bg-sidebar py-4 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-16 sm:rounded-2xl">
-          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 rounded-xl shadow-sm" />
+          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 object-contain" />
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -266,9 +266,9 @@ function App() {
         {/* Innehåll */}
         <div className="flex min-w-0 flex-1 flex-col bg-card sm:rounded-2xl sm:border sm:border-border sm:shadow-[var(--shadow-panel)]">
           <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur sm:rounded-t-2xl">
-            <div className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6">
+            <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6">
               <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                <span>Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</span>
+                <span><span className="font-semibold text-foreground">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</span>
                 <span className="rounded-md bg-muted px-2 py-0.5 font-medium tabular-nums text-foreground">{k.totalQty} objekt · {fmtKr(k.perYear)}/år</span>
               </div>
               <div className="mt-2 flex items-center justify-between gap-3">
@@ -282,14 +282,6 @@ function App() {
                   <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
                     className="h-9 w-9 border border-border bg-card p-0 text-foreground hover:bg-muted"><Plus size={18} /></Button>
                 </div>
-              </div>
-              <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto" role="tablist">
-                {TABS.map((t) => (
-                  <button key={t.id} onClick={() => setTab(t.id)} aria-current={tab === t.id ? "page" : undefined}
-                    className={`shrink-0 border-b-2 px-2.5 pb-2.5 pt-1 text-sm font-medium transition ${tab === t.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-                    {t.label}
-                  </button>
-                ))}
               </div>
             </div>
           </header>
