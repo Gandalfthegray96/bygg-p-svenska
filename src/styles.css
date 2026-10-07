@@ -26,6 +26,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --spacing: 0.25rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -154,7 +156,7 @@
   .ds-input::placeholder { color: var(--muted-foreground); }
   .ds-tab { height: 42px; border-radius: var(--radius); color: var(--info); background: transparent; border-bottom: 2px solid transparent; }
   .ds-tab:hover { background: var(--accent); color: var(--info); }
-  .ds-tab[aria-current="page"] { color: var(--primary); border-bottom-color: var(--primary); background: color-mix(in oklab, var(--primary) 5%, var(--card)); }
+  .ds-tab[aria-current="page"], .ds-tab[aria-current="page"]:hover { color: var(--primary); border-bottom-color: var(--primary); background: color-mix(in oklab, var(--primary) 5%, var(--card)); }
   .ds-badge { border-radius: var(--radius); font-size: 12px; font-weight: 600; padding: 4px 8px; border: 1px solid var(--border); }
   .ds-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
   .ds-table th { background: var(--muted); color: var(--muted-foreground); text-align: left; font-size: 12px; font-weight: 600; }
