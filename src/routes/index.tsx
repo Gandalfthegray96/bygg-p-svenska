@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Archive, Building2, Coins, Copy, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
+import { Archive, Building2, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -228,15 +228,13 @@ function App() {
     setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
 
-  const tabIndex = TABS.findIndex((t) => t.id === tab);
-  const activeTab = TABS[tabIndex]!;
 
   return (
     <div className="min-h-screen">
-      <div className="no-print flex min-h-screen bg-secondary">
+      <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
         {/* Sidomeny */}
-        <nav aria-label="Avtalssteg" className="sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-2 bg-info py-4 sm:w-16">
-          <img src="/icon-512.png" alt="UK Portservice" className="mb-3 h-9 w-9 rounded-lg ring-1 ring-white/25" />
+        <nav aria-label="Avtalssteg" className="sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-1.5 bg-sidebar py-4 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-16 sm:rounded-2xl">
+          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-9 w-9 rounded-lg" />
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -247,12 +245,11 @@ function App() {
                 title={t.label}
                 aria-label={t.label}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex h-11 w-11 items-center justify-center rounded-lg transition ${
-                  active ? "bg-white/15 text-white" : "text-white/55 hover:bg-white/10 hover:text-white"
+                className={`flex h-10 w-10 items-center justify-center rounded-lg transition ${
+                  active ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
               >
-                {active && <span className="absolute -left-[7px] h-6 w-1 rounded-r-full bg-white sm:-left-[11px]" />}
-                <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+                <Icon size={19} strokeWidth={active ? 2.3 : 1.9} />
               </button>
             );
           })}
@@ -260,54 +257,44 @@ function App() {
             onClick={() => lockApp()}
             title="Lås appen"
             aria-label="Lås appen"
-            className="mt-auto flex h-11 w-11 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white"
+            className="mt-auto flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground/70 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            <Lock size={20} />
+            <Lock size={19} />
           </button>
         </nav>
 
         {/* Innehåll */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-10 border-b border-border bg-card">
-            <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <h1 className="truncate font-display text-lg font-bold leading-tight text-foreground">{c.bestallare || "Nytt avtal"}</h1>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {activeTab.label}{c.avtalNr ? ` · Avtal ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}
-                </p>
+        <div className="flex min-w-0 flex-1 flex-col bg-card sm:rounded-2xl sm:border sm:border-border sm:shadow-[var(--shadow-panel)]">
+          <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur sm:rounded-t-2xl">
+            <div className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6">
+              <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <span>Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</span>
+                <span className="rounded-md bg-muted px-2 py-0.5 font-medium tabular-nums text-foreground">{k.totalQty} objekt · {fmtKr(k.perYear)}/år</span>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <div className="hidden rounded-md bg-secondary px-2.5 py-1 text-[11px] font-semibold tabular-nums text-info sm:block">
-                  {k.totalQty} objekt · {fmtKr(k.perYear)}/år
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <h1 className="min-w-0 truncate font-display text-xl font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button variant="ghost" onClick={() => setTab("avtal")} className="hidden h-9 gap-1.5 px-3 text-sm text-muted-foreground hover:text-foreground md:inline-flex"><Eye size={16} />Förhandsgranska</Button>
+                  <Button variant="ghost" onClick={onSave} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><Save size={16} />Spara</Button>
+                  <Button variant="ghost" onClick={onPdf} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileText size={16} />PDF</Button>
+                  <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileSpreadsheet size={16} />Excel</Button>
+                  <Button variant="ghost" onClick={openMail} className={`hidden h-9 gap-1.5 px-3 text-sm font-semibold sm:inline-flex ${btnPrimary}`}><Mail size={16} />Mejla</Button>
+                  <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
+                    className="h-9 w-9 border border-border bg-card p-0 text-foreground hover:bg-muted"><Plus size={18} /></Button>
                 </div>
-                <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
-                  className="h-9 w-9 rounded-md border border-border bg-card p-0 text-info transition hover:bg-accent"><Plus size={18} /></Button>
+              </div>
+              <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto" role="tablist">
+                {TABS.map((t) => (
+                  <button key={t.id} onClick={() => setTab(t.id)} aria-current={tab === t.id ? "page" : undefined}
+                    className={`shrink-0 border-b-2 px-2.5 pb-2.5 pt-1 text-sm font-medium transition ${tab === t.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                    {t.label}
+                  </button>
+                ))}
               </div>
             </div>
-            {/* Stegindikator */}
-            <ol className="mx-auto flex w-full max-w-2xl items-center gap-1 px-4 pb-3" aria-label="Steg">
-              {TABS.map((t, i) => {
-                const done = i < tabIndex;
-                const active = i === tabIndex;
-                return (
-                  <li key={t.id} className="flex flex-1 items-center gap-1 last:flex-none">
-                    <button
-                      onClick={() => setTab(t.id)}
-                      aria-label={`Steg ${i + 1}: ${t.label}`}
-                      aria-current={active ? "step" : undefined}
-                      className="group flex items-center gap-1.5"
-                    >
-                      <span className={`h-2 w-2 rounded-full transition ${active ? "bg-primary ring-4 ring-primary/15" : done ? "bg-info" : "bg-border group-hover:bg-info/50"}`} />
-                      <span className={`hidden text-[10px] font-semibold uppercase tracking-wide md:block ${active ? "text-foreground" : "text-muted-foreground"}`}>{t.label}</span>
-                    </button>
-                    {i < TABS.length - 1 && <span className={`h-px flex-1 ${done ? "bg-info" : "bg-border"}`} />}
-                  </li>
-                );
-              })}
-            </ol>
           </header>
 
-          <main className="mx-auto w-full max-w-2xl flex-1 space-y-5 px-4 py-5 pb-28">
+          <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-4 py-5 pb-28 sm:px-6 sm:pb-8">
             {tab === "kund" && (
               <>
                 <Card title="Avtal">
@@ -379,23 +366,30 @@ function App() {
             )}
 
             {tab === "objekt" && (
-              <Card title="Objekt">
-                <div className="space-y-3">
+              <section className="ds-panel">
+                <h2 className="font-display text-[15px] font-semibold text-foreground">Objekt</h2>
+                <p className="mb-4 text-xs text-muted-foreground">Lägg till portar och utrustning som ingår i avtalet.</p>
+                <div className="space-y-2">
                   {a.rows.map((row, i) => (
-                    <div key={row.id} className="rounded-lg border border-border bg-card p-3 shadow-sm">
+                    <div key={row.id} className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-glass)]">
                       <div className="flex items-center gap-2">
-                        <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`min-w-0 flex-1 ${inputCls}`} />
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">{i + 1}</span>
+                        <div className="relative min-w-0 flex-1">
+                          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                          <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`${inputCls} pl-9 font-medium`} />
+                        </div>
+                        <span className="hidden shrink-0 rounded-md bg-accent px-2.5 py-1.5 text-sm font-semibold tabular-nums text-accent-foreground sm:block">{fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)}/år</span>
                         <Button variant="ghost" onClick={() => setA((p) => { const idx = p.rows.findIndex((r) => r.id === row.id); const rows = [...p.rows]; rows.splice(idx + 1, 0, { ...row, id: newRow().id }); return { ...p, rows }; })}
                           aria-label={`Kopiera ${row.name || "objekt"}`} title="Kopiera objekt"
-                          className="shrink-0 rounded-md border border-input/70 bg-card p-2.5 text-info transition hover:text-info"><Copy size={16} /></Button>
+                          className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:bg-muted hover:text-foreground"><Copy size={16} /></Button>
                         {a.rows.length > 1 && (
                           <Button variant="ghost" onClick={() => setA((p) => ({ ...p, rows: p.rows.filter((r) => r.id !== row.id) }))} aria-label={`Ta bort ${row.name || "objekt"}`}
-                            className="shrink-0 rounded-md border border-input/70 bg-card p-2.5 text-muted-foreground transition hover:text-destructive"><Trash2 size={16} /></Button>
+                            className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 size={16} /></Button>
                         )}
                       </div>
-                      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="mt-3 grid grid-cols-3 gap-2">
                         <NumField label="Antal" value={row.qty} onChange={(n) => updateRow(row.id, { qty: n })} />
-                        <NumField label="Servicetid per st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
+                        <NumField label="Servicetid/st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
                         <NumField label="Besök per år" value={row.visits} min={1} max={12} onChange={(n) => updateRow(row.id, { visits: n })} />
                       </div>
                       <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -407,13 +401,21 @@ function App() {
                         <span className="mb-1 block text-xs font-medium text-muted-foreground">Notering (intern – visas inte för kund)</span>
                         <textarea value={row.note} rows={2} onChange={(e) => updateRow(row.id, { note: e.target.value })} placeholder="T.ex. sitter mot godsmottagningen" className={inputCls} />
                       </label>
-                      <p className="mt-2 text-xs text-muted-foreground">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
+                      <p className="mt-2 text-xs text-muted-foreground sm:hidden">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
                     </div>
                   ))}
                 </div>
                 <datalist id="objekt-typer">{OBJEKT_TYPER.map((t) => <option key={t} value={t} />)}</datalist>
-                <Button variant="ghost" onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))} className={`mt-3 w-full ${btnPrimary}`}><Plus size={18} /> Lägg till objekt</Button>
-              </Card>
+                <button type="button" onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent py-2.5 text-sm font-medium text-accent-foreground transition hover:bg-accent/70">
+                  <Plus size={16} /> Lägg till objekt
+                </button>
+                <dl className="mt-3 ml-auto max-w-sm divide-y divide-border overflow-hidden rounded-xl border border-border bg-card text-sm">
+                  <div className="flex justify-between px-4 py-2.5"><dt className="text-muted-foreground">Antal objekt</dt><dd className="tabular-nums text-foreground">{k.totalQty}</dd></div>
+                  <div className="flex justify-between px-4 py-2.5"><dt className="text-muted-foreground">Servicebesök per år</dt><dd className="tabular-nums text-foreground">{k.maxVisits}</dd></div>
+                  <div className="flex justify-between px-4 py-3"><dt className="font-semibold text-foreground">Totalt per år</dt><dd className="font-semibold tabular-nums text-foreground">{fmtKr(k.perYear)}</dd></div>
+                </dl>
+              </section>
             )}
 
             {tab === "pris" && (
@@ -448,9 +450,9 @@ function App() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 border-t-2 border-primary bg-muted p-4 text-center">
+                  <div className="mt-4 rounded-xl border-t-4 border-primary bg-muted p-4 text-center">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per år exkl. moms</p>
-                    <p className="mt-1 font-display text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perYear)}</p>
+                    <p className="mt-1 font-display text-3xl font-bold tabular-nums text-foreground">{fmtKr(k.perYear)}</p>
                     <p className="mt-2 text-sm text-muted-foreground">5 år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
                   </div>
                 </Card>
@@ -523,7 +525,7 @@ function App() {
           </main>
 
           {/* Fast åtgärdsrad */}
-          <div className="fixed bottom-0 left-14 right-0 z-10 border-t border-border bg-card px-3 py-2 sm:left-16">
+          <div className="fixed bottom-0 left-14 right-0 z-10 border-t border-border bg-card px-3 py-2 sm:hidden">
             <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2">
               <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><Save size={18} />Spara</Button>
               <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><FileText size={18} />PDF</Button>
