@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Öppet
+- [ ] Gemensamt designsystem: rött/blått/svart/vitt, typografi, avstånd, former och kontrollstilar; tillämpa i hela appen utan kalkyl- eller dokumentändringar.
 - [x] Avtals-PDF byggs av originalfilerna (försättsblad, avtal, prislista) — endast befintliga fält fylls i; ordning: Fsb, sida 1–2, Bilaga 1, signatursida, Prislista
 - [x] Redigerbart försättsblad i egen flik: behåll slogan och loggor, fast rubrik "Förebyggande Underhållsavtal", redigerbara kunduppgifter
 - [x] Masterplan steg 1: stabil grund — granskad 2026-10-01
