@@ -60,7 +60,7 @@ export function AppGate({ children }: { children: ReactNode }) {
           <Lock size={28} />
         </div>
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-primary">UK Portservice</p>
-        <h1 className="mt-1 text-center text-2xl font-bold text-foreground">Avtal & prisräknare</h1>
+        <h1 className="mt-1 text-center text-2xl font-bold text-foreground">Avtalskalkylator</h1>
         <p className="mt-1 text-center text-sm text-muted-foreground">Logga in för att fortsätta</p>
 
         {!PASSWORD ? (
