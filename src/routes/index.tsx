@@ -233,46 +233,50 @@ function App() {
     <div className="min-h-screen">
       <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
         {/* Sidomeny */}
-        <nav aria-label="Avtalssteg" className="sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-1.5 bg-sidebar py-4 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-16 sm:rounded-2xl">
-          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 object-contain" />
+        <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-4 py-6 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[72px] sm:rounded-2xl">
+          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
             return (
-              <button
+              <Button variant="glassNavigation"
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 title={t.label}
                 aria-label={t.label}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg transition ${
-                  active ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
+                className="h-10 w-10 shrink-0 p-0 [&_svg]:size-5"
               >
                 <Icon size={19} strokeWidth={active ? 2.3 : 1.9} />
-              </button>
+              </Button>
             );
           })}
-          <button
+          <Button variant="glassNavigation"
             onClick={() => lockApp()}
             title="Lås appen"
             aria-label="Lås appen"
-            className="mt-auto flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground/70 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="mt-auto h-10 w-10 shrink-0 p-0 [&_svg]:size-5"
           >
             <Lock size={19} />
-          </button>
+          </Button>
         </nav>
 
         {/* Innehåll */}
         <div className="flex min-w-0 flex-1 flex-col bg-card sm:rounded-2xl sm:border sm:border-border sm:shadow-[var(--shadow-panel)]">
           <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur sm:rounded-t-2xl">
             <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6">
-              <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                <span><span className="font-semibold text-foreground">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</span>
-                <span className="rounded-md bg-muted px-2 py-0.5 font-medium tabular-nums text-foreground">{k.totalQty} objekt · {fmtKr(k.perYear)}/år</span>
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</p>
+                  <h1 className="mt-1 break-words font-display text-xl font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
+                </div>
+                <dl aria-label="Avtalssammanfattning" className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-3 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+                  <div><dt className="text-xs font-semibold text-muted-foreground">Objekt</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalQty)} st</dd></div>
+                  <div><dt className="text-xs font-semibold text-muted-foreground">Servicetid</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalMinutes / 60)} h</dd></div>
+                  <div><dt className="text-xs font-semibold text-muted-foreground">Pris/år</dt><dd className="mt-1 break-words font-display text-base font-semibold text-info sm:text-lg">{fmtKr(k.perYear)}</dd></div>
+                </dl>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <h1 className="min-w-0 truncate font-display text-xl font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
+              <div className="mt-4 flex items-center justify-end gap-3">
                 <div className="flex shrink-0 items-center gap-2">
                   <Button variant="ghost" onClick={() => setTab("avtal")} className="hidden h-9 gap-1.5 px-3 text-sm text-muted-foreground hover:text-foreground md:inline-flex"><Eye size={16} />Förhandsgranska</Button>
                   <Button variant="ghost" onClick={onSave} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><Save size={16} />Spara</Button>

@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Öppet
-- [ ] Glasstil i vänstermenyn och större sammanfattning uppe till höger med objekt, tid och pris per år; behåll övrig funktion.
+- [x] Glasstil i vänstermenyn och större sammanfattning uppe till höger med objekt, tid och pris per år; verifierat ändrade värden, omladdning och telefonbredd utan kalkyländring.
 - [x] Gemensamt designsystem: rött/blått/svart/vitt, typografi, avstånd, former och kontrollstilar; tillämpa i hela appen utan kalkyl- eller dokumentändringar.
 - [x] Avtals-PDF byggs av originalfilerna (försättsblad, avtal, prislista) — endast befintliga fält fylls i; ordning: Fsb, sida 1–2, Bilaga 1, signatursida, Prislista
 - [x] Redigerbart försättsblad i egen flik: behåll slogan och loggor, fast rubrik "Förebyggande Underhållsavtal", redigerbara kunduppgifter
