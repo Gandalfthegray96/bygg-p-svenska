@@ -26,6 +26,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --spacing: 0.25rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -67,102 +69,99 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.375rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.22 0.02 255);
+  --foreground: oklch(0.23 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 255);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 255);
-  --primary: oklch(0.55 0.15 245);
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.57 0.215 27);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.01 245);
-  --secondary-foreground: oklch(0.28 0.02 255);
-  --muted: oklch(0.965 0.006 245);
-  --muted-foreground: oklch(0.5 0.02 255);
-  --accent: oklch(0.95 0.03 25);
-  --accent-foreground: oklch(0.58 0.22 28);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.91 0.01 245);
-  --input: oklch(0.89 0.012 245);
-  --ring: oklch(0.55 0.15 245);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
-  --glass: oklch(1 0 0 / 0.8);
-  --glass-strong: oklch(1 0 0 / 0.78);
-  --glass-border: oklch(0.91 0.01 245);
-  --success: oklch(0.62 0.15 150);
-  --info: oklch(0.58 0.22 28);
-  --shadow-glass: 0 8px 32px -8px oklch(0.3 0.05 255 / 0.18), inset 0 1px 0 oklch(1 0 0 / 0.6);
-  --gradient-app: oklch(1 0 0);
+  --secondary: oklch(0.97 0.008 245);
+  --secondary-foreground: oklch(0.48 0.145 245);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.48 0 0);
+  --accent: oklch(0.96 0.015 245);
+  --accent-foreground: var(--secondary-foreground);
+  --destructive: var(--primary);
+  --destructive-foreground: var(--primary-foreground);
+  --border: oklch(0.9 0 0);
+  --input: oklch(0.82 0 0);
+  --ring: var(--secondary-foreground);
+  --info: var(--secondary-foreground);
+  --success: var(--foreground);
+  --chart-1: var(--primary);
+  --chart-2: var(--info);
+  --chart-3: var(--foreground);
+  --chart-4: var(--muted-foreground);
+  --chart-5: var(--border);
+  --sidebar: var(--muted);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--info);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --glass: oklch(1 0 0 / 0.96);
+  --glass-strong: var(--card);
+  --glass-border: var(--border);
+  --shadow-glass: 0 2px 8px oklch(0 0 0 / 0.04);
+  --shadow-dialog: 0 12px 32px oklch(0 0 0 / 0.12);
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --space-unit: 0.25rem;
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --background: oklch(0.18 0 0);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.23 0 0);
+  --popover: var(--card);
+  --primary: oklch(0.64 0.2 27);
+  --secondary: oklch(0.27 0.015 245);
+  --secondary-foreground: oklch(0.76 0.12 245);
+  --muted: oklch(0.27 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --accent: var(--secondary);
+  --border: oklch(0.34 0 0);
+  --input: oklch(0.45 0 0);
+  --glass: oklch(0.23 0 0 / 0.96);
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
-  body {
-    background: var(--gradient-app);
-    background-attachment: fixed;
-    min-height: 100vh;
-    color: var(--color-foreground);
-  }
+  * { border-color: var(--border); }
+  body { background: var(--background); min-height: 100vh; color: var(--foreground); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; letter-spacing: 0; }
+  button, input, textarea, select { font: inherit; }
+  button, a, input, textarea, select { transition-duration: 150ms; }
+  input, textarea, select { accent-color: var(--primary); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 }
 
 @utility glass {
   background: var(--glass);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-glass);
+}
+
+/* Shared UI vocabulary: 4px spacing grid, 6px controls, 8px framed items. */
+@layer components {
+  .ds-section { padding: calc(var(--space-unit) * 5) 0; border-top: 1px solid var(--border); }
+  .ds-section:first-child { border-top: 0; padding-top: calc(var(--space-unit) * 2); }
+  .ds-section-title { margin-bottom: calc(var(--space-unit) * 4); font-size: 14px; font-weight: 650; color: var(--foreground); }
+  .ds-input { width: 100%; min-height: 42px; border-radius: var(--radius); border: 1px solid var(--input); background: var(--card); padding: 10px 12px; font-size: 14px; color: var(--foreground); outline: none; }
+  .ds-input:focus { border-color: var(--info); box-shadow: 0 0 0 2px color-mix(in oklab, var(--info) 12%, transparent); }
+  .ds-input::placeholder { color: var(--muted-foreground); }
+  .ds-tab { height: 42px; border-radius: var(--radius); color: var(--info); background: transparent; border-bottom: 2px solid transparent; }
+  .ds-tab:hover { background: var(--accent); color: var(--info); }
+  .ds-tab[aria-current="page"], .ds-tab[aria-current="page"]:hover { color: var(--primary); border-bottom-color: var(--primary); background: color-mix(in oklab, var(--primary) 5%, var(--card)); }
+  .ds-badge { border-radius: var(--radius); font-size: 12px; font-weight: 600; padding: 4px 8px; border: 1px solid var(--border); }
+  .ds-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .ds-table th { background: var(--muted); color: var(--muted-foreground); text-align: left; font-size: 12px; font-weight: 600; }
+  .ds-table th, .ds-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .ds-dialog { box-shadow: var(--shadow-dialog); }
 }
 
 /* ===== Avtalsdokument (utskrift / PDF) ===== */

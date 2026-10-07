@@ -4,6 +4,7 @@ import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
 import { Copy, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
@@ -41,7 +42,7 @@ function PdfPreview({ a }: { a: Avtal }) {
   return (
     <div className="space-y-3">
       {pages.map((src, i) => (
-        <img key={i} src={src} alt={`Avtal sida ${i + 1}`} className="w-full rounded-xl border border-glass-border shadow-lg" />
+        <img key={i} src={src} alt={`Avtal sida ${i + 1}`} className="w-full rounded-md border border-glass-border" />
       ))}
     </div>
   );
@@ -76,9 +77,9 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "sparade", label: "Sparade" },
 ];
 
-const inputCls = "w-full rounded-xl border border-input/70 bg-glass-strong px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary/50 focus:bg-card focus:ring-4 focus:ring-ring/15";
-const btnPrimary = "inline-flex items-center justify-center gap-2 rounded-xl bg-primary shadow-lg shadow-primary/25 px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90";
-const btnOutline = "inline-flex items-center justify-center gap-2 rounded-xl border border-glass-border bg-glass-strong px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent";
+const inputCls = "ds-input";
+const btnPrimary = "bg-primary text-primary-foreground hover:bg-primary/90";
+const btnOutline = "border border-border bg-card text-info hover:bg-accent hover:text-info";
 
 function defaultMailText(erRef: string) {
   return [
@@ -94,8 +95,8 @@ function defaultMailText(erRef: string) {
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="glass rounded-3xl p-5">
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
+    <section className="ds-section">
+      <h2 className="ds-section-title">{title}</h2>
       {children}
     </section>
   );
@@ -151,13 +152,13 @@ function ConfirmDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel:
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm" onClick={onCancel}>
-      <div role="dialog" aria-modal="true" className="glass w-full max-w-sm rounded-3xl bg-glass-strong p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive"><RotateCcw size={22} /></div>
+      <div role="dialog" aria-modal="true" className="glass ds-dialog w-full max-w-sm rounded-lg bg-glass-strong p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-destructive/10 text-destructive"><RotateCcw size={22} /></div>
         <h2 className="text-lg font-bold text-foreground">Vill du verkligen börja om?</h2>
         <p className="mt-1 text-sm text-muted-foreground">Allt du fyllt i rensas. Osparade ändringar försvinner, men sparade versioner ligger kvar.</p>
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <button className={`${btnOutline} py-2.5`} onClick={onCancel}>Avbryt</button>
-          <button className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground" onClick={onConfirm}>Ja, börja om</button>
+          <Button variant="ghost" className={`${btnOutline} py-2.5`} onClick={onCancel}>Avbryt</Button>
+          <Button variant="ghost" className="rounded-md bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground" onClick={onConfirm}>Ja, börja om</Button>
         </div>
       </div>
     </div>
@@ -231,29 +232,30 @@ function App() {
     <div className="min-h-screen">
       <div className="no-print pb-28">
         <header className="sticky top-0 z-10 px-3 pt-3">
-          <div className="glass mx-auto max-w-2xl rounded-3xl">
+          <div className="glass mx-auto max-w-2xl rounded-lg">
           <div className="flex items-center gap-3 px-4 py-3">
-            <img src="/icon-512.png" alt="" className="h-9 w-9 rounded-xl shadow" />
+            <img src="/icon-512.png" alt="" className="h-9 w-9 rounded-md" />
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-base font-bold leading-tight text-foreground">{c.bestallare || "Nytt avtal"}</h1>
               <p className="text-xs text-muted-foreground">
                 {c.avtalNr ? `Avtal ${c.avtalNr}` : "Inget avtalsnummer"}{currentVersion ? ` · v${currentVersion}` : ""}
               </p>
             </div>
-            <div className="hidden shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tabular-nums text-primary sm:block">
+            <div className="hidden shrink-0 rounded-md bg-muted px-3 py-1 text-xs font-semibold tabular-nums text-foreground sm:block">
               {k.totalQty} objekt · {fmtKr(k.perYear)}/år
             </div>
-            <button onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
-              className="shrink-0 rounded-xl border border-glass-border bg-glass-strong p-2 text-muted-foreground transition hover:text-primary"><Plus size={18} /></button>
-            <button onClick={() => lockApp()} aria-label="Lås appen" title="Lås appen"
-              className="shrink-0 rounded-xl border border-glass-border bg-glass-strong p-2 text-muted-foreground transition hover:text-primary"><Lock size={18} /></button>
+            <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
+              className="shrink-0 rounded-md border border-glass-border bg-glass-strong p-2 text-info transition hover:text-info"><Plus size={18} /></Button>
+            <Button variant="ghost" onClick={() => lockApp()} aria-label="Lås appen" title="Lås appen"
+              className="shrink-0 rounded-md border border-glass-border bg-glass-strong p-2 text-info transition hover:text-info"><Lock size={18} /></Button>
           </div>
-          <nav className="mx-3 mb-3 flex gap-1 overflow-x-auto rounded-2xl bg-foreground/5 p-1">
+          <nav className="mx-3 mb-2 flex gap-1 overflow-x-auto border-t border-border pt-1">
             {TABS.map((t) => (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex-1 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition ${tab === t.id ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              <Button variant="navigation" key={t.id} onClick={() => setTab(t.id)}
+                aria-current={tab === t.id ? "page" : undefined}
+                className="ds-tab flex-1 whitespace-nowrap px-3 text-sm font-semibold">
                 {t.label}
-              </button>
+              </Button>
             ))}
           </nav>
           </div>
@@ -297,7 +299,7 @@ function App() {
                 />
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span>Inga priser eller signatur – din egen signatur läggs till av mejlprogrammet.</span>
-                  <button type="button" className="underline" onClick={() => setC({ mejlText: undefined })}>Återställ</button>
+                  <Button variant="ghost" type="button" className="text-info underline" onClick={() => setC({ mejlText: undefined })}>Återställ</Button>
                 </div>
               </Card>
               <Card title="Anläggning">
@@ -335,15 +337,15 @@ function App() {
             <Card title="Objekt">
               <div className="space-y-3">
                 {a.rows.map((row, i) => (
-                  <div key={row.id} className="rounded-2xl border border-glass-border bg-glass-strong p-3 shadow-sm">
+                  <div key={row.id} className="rounded-lg border border-glass-border bg-glass-strong p-3">
                     <div className="flex items-center gap-2">
                       <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`min-w-0 flex-1 ${inputCls}`} />
-                      <button onClick={() => setA((p) => { const idx = p.rows.findIndex((r) => r.id === row.id); const rows = [...p.rows]; rows.splice(idx + 1, 0, { ...row, id: newRow().id }); return { ...p, rows }; })}
+                      <Button variant="ghost" onClick={() => setA((p) => { const idx = p.rows.findIndex((r) => r.id === row.id); const rows = [...p.rows]; rows.splice(idx + 1, 0, { ...row, id: newRow().id }); return { ...p, rows }; })}
                         aria-label={`Kopiera ${row.name || "objekt"}`} title="Kopiera objekt"
-                        className="shrink-0 rounded-xl border border-input/70 bg-glass-strong p-2.5 text-muted-foreground transition hover:text-primary"><Copy size={16} /></button>
+                        className="shrink-0 rounded-md border border-input/70 bg-glass-strong p-2.5 text-info transition hover:text-info"><Copy size={16} /></Button>
                       {a.rows.length > 1 && (
-                        <button onClick={() => setA((p) => ({ ...p, rows: p.rows.filter((r) => r.id !== row.id) }))} aria-label={`Ta bort ${row.name || "objekt"}`}
-                          className="shrink-0 rounded-xl border border-input/70 bg-glass-strong p-2.5 text-muted-foreground transition hover:text-destructive"><Trash2 size={16} /></button>
+                        <Button variant="ghost" onClick={() => setA((p) => ({ ...p, rows: p.rows.filter((r) => r.id !== row.id) }))} aria-label={`Ta bort ${row.name || "objekt"}`}
+                          className="shrink-0 rounded-md border border-input/70 bg-glass-strong p-2.5 text-muted-foreground transition hover:text-destructive"><Trash2 size={16} /></Button>
                       )}
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -365,7 +367,7 @@ function App() {
                 ))}
               </div>
               <datalist id="objekt-typer">{OBJEKT_TYPER.map((t) => <option key={t} value={t} />)}</datalist>
-              <button onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))} className={`mt-3 w-full ${btnPrimary}`}><Plus size={18} /> Lägg till objekt</button>
+              <Button variant="ghost" onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))} className={`mt-3 w-full ${btnPrimary}`}><Plus size={18} /> Lägg till objekt</Button>
             </Card>
           )}
 
@@ -382,10 +384,10 @@ function App() {
                 {k.visits.length === 0 && <p className="text-sm text-muted-foreground">Ange servicetid för objekten för att se priset.</p>}
                 <div className="space-y-3">
                   {k.visits.map((v) => (
-                    <div key={v.k} className="rounded-2xl border border-glass-border bg-glass-strong p-3">
+                    <div key={v.k} className="rounded-lg border border-glass-border bg-glass-strong p-3">
                       <div className="flex items-baseline justify-between">
                         <h3 className="font-semibold text-foreground">{k.visits.length > 1 ? `Servicebesök ${v.k}` : "Servicebesök"}</h3>
-                        <p className="text-lg font-bold tabular-nums text-primary">{fmtKr(v.perVisit)}</p>
+                        <p className="text-lg font-bold tabular-nums text-foreground">{fmtKr(v.perVisit)}</p>
                       </div>
                       <dl className="mt-2 space-y-1 text-sm">
                         {[
@@ -401,7 +403,7 @@ function App() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 rounded-2xl bg-primary/10 p-4 text-center ring-1 ring-primary/20">
+                <div className="mt-4 border-t-2 border-primary bg-muted p-4 text-center">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per år exkl. moms</p>
                   <p className="mt-1 text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perYear)}</p>
                   <p className="mt-2 text-sm text-muted-foreground">5 år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
@@ -445,42 +447,42 @@ function App() {
                   .filter((f) => f.versions.length > 0)
                   .sort((x, y) => x.name.localeCompare(y.name, "sv")).map((f) => (
                   <div key={f.name}>
-                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><FolderOpen size={16} className="text-primary" /> {f.name}</h3>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><FolderOpen size={16} className="text-info" /> {f.name}</h3>
                     <ul className="space-y-1">
                       {[...f.versions].reverse().map((v) => (
-                        <li key={v.version} className="flex flex-wrap items-center gap-2 rounded-2xl border border-glass-border bg-glass-strong px-3 py-2 text-sm">
+                        <li key={v.version} className="flex flex-wrap items-center gap-2 rounded-lg border border-glass-border bg-glass-strong px-3 py-2 text-sm">
                           <span className="font-semibold text-foreground">v{v.version}</span>
                           <span className="flex-1 truncate text-muted-foreground">
                             {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perYear)} per år
                           </span>
                           <select value={v.status ?? "utkast"} aria-label="Status"
                             onChange={(e) => { setVersionStatus(f.name, v.version, e.target.value as Status); setStore(loadStore()); }}
-                            className={`rounded-full border-0 px-2.5 py-1 text-xs font-semibold outline-none ${STATUS[v.status ?? "utkast"].cls}`}>
+                            className={`ds-badge outline-none ${STATUS[v.status ?? "utkast"].cls}`}>
                             {(Object.keys(STATUS) as Status[]).map((s) => <option key={s} value={s}>{STATUS[s].label}</option>)}
                           </select>
-                          <button className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
-                            onClick={() => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</button>
-                          <button className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive" aria-label="Ta bort version"
-                            onClick={() => { if (confirm(`Ta bort ${f.name} v${v.version}?`)) { deleteVersion(f.name, v.version); setStore(loadStore()); } }}><X size={14} /></button>
+                          <Button variant="ghost" className="rounded-md bg-secondary px-2 py-1 text-xs font-medium text-info"
+                            onClick={() => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</Button>
+                          <Button variant="ghost" className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive" aria-label="Ta bort version"
+                            onClick={() => { if (confirm(`Ta bort ${f.name} v${v.version}?`)) { deleteVersion(f.name, v.version); setStore(loadStore()); } }}><X size={14} /></Button>
                         </li>
                       ))}
                     </ul>
                   </div>
                 ))}
               </div>
-              <button className={`mt-4 w-full ${btnOutline}`} onClick={() => setConfirmNew(true)}>
+              <Button variant="ghost" className={`mt-4 w-full ${btnOutline}`} onClick={() => setConfirmNew(true)}>
                 <RotateCcw size={16} /> Nytt avtal
-              </button>
+              </Button>
             </Card>
           )}
         </main>
 
         <div className="fixed inset-x-0 bottom-0 z-10 px-3 pb-3">
-          <div className="glass mx-auto grid max-w-2xl grid-cols-4 gap-2 rounded-3xl p-2">
-            <button onClick={onSave} className={`${btnOutline} flex-col gap-1 px-1 py-2 text-xs`}><Save size={18} />Spara</button>
-            <button onClick={onPdf} className={`${btnOutline} flex-col gap-1 px-1 py-2 text-xs`}><FileText size={18} />PDF</button>
-            <button onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} flex-col gap-1 px-1 py-2 text-xs`}><FileSpreadsheet size={18} />Excel</button>
-            <button onClick={openMail} className={`${btnPrimary} flex-col gap-1 px-1 py-2 text-xs`}><Mail size={18} />Mejla</button>
+          <div className="glass mx-auto grid max-w-2xl grid-cols-4 gap-2 rounded-lg p-2">
+            <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><Save size={18} />Spara</Button>
+            <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><FileText size={18} />PDF</Button>
+            <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><FileSpreadsheet size={18} />Excel</Button>
+            <Button variant="ghost" onClick={openMail} className={`${btnPrimary} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><Mail size={18} />Mejla</Button>
           </div>
         </div>
         <ConfirmDialog open={confirmNew} onCancel={() => setConfirmNew(false)} onConfirm={startNew} />
