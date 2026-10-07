@@ -264,7 +264,7 @@ function App() {
         {/* Innehåll */}
         <div className="flex min-w-0 flex-1 flex-col bg-card sm:rounded-2xl sm:border sm:border-border sm:shadow-[var(--shadow-panel)]">
           <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur sm:rounded-t-2xl">
-            <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6">
+            <div className="w-full px-4 py-4">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</p>
@@ -290,7 +290,7 @@ function App() {
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-4 py-5 pb-28 sm:px-6 sm:pb-8">
+          <main className="w-full flex-1 space-y-4 px-4 py-5 pb-28 sm:pb-8">
             {tab === "kund" && (
               <>
                 <Card title="Avtal">
