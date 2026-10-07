@@ -55,10 +55,8 @@ export function AppGate({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
-      <form onSubmit={submit} className="ds-dialog relative w-full max-w-sm rounded-lg border border-border bg-card p-8">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Lock size={28} />
-        </div>
+      <form onSubmit={submit} className="ds-dialog relative w-full max-w-sm rounded-3xl border border-border bg-card p-8">
+        <img src="/icon-512.png" alt="UK Portservice Avtal" className="mx-auto mb-4 h-20 w-20 rounded-2xl shadow-md" />
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-primary">UK Portservice</p>
         <h1 className="mt-1 text-center text-2xl font-bold text-foreground">Avtalskalkylator</h1>
         <p className="mt-1 text-center text-sm text-muted-foreground">Logga in för att fortsätta</p>
