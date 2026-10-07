@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, Lock } from "lucide-react";
 
 const UNLOCK_KEY = "ukp-gate";
@@ -53,10 +54,8 @@ export function AppGate({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
-      <div aria-hidden className="pointer-events-none absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-40 right-0 h-80 w-80 rounded-full bg-accent-foreground/10 blur-3xl" />
-      <form onSubmit={submit} className="glass relative w-full max-w-sm rounded-3xl p-8">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30">
+      <form onSubmit={submit} className="ds-dialog relative w-full max-w-sm rounded-lg border border-border bg-card p-8">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Lock size={28} />
         </div>
         <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-primary">UK Portservice</p>
@@ -64,7 +63,7 @@ export function AppGate({ children }: { children: ReactNode }) {
         <p className="mt-1 text-center text-sm text-muted-foreground">Logga in för att fortsätta</p>
 
         {!PASSWORD ? (
-          <p className="mt-6 rounded-xl bg-destructive/10 p-3 text-center text-sm text-destructive">
+          <p className="mt-6 rounded-md bg-destructive/10 p-3 text-center text-sm text-destructive">
             Inget lösenord är inställt för appen. Kontakta den som administrerar appen.
           </p>
         ) : (
@@ -74,19 +73,19 @@ export function AppGate({ children }: { children: ReactNode }) {
               <input
                 id="gate-pw" type={show ? "text" : "password"} autoFocus autoComplete="current-password"
                 value={pw} onChange={(e) => { setPw(e.target.value); setError(""); }}
-                className="h-12 w-full rounded-xl border border-input bg-background px-4 pr-12 text-base text-foreground outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15"
+                className="ds-input h-12 pr-12"
                 placeholder="Skriv lösenordet"
               />
-              <button type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Dölj lösenord" : "Visa lösenord"}
+              <Button variant="ghost" type="button" onClick={() => setShow((s) => !s)} aria-label={show ? "Dölj lösenord" : "Visa lösenord"}
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-muted-foreground hover:text-primary">
                 {show ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+              </Button>
             </div>
             <p className="mt-2 h-5 text-sm text-destructive">{error}</p>
-            <button type="submit" disabled={!pw || busy}
-              className="mt-2 h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50">
+            <Button variant="ghost" type="submit" disabled={!pw || busy}
+              className="mt-2 h-12 w-full rounded-md bg-primary font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50">
               Logga in
-            </button>
+            </Button>
           </>
         )}
       </form>
