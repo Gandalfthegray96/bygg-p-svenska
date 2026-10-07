@@ -450,9 +450,9 @@ function App() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 border-t-2 border-primary bg-muted p-4 text-center">
+                  <div className="mt-4 rounded-xl border-t-4 border-primary bg-muted p-4 text-center">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Per år exkl. moms</p>
-                    <p className="mt-1 font-display text-3xl font-bold tabular-nums text-primary">{fmtKr(k.perYear)}</p>
+                    <p className="mt-1 font-display text-3xl font-bold tabular-nums text-foreground">{fmtKr(k.perYear)}</p>
                     <p className="mt-2 text-sm text-muted-foreground">5 år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
                   </div>
                 </Card>
@@ -525,7 +525,7 @@ function App() {
           </main>
 
           {/* Fast åtgärdsrad */}
-          <div className="fixed bottom-0 left-14 right-0 z-10 border-t border-border bg-card px-3 py-2 sm:left-16">
+          <div className="fixed bottom-0 left-14 right-0 z-10 border-t border-border bg-card px-3 py-2 sm:hidden">
             <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2">
               <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><Save size={18} />Spara</Button>
               <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><FileText size={18} />PDF</Button>
