@@ -69,7 +69,7 @@ export const Route = createFileRoute("/")({
 type Tab = "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade";
 const TABS: { id: Tab; label: string }[] = [
   { id: "kund", label: "Kund" },
-  { id: "forsatt", label: "Försätt" },
+  { id: "forsatt", label: "Försättsblad" },
   { id: "objekt", label: "Objekt" },
   { id: "pris", label: "Pris" },
   { id: "avtal", label: "Avtal" },
