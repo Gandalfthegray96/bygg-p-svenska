@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 const UNLOCK_KEY = "ukp-gate";
 const envPw = import.meta.env['VITE_APP_PASSWORD'] as string | undefined;
