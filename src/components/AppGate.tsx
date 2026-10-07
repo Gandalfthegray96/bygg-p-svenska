@@ -4,7 +4,8 @@ import { Eye, EyeOff, Lock } from "lucide-react";
 
 const UNLOCK_KEY = "ukp-gate";
 const envPw = import.meta.env['VITE_APP_PASSWORD'] as string | undefined;
-const PASSWORD = envPw || (import.meta.env.DEV ? "admin" : "");
+const isPreview = typeof window !== "undefined" && /(^|\.)id-preview--|localhost|lovableproject\.com/.test(window.location.hostname);
+const PASSWORD = isPreview || import.meta.env.DEV ? "admin" : envPw || "";
 
 async function hash(s: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ukp-gate:" + s));
