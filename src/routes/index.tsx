@@ -233,10 +233,10 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      <div className="no-print flex min-h-screen bg-secondary">
+      <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
         {/* Sidomeny */}
-        <nav aria-label="Avtalssteg" className="sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-2 bg-info py-4 sm:w-16">
-          <img src="/icon-512.png" alt="UK Portservice" className="mb-3 h-9 w-9 rounded-lg ring-1 ring-white/25" />
+        <nav aria-label="Avtalssteg" className="sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-1.5 bg-sidebar py-4 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-16 sm:rounded-2xl">
+          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-9 w-9 rounded-lg" />
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
@@ -247,12 +247,11 @@ function App() {
                 title={t.label}
                 aria-label={t.label}
                 aria-current={active ? "page" : undefined}
-                className={`relative flex h-11 w-11 items-center justify-center rounded-lg transition ${
-                  active ? "bg-white/15 text-white" : "text-white/55 hover:bg-white/10 hover:text-white"
+                className={`flex h-10 w-10 items-center justify-center rounded-lg transition ${
+                  active ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
               >
-                {active && <span className="absolute -left-[7px] h-6 w-1 rounded-r-full bg-white sm:-left-[11px]" />}
-                <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+                <Icon size={19} strokeWidth={active ? 2.3 : 1.9} />
               </button>
             );
           })}
@@ -260,54 +259,44 @@ function App() {
             onClick={() => lockApp()}
             title="Lås appen"
             aria-label="Lås appen"
-            className="mt-auto flex h-11 w-11 items-center justify-center rounded-lg text-white/55 transition hover:bg-white/10 hover:text-white"
+            className="mt-auto flex h-10 w-10 items-center justify-center rounded-lg text-sidebar-foreground/70 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
-            <Lock size={20} />
+            <Lock size={19} />
           </button>
         </nav>
 
         {/* Innehåll */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-10 border-b border-border bg-card">
-            <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <h1 className="truncate font-display text-lg font-bold leading-tight text-foreground">{c.bestallare || "Nytt avtal"}</h1>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {activeTab.label}{c.avtalNr ? ` · Avtal ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}
-                </p>
+        <div className="flex min-w-0 flex-1 flex-col bg-card sm:rounded-2xl sm:border sm:border-border sm:shadow-[var(--shadow-panel)]">
+          <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur sm:rounded-t-2xl">
+            <div className="mx-auto w-full max-w-5xl px-4 pt-4 sm:px-6">
+              <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <span>Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</span>
+                <span className="rounded-md bg-muted px-2 py-0.5 font-medium tabular-nums text-foreground">{k.totalQty} objekt · {fmtKr(k.perYear)}/år</span>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <div className="hidden rounded-md bg-secondary px-2.5 py-1 text-[11px] font-semibold tabular-nums text-info sm:block">
-                  {k.totalQty} objekt · {fmtKr(k.perYear)}/år
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <h1 className="min-w-0 truncate font-display text-xl font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button variant="ghost" onClick={() => setTab("avtal")} className="hidden h-9 gap-1.5 px-3 text-sm text-muted-foreground hover:text-foreground md:inline-flex"><Eye size={16} />Förhandsgranska</Button>
+                  <Button variant="ghost" onClick={onSave} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><Save size={16} />Spara</Button>
+                  <Button variant="ghost" onClick={onPdf} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileText size={16} />PDF</Button>
+                  <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileSpreadsheet size={16} />Excel</Button>
+                  <Button variant="ghost" onClick={openMail} className={`hidden h-9 gap-1.5 px-3 text-sm font-semibold sm:inline-flex ${btnPrimary}`}><Mail size={16} />Mejla</Button>
+                  <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
+                    className="h-9 w-9 border border-border bg-card p-0 text-foreground hover:bg-muted"><Plus size={18} /></Button>
                 </div>
-                <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
-                  className="h-9 w-9 rounded-md border border-border bg-card p-0 text-info transition hover:bg-accent"><Plus size={18} /></Button>
+              </div>
+              <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto" role="tablist">
+                {TABS.map((t) => (
+                  <button key={t.id} onClick={() => setTab(t.id)} aria-current={tab === t.id ? "page" : undefined}
+                    className={`shrink-0 border-b-2 px-2.5 pb-2.5 pt-1 text-sm font-medium transition ${tab === t.id ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                    {t.label}
+                  </button>
+                ))}
               </div>
             </div>
-            {/* Stegindikator */}
-            <ol className="mx-auto flex w-full max-w-2xl items-center gap-1 px-4 pb-3" aria-label="Steg">
-              {TABS.map((t, i) => {
-                const done = i < tabIndex;
-                const active = i === tabIndex;
-                return (
-                  <li key={t.id} className="flex flex-1 items-center gap-1 last:flex-none">
-                    <button
-                      onClick={() => setTab(t.id)}
-                      aria-label={`Steg ${i + 1}: ${t.label}`}
-                      aria-current={active ? "step" : undefined}
-                      className="group flex items-center gap-1.5"
-                    >
-                      <span className={`h-2 w-2 rounded-full transition ${active ? "bg-primary ring-4 ring-primary/15" : done ? "bg-info" : "bg-border group-hover:bg-info/50"}`} />
-                      <span className={`hidden text-[10px] font-semibold uppercase tracking-wide md:block ${active ? "text-foreground" : "text-muted-foreground"}`}>{t.label}</span>
-                    </button>
-                    {i < TABS.length - 1 && <span className={`h-px flex-1 ${done ? "bg-info" : "bg-border"}`} />}
-                  </li>
-                );
-              })}
-            </ol>
           </header>
 
-          <main className="mx-auto w-full max-w-2xl flex-1 space-y-5 px-4 py-5 pb-28">
+          <main className="mx-auto w-full max-w-5xl flex-1 space-y-4 px-4 py-5 pb-28 sm:px-6 sm:pb-8">
             {tab === "kund" && (
               <>
                 <Card title="Avtal">
