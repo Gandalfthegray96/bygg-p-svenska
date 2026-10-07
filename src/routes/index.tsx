@@ -234,7 +234,7 @@ function App() {
       <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
         {/* Sidomeny */}
         <nav aria-label="Avtalssteg" className="sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-1.5 bg-sidebar py-4 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-16 sm:rounded-2xl">
-          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-9 w-9 rounded-lg" />
+          <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 rounded-xl shadow-sm" />
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
