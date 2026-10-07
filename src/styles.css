@@ -152,7 +152,7 @@
 @layer components {
   .ds-section { padding: calc(var(--space-unit) * 5) 0; border-top: 1px solid var(--border); }
   .ds-section:first-child { border-top: 0; padding-top: calc(var(--space-unit) * 2); }
-  .ds-section-title { margin-bottom: calc(var(--space-unit) * 4); font-size: 14px; font-weight: 650; color: var(--foreground); }
+  .ds-section-title { margin-bottom: calc(var(--space-unit) * 3); font-family: var(--font-display); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-foreground); }
   .ds-input { width: 100%; min-height: 42px; border-radius: var(--radius); border: 1px solid var(--input); background: var(--card); padding: 10px 12px; font-size: 14px; color: var(--foreground); outline: none; }
   .ds-input:focus { border-color: var(--info); box-shadow: 0 0 0 2px color-mix(in oklab, var(--info) 12%, transparent); }
   .ds-input::placeholder { color: var(--muted-foreground); }
