@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Copy, FileSpreadsheet, FileText, FolderOpen, Mail, Plus, RotateCcw, Save, Search, Trash2, X } from "lucide-react";
+import { Copy, FileSpreadsheet, FileText, FolderOpen, KeyRound, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, X } from "lucide-react";
+import { PinLock, lockApp, resetPin } from "@/components/PinLock";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/")({
       { rel: "apple-touch-icon", href: "/icon-512.png" },
     ],
   }),
-  component: App,
+  component: () => <PinLock><App /></PinLock>,
 });
 
 type Tab = "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade";
@@ -244,6 +245,10 @@ function App() {
             </div>
             <button onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
               className="shrink-0 rounded-xl border border-glass-border bg-glass-strong p-2 text-muted-foreground transition hover:text-primary"><Plus size={18} /></button>
+            <button onClick={() => lockApp()} aria-label="Lås appen" title="Lås appen"
+              className="shrink-0 rounded-xl border border-glass-border bg-glass-strong p-2 text-muted-foreground transition hover:text-primary"><Lock size={18} /></button>
+            <button onClick={() => { if (confirm("Vill du byta PIN-kod? Du får välja en ny kod direkt.")) resetPin(); }} aria-label="Byt kod" title="Byt PIN-kod"
+              className="shrink-0 rounded-xl border border-glass-border bg-glass-strong p-2 text-muted-foreground transition hover:text-primary"><KeyRound size={18} /></button>
           </div>
           <nav className="mx-3 mb-3 flex gap-1 overflow-x-auto rounded-2xl bg-foreground/5 p-1">
             {TABS.map((t) => (
