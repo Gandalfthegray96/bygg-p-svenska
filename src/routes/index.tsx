@@ -251,7 +251,7 @@ function App() {
           </div>
           <nav className="mx-3 mb-2 flex gap-1 overflow-x-auto border-t border-border pt-1">
             {TABS.map((t) => (
-              <Button variant="ghost" key={t.id} onClick={() => setTab(t.id)}
+              <Button variant="navigation" key={t.id} onClick={() => setTab(t.id)}
                 aria-current={tab === t.id ? "page" : undefined}
                 className="ds-tab flex-1 whitespace-nowrap px-3 text-sm font-semibold">
                 {t.label}
