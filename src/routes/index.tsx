@@ -204,9 +204,24 @@ function App() {
     }
   };
 
-  const openMail = () => {
+  const openMail = async () => {
     const subject = `Avtalsförslag ${c.avtalNr}`.trim();
     const body = (c.mejlText ?? "").trim() || defaultMailText(c.erRef);
+    // Telefon/surfplatta: dela-menyn med PDF:en bifogad. Dator: vanligt mailto.
+    const touch = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+    const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+    if (touch && nav.share) {
+      try {
+        const bytes = await buildAvtalPdf(a);
+        const file = new File([bytes as BlobPart], `Avtal_${fileBase(a, currentVersion)}.pdf`, { type: "application/pdf" });
+        if (nav.canShare?.({ files: [file] })) {
+          await nav.share({ files: [file], title: subject, text: body });
+          return;
+        }
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+      }
+    }
     window.location.href = `mailto:${encodeURIComponent(c.epost)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
