@@ -105,6 +105,17 @@
   --sidebar-accent-foreground: oklch(0.97 0 0);
   --sidebar-border: oklch(0.33 0.03 205);
   --sidebar-ring: var(--ring);
+  --nav-glass: oklch(0.271 0.046 194 / 0.85);
+  --nav-glass-edge: oklch(1 0 0 / 0.10);
+  --nav-icon-glass: oklch(1 0 0 / 0.10);
+  --nav-icon-edge: oklch(1 0 0 / 0.20);
+  --nav-icon-hover: oklch(1 0 0 / 0.20);
+  --nav-icon-ink: oklch(0.953 0.051 181 / 0.80);
+  --nav-selected: oklch(0.852 0.199 91.94);
+  --nav-selected-ink: oklch(0.271 0.046 194);
+  --shadow-nav: 0 12px 28px -12px oklch(0.271 0.046 194 / 0.45), inset 0 1px 0 var(--nav-icon-edge);
+  --shadow-nav-icon: inset 0 1px 0 var(--nav-icon-edge), 0 3px 8px oklch(0.271 0.046 194 / 0.12);
+  --shadow-nav-selected: 0 0 15px oklch(0.852 0.199 91.94 / 0.30), inset 0 1px 0 var(--nav-icon-edge);
   --glass: oklch(1 0 0 / 0.96);
   --glass-strong: var(--card);
   --glass-border: var(--border);
@@ -144,13 +155,16 @@
 @utility glass {
   background: var(--glass);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-glass);
 }
 
 /* Shared UI vocabulary: 4px spacing grid, 6px controls, 8px framed items. */
 @layer components {
+  .ds-glass-nav { background: var(--nav-glass); backdrop-filter: blur(24px) saturate(140%); border: 1px solid var(--nav-glass-edge); box-shadow: var(--shadow-nav); }
+  .ds-glass-icon { background: var(--nav-icon-glass); color: var(--nav-icon-ink); border: 1px solid var(--nav-icon-edge); border-radius: 12px; backdrop-filter: blur(4px); box-shadow: var(--shadow-nav-icon); }
+  .ds-glass-icon:hover { background: var(--nav-icon-hover); color: var(--sidebar-accent-foreground); }
+  .ds-glass-icon[aria-current="page"], .ds-glass-icon[aria-current="page"]:hover { background: var(--nav-selected); color: var(--nav-selected-ink); border-color: var(--nav-selected); box-shadow: var(--shadow-nav-selected); }
   .ds-section { padding: calc(var(--space-unit) * 5); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--card); box-shadow: var(--shadow-glass); }
   .ds-section-title { margin-bottom: calc(var(--space-unit) * 1); font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--foreground); }
   .ds-section-title + * { margin-top: calc(var(--space-unit) * 4); }

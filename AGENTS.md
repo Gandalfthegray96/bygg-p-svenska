@@ -14,3 +14,4 @@
 - The cover is rendered by the shared CoverPreview component in both its editor tab and the printable agreement so both views always match.
 
 - All app UI uses semantic tokens and shared Button variants with the ds-* visual vocabulary in src/styles.css; keep original document/Excel styles isolated to prevent brand changes altering customer originals.
+- Sidebar glass styling uses the shared glassNavigation Button variant and semantic glass tokens; the header summary reads calculate() results to keep navigation and totals consistent without changing calculation rules.
