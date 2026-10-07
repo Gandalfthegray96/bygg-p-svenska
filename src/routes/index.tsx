@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Archive, Building2, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
+import { Archive, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -174,6 +174,7 @@ function App() {
   const [toast, setToast] = useState("");
   const [confirmNew, setConfirmNew] = useState(false);
   const [search, setSearch] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
   const startNew = () => { setA(emptyAvtal()); setCurrentVersion(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
 
   useEffect(() => {
@@ -366,10 +367,26 @@ function App() {
                 <h2 className="font-display text-[15px] font-semibold text-foreground">Objekt</h2>
                 <p className="mb-4 text-xs text-muted-foreground">Lägg till portar och utrustning som ingår i avtalet.</p>
                 <div className="space-y-2">
-                  {a.rows.map((row, i) => (
+                  {a.rows.map((row, i) => {
+                    const isOpen = (openId ?? a.rows[a.rows.length - 1]?.id) === row.id;
+                    const rowPrice = Math.round((k.unitPrices[i] ?? 0) * row.qty * 100) / 100;
+                    if (!isOpen) return (
+                      <div key={row.id} className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-[var(--shadow-glass)]">
+                        <button type="button" onClick={() => setOpenId(row.id)} aria-expanded={false} aria-label={`Redigera ${row.name || "objekt"}`}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">{i + 1}</span>
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{row.name || "Namnlöst objekt"}{row.qty > 1 && <span className="text-muted-foreground"> × {row.qty}</span>}</span>
+                          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{row.minutes} min · {row.visits}/år</span>
+                          <span className="shrink-0 rounded-md bg-accent px-2 py-1 text-sm font-semibold tabular-nums text-accent-foreground">{fmtKr(rowPrice)}</span>
+                          <ChevronDown size={16} className="shrink-0 text-muted-foreground" />
+                        </button>
+                      </div>
+                    );
+                    return (
                     <div key={row.id} className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-glass)]">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground">{i + 1}</span>
+                        <button type="button" onClick={() => setOpenId("")} aria-expanded aria-label="Fäll ihop objekt"
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground hover:bg-accent"><ChevronUp size={14} /></button>
                         <div className="relative min-w-0 flex-1">
                           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                           <input value={row.name} list="objekt-typer" onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Välj eller skriv, t.ex. Takskjutport" className={`${inputCls} pl-9 font-medium`} />
@@ -399,10 +416,10 @@ function App() {
                       </label>
                       <p className="mt-2 text-xs text-muted-foreground sm:hidden">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
                     </div>
-                  ))}
+                  ); })}
                 </div>
                 <datalist id="objekt-typer">{OBJEKT_TYPER.map((t) => <option key={t} value={t} />)}</datalist>
-                <button type="button" onClick={() => setA((p) => ({ ...p, rows: [...p.rows, newRow()] }))}
+                <button type="button" onClick={() => { const r = newRow(); setOpenId(r.id); setA((p) => ({ ...p, rows: [...p.rows, r] })); }}
                   className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-accent py-2.5 text-sm font-medium text-accent-foreground transition hover:bg-accent/70">
                   <Plus size={16} /> Lägg till objekt
                 </button>
