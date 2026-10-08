@@ -133,9 +133,9 @@ export function Kalender({ defaultTitle, defaultPlace }: { defaultTitle: string;
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <Button variant="outline" className="justify-start gap-2" onClick={() => setOpenPanel("sync")}><RefreshCw size={16} />Synka Outlook-kalendern</Button>
-        <Button variant="outline" className="justify-start gap-2" onClick={() => setOpenPanel("feed")}><Download size={16} />Visa appens besök i Outlook</Button>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button variant="outline" className="h-16 w-52 flex-col gap-1 rounded-xl border-border bg-card shadow-sm hover:bg-muted" onClick={() => setOpenPanel("sync")}><RefreshCw size={18} /><span className="text-sm font-medium">Synka Outlook-kalendern</span></Button>
+        <Button variant="outline" className="h-16 w-52 flex-col gap-1 rounded-xl border-border bg-card shadow-sm hover:bg-muted" onClick={() => setOpenPanel("feed")}><Download size={18} /><span className="text-sm font-medium">Visa appens besök i Outlook</span></Button>
       </div>
 
       {openPanel && (
