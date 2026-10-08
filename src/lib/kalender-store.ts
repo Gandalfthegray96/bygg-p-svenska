@@ -11,6 +11,20 @@ export function saveEvents(e: KalEvent[]) { const raw = JSON.stringify(e); local
 export function loadIcsUrl() { return localStorage.getItem(URL_KEY) || ""; }
 export function saveIcsUrl(u: string) { localStorage.setItem(URL_KEY, u); pushKey(URL_KEY, u); }
 
+const FEED_KEY = "uc-kalender-feed";
+/** Hemlig prenumerationslänk (appen → Outlook). Skapas första gången och följer kontot. */
+export function getFeedUrl(): string {
+  let token = "";
+  try { token = JSON.parse(localStorage.getItem(FEED_KEY) || "{}").token || ""; } catch { /* ny */ }
+  if (!token) {
+    token = crypto.randomUUID();
+    const raw = JSON.stringify({ token });
+    localStorage.setItem(FEED_KEY, raw);
+    pushKey(FEED_KEY, raw);
+  }
+  return `${window.location.origin}/api/public/kalender/${token}.ics`;
+}
+
 function unfold(s: string) { return s.replace(/\r?\n[ \t]/g, ""); }
 function parseDate(v: string): string {
   const m = v.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?/);

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ApiPublicKalenderTokenRouteImport } from './routes/api/public/kalender.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicKalenderTokenRoute = ApiPublicKalenderTokenRouteImport.update({
+  id: '/api/public/kalender/$token',
+  path: '/api/public/kalender/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/kalender/$token': typeof ApiPublicKalenderTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/kalender/$token': typeof ApiPublicKalenderTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/api/public/kalender/$token': typeof ApiPublicKalenderTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/reset-password'
+  fullPaths: '/' | '/reset-password' | '/api/public/kalender/$token'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/reset-password'
-  id: '__root__' | '/' | '/reset-password'
+  to: '/' | '/reset-password' | '/api/public/kalender/$token'
+  id: '__root__' | '/' | '/reset-password' | '/api/public/kalender/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicKalenderTokenRoute: typeof ApiPublicKalenderTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/kalender/$token': {
+      id: '/api/public/kalender/$token'
+      path: '/api/public/kalender/$token'
+      fullPath: '/api/public/kalender/$token'
+      preLoaderRoute: typeof ApiPublicKalenderTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicKalenderTokenRoute: ApiPublicKalenderTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

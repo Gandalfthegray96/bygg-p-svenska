@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Lokala nycklar som speglas till kontot i molnet.
-export const SYNC_KEYS = ["uc-avtal-store", "uc-avtal-draft", "uc-kalender", "uc-kalender-ics-url"] as const;
+export const SYNC_KEYS = ["uc-avtal-store", "uc-avtal-draft", "uc-kalender", "uc-kalender-ics-url", "uc-kalender-feed"] as const;
 const OWNER_KEY = "uc-sync-owner";
 
 let userId: string | null = null;
