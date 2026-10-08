@@ -11,7 +11,7 @@ const C = 2 * Math.PI * 52;
 function Ring({ pct, color, children }: { pct: number; color: string; children: ReactNode }) {
   const p = Math.max(0, Math.min(100, pct));
   return (
-    <div className="relative mx-auto h-28 w-28">
+    <div className="relative mx-auto h-40 w-40">
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
         <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" strokeWidth="10" />
         <circle
@@ -38,11 +38,11 @@ function StatRing({ label, icon, pct, color, value, sub, pulse }: {
   pulse?: boolean;
 }) {
   return (
-    <div className="ds-panel flex flex-col items-center text-center">
-      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">{icon}{label}</div>
+    <div className="flex flex-col items-center gap-3 py-2 text-center">
+      <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">{icon}{label}</div>
       <Ring pct={pct} color={color}>
-        <span className={`font-display text-3xl font-bold tabular-nums text-foreground ${pulse ? "" : ""}`}>{value}</span>
-        <span className="text-[11px] text-muted-foreground">{sub}</span>
+        <span className={`font-display text-4xl font-bold tabular-nums text-foreground ${pulse ? "" : ""}`}>{value}</span>
+        <span className="mt-1 text-xs text-muted-foreground">{sub}</span>
       </Ring>
     </div>
   );
@@ -62,7 +62,7 @@ export function Hem({ store, onOpen, onNew }: { store: Record<string, CustomerFo
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-6 py-4 lg:grid-cols-4">
         <StatRing
           label="Väntar på svar"
           icon={<Clock size={16} className="text-info" />}
