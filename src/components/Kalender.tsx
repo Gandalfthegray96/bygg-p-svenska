@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, RefreshCw, Trash2, Plus, Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, Trash2, Plus, Bell, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { type KalEvent, eventToIcs, loadEvents, loadIcsUrl, parseIcs, saveEvents, saveIcsUrl } from "@/lib/kalender-store";
+import { type KalEvent, eventToIcs, getFeedUrl, loadEvents, loadIcsUrl, parseIcs, saveEvents, saveIcsUrl } from "@/lib/kalender-store";
 import { fetchIcs } from "@/lib/ics.functions";
 import { saveFile } from "@/lib/save-file";
 
@@ -17,8 +17,10 @@ export function Kalender({ defaultTitle, defaultPlace }: { defaultTitle: string;
   const [icsUrl, setIcsUrl] = useState("");
   const [syncMsg, setSyncMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [feedUrl, setFeedUrl] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => { setEvents(loadEvents()); setIcsUrl(loadIcsUrl()); }, []);
+  useEffect(() => { setEvents(loadEvents()); setIcsUrl(loadIcsUrl()); setFeedUrl(getFeedUrl()); }, []);
   const persist = (e: KalEvent[]) => { setEvents(e); saveEvents(e); };
 
   // Påminnelser: notis 30 min innan appens egna besök (när appen är öppen).
@@ -141,6 +143,20 @@ export function Kalender({ defaultTitle, defaultPlace }: { defaultTitle: string;
           <Button onClick={sync} disabled={busy} className="gap-1.5"><RefreshCw size={16} className={busy ? "animate-spin" : ""} />Synka</Button>
         </div>
         {syncMsg && <p className="mt-2 text-sm text-foreground">{syncMsg}</p>}
+      </section>
+
+      <section className="ds-panel">
+        <h3 className="font-display font-semibold text-foreground">Visa appens besök i Outlook</h3>
+        <p className="mb-3 mt-1 text-xs text-muted-foreground">
+          Kopiera länken. I Outlook: <b>Lägg till kalender → Prenumerera från webben</b> → klistra in → Importera.
+          Besök du bokar här dyker sedan upp i Outlook av sig själva (Outlook uppdaterar med några timmars mellanrum). Dela inte länken.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input readOnly className="ds-input flex-1" value={feedUrl} onFocus={(e) => e.target.select()} aria-label="Prenumerationslänk" />
+          <Button onClick={async () => { await navigator.clipboard.writeText(feedUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="gap-1.5">
+            {copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "Kopierad" : "Kopiera länk"}
+          </Button>
+        </div>
       </section>
     </div>
   );
