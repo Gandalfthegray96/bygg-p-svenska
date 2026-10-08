@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, RefreshCw, Trash2, Plus, Bell, Copy, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, RefreshCw, Trash2, Plus, Bell, Copy, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type KalEvent, eventToIcs, getFeedUrl, loadEvents, loadIcsUrl, parseIcs, saveEvents, saveIcsUrl } from "@/lib/kalender-store";
 import { fetchIcs } from "@/lib/ics.functions";
