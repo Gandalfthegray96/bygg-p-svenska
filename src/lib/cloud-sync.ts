@@ -12,9 +12,7 @@ export async function pullAll(uid: string) {
   userId = uid;
   const { data, error } = await supabase.from("user_data").select("key, value");
   if (error) throw error;
-  if (localStorage.getItem(OWNER_KEY) !== uid || data.length) {
-    for (const k of SYNC_KEYS) localStorage.removeItem(k);
-  }
+  for (const k of SYNC_KEYS) localStorage.removeItem(k);
   for (const row of data) {
     const v = row.value;
     localStorage.setItem(row.key, typeof v === "string" ? v : JSON.stringify(v));
