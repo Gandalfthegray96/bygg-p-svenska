@@ -108,7 +108,7 @@ export function AppGate({ children }: { children: ReactNode }) {
           {mode === "login" ? (
             <>
               <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setMode("forgot"); setError(""); setInfo(""); }}>Glömt lösenord?</button>
-              <button type="button" className="font-medium text-foreground hover:underline" onClick={() => { setMode("signup"); setError(""); setInfo(""); }}>Inget konto? Skapa ett</button>
+              <p className="mt-1 text-xs text-muted-foreground">Konton skapas av en administratör</p>
             </>
           ) : (
             <button type="button" className="font-medium text-foreground hover:underline" onClick={() => { setMode("login"); setError(""); }}>Tillbaka till inloggning</button>

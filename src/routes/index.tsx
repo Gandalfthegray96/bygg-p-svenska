@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
+import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -11,6 +11,9 @@ import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
 import { Hem } from "@/components/Hem";
 import { Kalender } from "@/components/Kalender";
+import { Anvandare } from "@/components/Anvandare";
+import { getMyRole } from "@/lib/users.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -69,7 +72,7 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "hem" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade";
+type Tab = "hem" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "hem", label: "Hem", icon: House },
   { id: "kund", label: "Kund", icon: User },
@@ -79,6 +82,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "avtal", label: "Förhandsgranskning", icon: FileCheck2 },
   { id: "sparade", label: "Sparade", icon: Archive },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
+  { id: "anvandare", label: "Användare", icon: Users },
 ];
 
 const inputCls = "ds-input";
@@ -173,6 +177,9 @@ function App() {
   const [a, setA] = useState<Avtal>(emptyAvtal);
   const [hydrated, setHydrated] = useState(false);
   const [tab, setTab] = useState<Tab>("hem");
+  const fetchRole = useServerFn(getMyRole);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => { fetchRole().then((r) => setIsAdmin(r.role === "admin")).catch(() => setIsAdmin(false)); }, []);
   const [store, setStore] = useState<Record<string, CustomerFolder>>({});
   const [currentVersion, setCurrentVersion] = useState<number | undefined>();
   const [toast, setToast] = useState("");
@@ -250,7 +257,7 @@ function App() {
         {/* Sidomeny */}
         <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-4 py-6 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[72px] sm:rounded-2xl">
           <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
-          {TABS.filter((t) => t.id !== "avtal").map((t) => {
+          {TABS.filter((t) => t.id !== "avtal" && (t.id !== "anvandare" || isAdmin)).map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
             return (
@@ -310,6 +317,7 @@ function App() {
               <Hem store={store} onNew={() => setConfirmNew(true)}
                 onOpen={(name, v) => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
             )}
+            {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} />}
             {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
 
             {tab === "kund" && (
