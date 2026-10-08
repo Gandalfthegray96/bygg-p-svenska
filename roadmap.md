@@ -12,6 +12,7 @@
 - [x] Bygg hela avtalsflödet (avtal FU_Avtal_-25_Q4 + försättsblad Fsb_Q2-22 mottagna) — kund → objekt → pris → förhandsgranskning → PDF
 - [x] Kalkyl-ändringar enligt mallen: rabatt bara på arbetskostnad, pris per tillfälle, utjämning +/- per tillfälle, 5-årstotal
 - [x] Export: avtal som PDF + kalkyl som Excel laddas ner till telefonens "Mina filer" — ingen SharePoint-koppling i appen (beslutat 2026-09-29)
+- [ ] Outlook-synk i appen (riktig koppling, App User Connector microsoft_outlook): connect_client-kort -> OAuth per anvandare -> kalenderny vy/hamtning — PÅGÅR
 - [ ] Moln-lagring (Lovable Cloud) + kundmappar med versioner v1/v2/v3
 - [ ] Publicering så appen kan installeras på Android-startskärmen
 
