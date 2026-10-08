@@ -133,32 +133,51 @@ export function Kalender({ defaultTitle, defaultPlace }: { defaultTitle: string;
         )}
       </section>
 
-      <section className="ds-panel">
-        <h3 className="font-display font-semibold text-foreground">Synka Outlook-kalendern</h3>
-        <p className="mb-3 mt-1 text-xs text-muted-foreground">
-          I Outlook: Inställningar → Kalender → Delade kalendrar → <b>Publicera en kalender</b> → kopiera ICS-länken och klistra in här.
-          Om ni inte kan publicera har IT spärrat det. Besök du bokar här läggs in i Outlook med nedladdningsknappen.
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input className="ds-input flex-1" placeholder="https://outlook.office365.com/owa/calendar/…/calendar.ics" value={icsUrl} onChange={(e) => setIcsUrl(e.target.value)} />
-          <Button onClick={sync} disabled={busy} className="gap-1.5"><RefreshCw size={16} className={busy ? "animate-spin" : ""} />Synka</Button>
-        </div>
-        {syncMsg && <p className="mt-2 text-sm text-foreground">{syncMsg}</p>}
-      </section>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Button variant="outline" className="justify-start gap-2" onClick={() => setOpenPanel("sync")}><RefreshCw size={16} />Synka Outlook-kalendern</Button>
+        <Button variant="outline" className="justify-start gap-2" onClick={() => setOpenPanel("feed")}><Download size={16} />Visa appens besök i Outlook</Button>
+      </div>
 
-      <section className="ds-panel">
-        <h3 className="font-display font-semibold text-foreground">Visa appens besök i Outlook</h3>
-        <p className="mb-3 mt-1 text-xs text-muted-foreground">
-          Kopiera länken. I Outlook: <b>Lägg till kalender → Prenumerera från webben</b> → klistra in → Importera.
-          Besök du bokar här dyker sedan upp i Outlook av sig själva (Outlook uppdaterar med några timmars mellanrum). Dela inte länken.
-        </p>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input readOnly className="ds-input flex-1" value={feedUrl} onFocus={(e) => e.target.select()} aria-label="Prenumerationslänk" />
-          <Button onClick={async () => { await navigator.clipboard.writeText(feedUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="gap-1.5">
-            {copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "Kopierad" : "Kopiera länk"}
-          </Button>
+      {openPanel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm" onClick={() => setOpenPanel(null)}>
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-lg" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            {openPanel === "sync" ? (
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-display font-semibold text-foreground">Synka Outlook-kalendern</h3>
+                  <Button variant="ghost" size="icon" aria-label="Stäng" onClick={() => setOpenPanel(null)}><X /></Button>
+                </div>
+                <p className="mb-3 mt-1 text-xs text-muted-foreground">
+                  I Outlook: Inställningar → Kalender → Delade kalendrar → <b>Publicera en kalender</b> → kopiera ICS-länken och klistra in här.
+                  Om ni inte kan publicera har IT spärrat det. Besök du bokar här läggs in i Outlook med nedladdningsknappen.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input className="ds-input flex-1" placeholder="https://outlook.office365.com/owa/calendar/…/calendar.ics" value={icsUrl} onChange={(e) => setIcsUrl(e.target.value)} />
+                  <Button onClick={sync} disabled={busy} className="gap-1.5"><RefreshCw size={16} className={busy ? "animate-spin" : ""} />Synka</Button>
+                </div>
+                {syncMsg && <p className="mt-2 text-sm text-foreground">{syncMsg}</p>}
+              </>
+            ) : (
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="font-display font-semibold text-foreground">Visa appens besök i Outlook</h3>
+                  <Button variant="ghost" size="icon" aria-label="Stäng" onClick={() => setOpenPanel(null)}><X /></Button>
+                </div>
+                <p className="mb-3 mt-1 text-xs text-muted-foreground">
+                  Kopiera länken. I Outlook: <b>Lägg till kalender → Prenumerera från webben</b> → klistra in → Importera.
+                  Besök du bokar här dyker sedan upp i Outlook av sig själva (Outlook uppdaterar med några timmars mellanrum). Dela inte länken.
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input readOnly className="ds-input flex-1" value={feedUrl} onFocus={(e) => e.target.select()} aria-label="Prenumerationslänk" />
+                  <Button onClick={async () => { await navigator.clipboard.writeText(feedUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="gap-1.5">
+                    {copied ? <Check size={16} /> : <Copy size={16} />}{copied ? "Kopierad" : "Kopiera länk"}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </section>
+      )}
     </div>
   );
 }
