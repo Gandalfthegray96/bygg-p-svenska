@@ -21,9 +21,8 @@ export async function pullAll(uid: string) {
 }
 
 export function stopSync() {
+  // Väntande ändringar skickas klart med det konto de hörde till.
   userId = null;
-  timers.forEach(clearTimeout);
-  timers.clear();
 }
 
 /** Skickar en lokal ändring till molnet (fördröjt så snabbt skrivande inte spammar). */
