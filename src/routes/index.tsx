@@ -3,12 +3,14 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Archive, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
+import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
+import { Hem } from "@/components/Hem";
+import { Kalender } from "@/components/Kalender";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -67,14 +69,16 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade";
+type Tab = "hem" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade";
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
+  { id: "hem", label: "Hem", icon: House },
   { id: "kund", label: "Kund", icon: User },
   { id: "forsatt", label: "Försättsblad", icon: FileText },
   { id: "objekt", label: "Objekt", icon: Building2 },
   { id: "pris", label: "Pris", icon: Coins },
   { id: "avtal", label: "Förhandsgranskning", icon: FileCheck2 },
   { id: "sparade", label: "Sparade", icon: Archive },
+  { id: "kalender", label: "Kalender", icon: CalendarDays },
 ];
 
 const inputCls = "ds-input";
@@ -168,7 +172,7 @@ function ConfirmDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel:
 function App() {
   const [a, setA] = useState<Avtal>(emptyAvtal);
   const [hydrated, setHydrated] = useState(false);
-  const [tab, setTab] = useState<Tab>("kund");
+  const [tab, setTab] = useState<Tab>("hem");
   const [store, setStore] = useState<Record<string, CustomerFolder>>({});
   const [currentVersion, setCurrentVersion] = useState<number | undefined>();
   const [toast, setToast] = useState("");
@@ -207,7 +211,17 @@ function App() {
     }
   };
 
+  // Mejlat avtal får automatiskt status "Skickat" (sparas som version om det inte finns någon).
+  const markSent = () => {
+    const name = c.bestallare.trim() || "Namnlös kund";
+    let v = currentVersion;
+    if (!v) { v = saveVersion(a); setCurrentVersion(v); }
+    setVersionStatus(name, v, "skickat");
+    setStore(loadStore());
+  };
+
   const openMail = async () => {
+    markSent();
     const subject = `Avtalsförslag ${c.avtalNr}`.trim();
     const body = (c.mejlText ?? "").trim() || defaultMailText(c.erRef);
     // Telefon/surfplatta: dela-menyn med PDF:en bifogad. Dator: vanligt mailto.
@@ -292,6 +306,12 @@ function App() {
           </header>
 
           <main className="w-full flex-1 space-y-4 px-4 py-5 pb-28 sm:pb-8">
+            {tab === "hem" && (
+              <Hem store={store} onNew={() => setConfirmNew(true)}
+                onOpen={(name, v) => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
+            )}
+            {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
+
             {tab === "kund" && (
               <>
                 <Card title="Avtal">
