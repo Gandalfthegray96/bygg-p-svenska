@@ -15,3 +15,4 @@
 
 - All app UI uses semantic tokens and shared Button variants with the ds-* visual vocabulary in src/styles.css; keep original document/Excel styles isolated to prevent brand changes altering customer originals.
 - Sidebar glass styling uses the shared glassNavigation Button variant and semantic glass tokens; the header summary reads calculate() results to keep navigation and totals consistent without changing calculation rules.
+- Account sync: local stores (avtal-store, kalender-store) stay the synchronous source in the UI and mirror each key to the `user_data` table via src/lib/cloud-sync.ts; AppGate pulls the signed-in account's data before rendering — keeps the existing offline-first code untouched while syncing between devices.
