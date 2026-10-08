@@ -1,10 +1,52 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { CheckCircle2, Clock, FilePen, Plus, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
 import type { CustomerFolder, Status, Version } from "@/lib/avtal-store";
 
 type Latest = { name: string; v: Version; status: Status; perYear: number };
+
+const C = 2 * Math.PI * 52;
+
+function Ring({ pct, color, children }: { pct: number; color: string; children: ReactNode }) {
+  const p = Math.max(0, Math.min(100, pct));
+  return (
+    <div className="relative mx-auto h-28 w-28">
+      <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" strokeWidth="10" />
+        <circle
+          cx="60" cy="60" r="52" fill="none"
+          stroke={color}
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={`${(p / 100) * C} ${C}`}
+          style={{ transition: "stroke-dasharray 400ms ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
+    </div>
+  );
+}
+
+function StatRing({ label, icon, pct, color, value, sub, pulse }: {
+  label: string;
+  icon: ReactNode;
+  pct: number;
+  color: string;
+  value: string;
+  sub: string;
+  pulse?: boolean;
+}) {
+  return (
+    <div className="ds-panel flex flex-col items-center text-center">
+      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">{icon}{label}</div>
+      <Ring pct={pct} color={color}>
+        <span className={`font-display text-3xl font-bold tabular-nums text-foreground ${pulse ? "" : ""}`}>{value}</span>
+        <span className="text-[11px] text-muted-foreground">{sub}</span>
+      </Ring>
+    </div>
+  );
+}
 
 export function Hem({ store, onOpen, onNew }: { store: Record<string, CustomerFolder>; onOpen: (name: string, v: Version) => void; onNew: () => void }) {
   const latest = useMemo<Latest[]>(() =>
@@ -16,28 +58,43 @@ export function Hem({ store, onOpen, onNew }: { store: Record<string, CustomerFo
   const stat = (s: Status) => { const l = latest.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
   const sent = stat("skickat"), signed = stat("signerat"), draft = stat("utkast");
   const rate = sent.n + signed.n ? Math.round((signed.n / (sent.n + signed.n)) * 100) : 0;
-
-  const cards = [
-    { label: "Väntar på svar", icon: Clock, ...sent, cls: "text-info" },
-    { label: "Påskrivna", icon: CheckCircle2, ...signed, cls: "text-success" },
-    { label: "Utkast", icon: FilePen, ...draft, cls: "text-muted-foreground" },
-  ];
+  const signedShare = sent.n + signed.n ? Math.round((signed.n / (sent.n + signed.n)) * 100) : 0;
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((c) => (
-          <div key={c.label} className="ds-panel">
-            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><c.icon size={16} className={c.cls} />{c.label}</div>
-            <p className="mt-2 font-display text-3xl font-bold tabular-nums text-foreground">{c.n}</p>
-            <p className="text-xs text-muted-foreground">{fmtKr(c.sum)} / år</p>
-          </div>
-        ))}
-        <div className="ds-panel">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><Send size={16} className="text-primary" />Andel påskrivna</div>
-          <p className="mt-2 font-display text-3xl font-bold tabular-nums text-foreground">{rate} %</p>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-success" style={{ width: `${rate}%` }} /></div>
-        </div>
+        <StatRing
+          label="Väntar på svar"
+          icon={<Clock size={16} className="text-info" />}
+          pct={100}
+          color="var(--info)"
+          value={String(sent.n)}
+          sub={fmtKr(sent.sum) + " / år"}
+        />
+        <StatRing
+          label="Påskrivna"
+          icon={<CheckCircle2 size={16} className="text-success" />}
+          pct={signedShare}
+          color="var(--success)"
+          value={String(signed.n)}
+          sub={fmtKr(signed.sum) + " / år"}
+        />
+        <StatRing
+          label="Utkast"
+          icon={<FilePen size={16} className="text-primary" />}
+          pct={100}
+          color="var(--primary)"
+          value={String(draft.n)}
+          sub={fmtKr(draft.sum) + " / år"}
+        />
+        <StatRing
+          label="Andel påskrivna"
+          icon={<Send size={16} className="text-success" />}
+          pct={rate}
+          color="var(--success)"
+          value={rate + " %"}
+          sub="av skickade"
+        />
       </div>
 
       <section className="ds-panel">
