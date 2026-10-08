@@ -23,7 +23,7 @@ export function AppGate({ children }: { children: ReactNode }) {
   const isReset = typeof window !== "undefined" && window.location.pathname === "/reset-password";
 
   useEffect(() => {
-    let current: string | null = null;
+    let current: string | null | undefined = undefined;
     const open = async (uid: string | null) => {
       if (uid === current) return;
       current = uid;
