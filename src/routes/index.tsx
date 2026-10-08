@@ -73,7 +73,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "forsatt", label: "Försättsblad", icon: FileText },
   { id: "objekt", label: "Objekt", icon: Building2 },
   { id: "pris", label: "Pris", icon: Coins },
-  { id: "avtal", label: "Avtal", icon: FileCheck2 },
+  { id: "avtal", label: "Förhandsgranskning", icon: FileCheck2 },
   { id: "sparade", label: "Sparade", icon: Archive },
 ];
 
@@ -236,7 +236,7 @@ function App() {
         {/* Sidomeny */}
         <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-4 py-6 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[72px] sm:rounded-2xl">
           <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
-          {TABS.map((t) => {
+          {TABS.filter((t) => t.id !== "avtal").map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;
             return (
