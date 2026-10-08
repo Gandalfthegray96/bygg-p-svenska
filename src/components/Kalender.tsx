@@ -46,7 +46,7 @@ export function Kalender({ defaultTitle, defaultPlace }: { defaultTitle: string;
 
   const add = () => {
     const [h, mi] = form.time.split(":").map(Number);
-    const [y, mo, d] = sel.split("-").map(Number);
+    const [y = 0, mo = 1, d = 1] = sel.split("-").map(Number);
     const start = new Date(y, mo - 1, d, h || 0, mi || 0).toISOString();
     persist([...events, { id: crypto.randomUUID(), title: form.title || defaultTitle || "Kundbesök", start, place: form.place || defaultPlace, note: form.note, source: "app" }]);
     setForm({ title: "", time: "08:00", place: "", note: "" });

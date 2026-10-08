@@ -1,4 +1,4 @@
-export type KalEvent = { id: string; title: string; start: string; end?: string; place?: string; note?: string; source: "app" | "outlook" };
+export type KalEvent = { id: string; title: string; start: string; end?: string | undefined; place?: string | undefined; note?: string | undefined; source: "app" | "outlook" };
 
 const KEY = "uc-kalender";
 const URL_KEY = "uc-kalender-ics-url";
