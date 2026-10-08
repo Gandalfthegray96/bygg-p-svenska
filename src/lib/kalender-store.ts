@@ -1,3 +1,4 @@
+import { pushKey } from "./cloud-sync";
 export type KalEvent = { id: string; title: string; start: string; end?: string | undefined; place?: string | undefined; note?: string | undefined; source: "app" | "outlook" };
 
 const KEY = "uc-kalender";
@@ -6,9 +7,9 @@ const URL_KEY = "uc-kalender-ics-url";
 export function loadEvents(): KalEvent[] {
   try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { return []; }
 }
-export function saveEvents(e: KalEvent[]) { localStorage.setItem(KEY, JSON.stringify(e)); }
+export function saveEvents(e: KalEvent[]) { const raw = JSON.stringify(e); localStorage.setItem(KEY, raw); pushKey(KEY, raw); }
 export function loadIcsUrl() { return localStorage.getItem(URL_KEY) || ""; }
-export function saveIcsUrl(u: string) { localStorage.setItem(URL_KEY, u); }
+export function saveIcsUrl(u: string) { localStorage.setItem(URL_KEY, u); pushKey(URL_KEY, u); }
 
 function unfold(s: string) { return s.replace(/\r?\n[ \t]/g, ""); }
 function parseDate(v: string): string {
