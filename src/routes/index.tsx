@@ -366,26 +366,26 @@ function App() {
               <section className="ds-panel">
                 <h2 className="font-display text-[15px] font-semibold text-foreground">Objekt</h2>
                 <p className="mb-4 text-xs text-muted-foreground">Lägg till portar och utrustning som ingår i avtalet.</p>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 lg:grid-cols-4">
                   {a.rows.map((row, i) => {
                     const isOpen = (openId ?? a.rows[a.rows.length - 1]?.id) === row.id;
                     const rowPrice = Math.round((k.unitPrices[i] ?? 0) * row.qty * 100) / 100;
                     if (!isOpen) return (
-                      <div key={row.id} className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-glass)]">
+                      <div key={row.id} className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-glass)] transition hover:border-ring/40 hover:shadow-[var(--shadow-panel)]">
                         <button type="button" onClick={() => setOpenId(row.id)} aria-expanded={false} aria-label={`Redigera ${row.name || "objekt"}`}
-                          className="flex w-full items-center gap-3 text-left">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold text-muted-foreground">{i + 1}</span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-semibold text-foreground">{row.name || "Namnlöst objekt"}{row.qty > 1 && <span className="font-normal text-muted-foreground"> × {row.qty}</span>}</span>
-                            <span className="mt-0.5 block text-xs tabular-nums text-muted-foreground">{row.minutes} min/besök · {row.visits} besök/år</span>
+                          className="flex w-full flex-col items-start gap-1.5 text-left">
+                          <span className="flex w-full items-center justify-between">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted text-xs font-semibold text-muted-foreground">{i + 1}</span>
+                            <ChevronDown size={16} className="text-muted-foreground" />
                           </span>
-                          <span className="shrink-0 rounded-md bg-accent px-2.5 py-1.5 text-sm font-semibold tabular-nums text-accent-foreground">{fmtKr(rowPrice)}</span>
-                          <ChevronDown size={16} className="shrink-0 text-muted-foreground" />
+                          <span className="block w-full truncate text-sm font-semibold text-foreground">{row.name || "Namnlöst objekt"}{row.qty > 1 && <span className="font-normal text-muted-foreground"> × {row.qty}</span>}</span>
+                          <span className="block text-xs tabular-nums text-muted-foreground">{row.minutes} min/besök · {row.visits} besök/år</span>
+                          <span className="rounded-md bg-accent px-2.5 py-1 text-sm font-semibold tabular-nums text-accent-foreground">{fmtKr(rowPrice)}</span>
                         </button>
                       </div>
                     );
                     return (
-                    <div key={row.id} className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-glass)]">
+                    <div key={row.id} className="objekt-open col-span-full rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-glass)]">
                       <div className="flex items-center gap-2">
                         <button type="button" onClick={() => setOpenId("")} aria-expanded aria-label="Fäll ihop objekt"
                           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground hover:bg-accent"><ChevronUp size={14} /></button>
@@ -402,6 +402,7 @@ function App() {
                             className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:bg-muted hover:text-destructive"><Trash2 size={16} /></Button>
                         )}
                       </div>
+                      <div className="objekt-body">
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         <NumField label="Antal" value={row.qty} onChange={(n) => updateRow(row.id, { qty: n })} />
                         <NumField label="Servicetid/st (min)" value={row.minutes} onChange={(n) => updateRow(row.id, { minutes: n })} />
@@ -417,6 +418,7 @@ function App() {
                         <textarea value={row.note} rows={2} onChange={(e) => updateRow(row.id, { note: e.target.value })} placeholder="T.ex. sitter mot godsmottagningen" className={inputCls} />
                       </label>
                       <p className="mt-2 text-xs text-muted-foreground sm:hidden">Styckespris: {fmtKr(Math.round((k.unitPrices[i] ?? 0) * 100) / 100)} per år</p>
+                      </div>
                     </div>
                   ); })}
                 </div>
