@@ -19,6 +19,7 @@ export function Kalender({ defaultTitle, defaultPlace }: { defaultTitle: string;
   const [busy, setBusy] = useState(false);
   const [feedUrl, setFeedUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [openPanel, setOpenPanel] = useState<"sync" | "feed" | null>(null);
 
   useEffect(() => { setEvents(loadEvents()); setIcsUrl(loadIcsUrl()); setFeedUrl(getFeedUrl()); }, []);
   const persist = (e: KalEvent[]) => { setEvents(e); saveEvents(e); };
