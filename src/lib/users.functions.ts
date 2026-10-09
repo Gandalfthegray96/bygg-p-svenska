@@ -30,7 +30,7 @@ export const listUsers = createServerFn({ method: "GET" })
     return data.users.map((u) => ({
       id: u.id,
       email: u.email ?? "",
-      name: (u.user_metadata?.name as string) ?? "",
+      name: (u.user_metadata?.['name'] as string) ?? "",
       createdAt: u.created_at,
       lastSignIn: u.last_sign_in_at ?? null,
       role: ((roles ?? []).find((r) => r.user_id === u.id && r.role === "admin")?.role ??
