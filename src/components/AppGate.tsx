@@ -12,7 +12,7 @@ export async function lockApp() {
 type Mode = "login" | "signup" | "forgot";
 
 export function AppGate({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<"checking" | "locked" | "open">("checking");
+  const [state, setState] = useState<"checking" | "locked" | "open" | "pending">("checking");
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -29,6 +29,8 @@ export function AppGate({ children }: { children: ReactNode }) {
       current = uid;
       if (!uid) { stopSync(); setState("locked"); return; }
       setState("checking");
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+      if (!roles?.length) { setState("pending"); return; }
       try { await pullAll(uid); } catch (e) { console.error(e); }
       setState("open");
     };
@@ -47,7 +49,7 @@ export function AppGate({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
         if (error) throw error;
       } else if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: window.location.origin } });
+        const { data, error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: window.location.origin, data: { name: email.split("@")[0] } } });
         if (error) throw error;
         if (!data.session) { setInfo("Kontot är skapat. Öppna mejlet vi skickade och bekräfta adressen, logga sedan in."); setMode("login"); }
       } else {
@@ -64,6 +66,16 @@ export function AppGate({ children }: { children: ReactNode }) {
   };
 
   if (isReset || state === "open") return <>{children}</>;
+  if (state === "pending") return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="ds-dialog w-full max-w-sm rounded-3xl border border-border bg-card p-8 text-center">
+        <img src="/icon-512.png" alt="UK Portservice Avtal" className="mx-auto mb-4 h-20 w-20 rounded-2xl shadow-md" />
+        <h1 className="text-xl font-bold text-foreground">Väntar på godkännande</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Ditt konto är skapat. En administratör behöver ge dig behörighet innan du kan använda appen.</p>
+        <Button variant="outline" className="mt-5 w-full" onClick={() => lockApp()}>Logga ut</Button>
+      </div>
+    </div>
+  );
   if (state === "checking") return <div className="min-h-screen bg-background" />;
 
   const title = mode === "login" ? "Logga in på ditt konto" : mode === "signup" ? "Skapa ett konto" : "Glömt lösenord";
@@ -108,7 +120,7 @@ export function AppGate({ children }: { children: ReactNode }) {
           {mode === "login" ? (
             <>
               <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => { setMode("forgot"); setError(""); setInfo(""); }}>Glömt lösenord?</button>
-              <p className="mt-1 text-xs text-muted-foreground">Konton skapas av en administratör</p>
+              <button type="button" className="font-medium text-foreground hover:underline" onClick={() => { setMode("signup"); setError(""); setInfo(""); }}>Skapa konto</button>
             </>
           ) : (
             <button type="button" className="font-medium text-foreground hover:underline" onClick={() => { setMode("login"); setError(""); }}>Tillbaka till inloggning</button>
