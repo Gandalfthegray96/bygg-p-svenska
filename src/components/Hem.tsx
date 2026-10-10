@@ -1,118 +1,110 @@
-import { useMemo, type ReactNode } from "react";
-import { CheckCircle2, Clock, FilePen, Plus, Send } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
-import type { CustomerFolder, Status, Version } from "@/lib/avtal-store";
+import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
-type Latest = { name: string; v: Version; status: Status; perYear: number };
+type Row = { name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; adress: string };
+type Filter = "alla" | Status;
+type Sort = "datum" | "varde" | "kund";
 
-const C = 2 * Math.PI * 52;
+const STATUS_LABEL: Record<Status, string> = { utkast: "Utkast", skickat: "Väntar på svar", signerat: "Signerat" };
+const STATUS_CLS: Record<Status, string> = {
+  signerat: "bg-success/15 text-success",
+  skickat: "bg-info/15 text-info",
+  utkast: "bg-muted text-muted-foreground",
+};
 
-function Ring({ pct, color, children }: { pct: number; color: string; children: ReactNode }) {
-  const p = Math.max(0, Math.min(100, pct));
+function Stat({ label, value, sub, icon, active, onClick }: { label: string; value: string; sub: string; icon: ReactNode; active: boolean; onClick: () => void }) {
   return (
-    <div className="relative mx-auto h-40 w-40">
-      <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" strokeWidth="10" />
-        <circle
-          cx="60" cy="60" r="52" fill="none"
-          stroke={color}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={`${(p / 100) * C} ${C}`}
-          style={{ transition: "stroke-dasharray 400ms ease" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
-    </div>
+    <button onClick={onClick} aria-pressed={active}
+      className={`flex min-w-0 flex-col gap-1 rounded-xl border p-3 text-left transition-colors sm:p-4 ${active ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-muted"}`}>
+      <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">{icon}<span className="truncate">{label}</span></span>
+      <span className="truncate font-display text-2xl font-bold tabular-nums text-foreground sm:text-3xl">{value}</span>
+      <span className="truncate text-xs text-muted-foreground">{sub}</span>
+    </button>
   );
 }
 
-function StatRing({ label, icon, pct, color, value, sub, pulse }: {
-  label: string;
-  icon: ReactNode;
-  pct: number;
-  color: string;
-  value: string;
-  sub: string;
-  pulse?: boolean;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 py-2 text-center">
-      <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">{icon}{label}</div>
-      <Ring pct={pct} color={color}>
-        <span className={`font-display text-4xl font-bold tabular-nums text-foreground ${pulse ? "" : ""}`}>{value}</span>
-        <span className="mt-1 text-xs text-muted-foreground">{sub}</span>
-      </Ring>
-    </div>
-  );
-}
+export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (name: string, v: Version) => void; onNew: () => void; onChanged?: () => void }) {
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<Filter>("alla");
+  const [sort, setSort] = useState<Sort>("datum");
 
-export function Hem({ store, onOpen, onNew }: { store: Record<string, CustomerFolder>; onOpen: (name: string, v: Version) => void; onNew: () => void }) {
-  const latest = useMemo<Latest[]>(() =>
+  const rows = useMemo<Row[]>(() =>
     Object.values(store).filter((f) => f.versions.length).map((f) => {
       const v = f.versions.at(-1)!;
-      return { name: f.name, v, status: v.status ?? "utkast", perYear: calculate(normalizeAvtal(v.data)).perYear };
-    }).sort((a, b) => b.v.savedAt.localeCompare(a.v.savedAt)), [store]);
+      const a = normalizeAvtal(v.data);
+      return { name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
+    }), [store]);
 
-  const stat = (s: Status) => { const l = latest.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
+  const stat = (s: Status) => { const l = rows.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
   const sent = stat("skickat"), signed = stat("signerat"), draft = stat("utkast");
-  const rate = sent.n + signed.n ? Math.round((signed.n / (sent.n + signed.n)) * 100) : 0;
-  const signedShare = sent.n + signed.n ? Math.round((signed.n / (sent.n + signed.n)) * 100) : 0;
+
+  const shown = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    const l = rows.filter((r) => (filter === "alla" || r.status === filter) &&
+      (!s || [r.name, r.avtalNr, r.ansvarig, r.adress].some((x) => x.toLowerCase().includes(s))));
+    return l.sort((a, b) => sort === "varde" ? b.perYear - a.perYear : sort === "kund" ? a.name.localeCompare(b.name, "sv") : b.v.savedAt.localeCompare(a.v.savedAt));
+  }, [rows, q, filter, sort]);
+
+  const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "alla" : f));
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-6 py-4 lg:grid-cols-4">
-        <StatRing
-          label="Väntar på svar"
-          icon={<Clock size={16} className="text-info" />}
-          pct={100}
-          color="var(--info)"
-          value={String(sent.n)}
-          sub={fmtKr(sent.sum) + " / år"}
-        />
-        <StatRing
-          label="Påskrivna"
-          icon={<CheckCircle2 size={16} className="text-success" />}
-          pct={signedShare}
-          color="var(--success)"
-          value={String(signed.n)}
-          sub={fmtKr(signed.sum) + " / år"}
-        />
-        <StatRing
-          label="Utkast"
-          icon={<FilePen size={16} className="text-primary" />}
-          pct={100}
-          color="var(--primary)"
-          value={String(draft.n)}
-          sub={fmtKr(draft.sum) + " / år"}
-        />
-        <StatRing
-          label="Andel påskrivna"
-          icon={<Send size={16} className="text-success" />}
-          pct={rate}
-          color="var(--success)"
-          value={rate + " %"}
-          sub="av skickade"
-        />
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+        <Stat label="Aktiva avtal" icon={<CheckCircle2 size={14} className="text-success" />} value={String(signed.n)} sub={fmtKr(signed.sum) + " / år"} active={filter === "signerat"} onClick={() => toggle("signerat")} />
+        <Stat label="Väntar på svar" icon={<Clock size={14} className="text-info" />} value={String(sent.n)} sub={fmtKr(sent.sum) + " / år"} active={filter === "skickat"} onClick={() => toggle("skickat")} />
+        <Stat label="Utkast" icon={<FilePen size={14} />} value={String(draft.n)} sub={fmtKr(draft.sum) + " / år"} active={filter === "utkast"} onClick={() => toggle("utkast")} />
+        <Stat label="Årligt avtalsvärde" icon={<Coins size={14} className="text-success" />} value={fmtKr(signed.sum)} sub={`${rows.length} avtal totalt`} active={filter === "alla"} onClick={() => setFilter("alla")} />
       </div>
 
-      <section className="ds-panel">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-[15px] font-semibold text-foreground">Senaste avtal</h2>
+      <section className="ds-panel space-y-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <h2 className="truncate font-display text-[15px] font-semibold text-foreground">Avtalsöversikt</h2>
           <Button onClick={onNew} className="gap-1.5"><Plus size={16} />Nytt avtal</Button>
         </div>
-        {latest.length === 0 && <p className="text-sm text-muted-foreground">Inga sparade avtal ännu.</p>}
-        <ul className="space-y-1">
-          {latest.slice(0, 8).map((x) => (
-            <li key={x.name}>
-              <button onClick={() => onOpen(x.name, x.v)} className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left text-sm hover:bg-muted">
-                <span className="min-w-0 flex-1 truncate font-medium text-foreground">{x.name} <span className="text-muted-foreground">v{x.v.version}</span></span>
-                <span className="tabular-nums text-muted-foreground">{fmtKr(x.perYear)}/år</span>
-                <span className={`ds-badge ${x.status === "signerat" ? "bg-success/15 text-success" : x.status === "skickat" ? "bg-info/15 text-info" : "bg-muted text-muted-foreground"}`}>
-                  {x.status === "signerat" ? "Signerat" : x.status === "skickat" ? "Skickat" : "Utkast"}
-                </span>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+          <label className="relative block min-w-0">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Sök kund, avtalsnr, ansvarig, adress" className="ds-input pl-9" aria-label="Sök avtal" />
+          </label>
+          <div className="grid grid-cols-2 gap-2 sm:contents">
+            <select value={filter} onChange={(e) => setFilter(e.target.value as Filter)} className="ds-input sm:w-40" aria-label="Filtrera status">
+              <option value="alla">Alla statusar</option>
+              {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+            </select>
+            <label className="relative block">
+              <ArrowUpDown size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="ds-input pl-8 sm:w-40" aria-label="Sortera">
+                <option value="datum">Senast ändrad</option>
+                <option value="varde">Högst värde</option>
+                <option value="kund">Kund A–Ö</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">Inga sparade avtal ännu.</p>}
+        {rows.length > 0 && shown.length === 0 && <p className="text-sm text-muted-foreground">Inga avtal matchar sökningen.</p>}
+
+        <ul className="divide-y divide-border rounded-lg border border-border">
+          {shown.map((x) => (
+            <li key={x.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto]">
+              <button onClick={() => onOpen(x.name, x.v)} className="min-w-0 text-left">
+                <p className="truncate font-medium text-foreground">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
+                </p>
               </button>
+              <span className="order-3 col-span-2 truncate text-xs text-muted-foreground sm:order-none sm:col-span-1">{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
+              <span className="text-right text-sm font-semibold tabular-nums text-foreground">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
+              <select value={x.status} aria-label="Status"
+                onChange={(e) => { setVersionStatus(x.name, x.v.version, e.target.value as Status); onChanged?.(); }}
+                className={`ds-badge order-4 outline-none sm:order-none ${STATUS_CLS[x.status]}`}>
+                {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+              </select>
+              <Button variant="outline" size="sm" className="order-5 justify-self-end sm:order-none" onClick={() => onOpen(x.name, x.v)}>Öppna</Button>
             </li>
           ))}
         </ul>

@@ -254,7 +254,7 @@ function App() {
     <div className="min-h-screen">
       <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
         {/* Sidomeny */}
-        <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 flex h-screen w-14 shrink-0 flex-col items-center gap-4 py-6 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[72px] sm:rounded-2xl">
+        <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 hidden h-screen w-14 sm:flex shrink-0 flex-col items-center gap-4 py-6 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[72px] sm:rounded-2xl">
           <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
           {TABS.filter((t) => t.id !== "avtal" && (t.id !== "anvandare" || isAdmin)).map((t) => {
             const Icon = t.icon;
@@ -285,19 +285,19 @@ function App() {
         {/* Innehåll */}
         <div className="flex min-w-0 flex-1 flex-col bg-card sm:rounded-2xl sm:border sm:border-border sm:shadow-[var(--shadow-panel)]">
           <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur sm:rounded-t-2xl">
-            <div className="w-full px-4 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+            <div className="w-full px-3 py-2.5 sm:px-4 sm:py-4">
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 sm:gap-y-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</p>
-                  <h1 className="mt-1 break-words font-display text-xl font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
+                  <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
                 </div>
-                <dl aria-label="Avtalssammanfattning" className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-3 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+                <dl aria-label="Avtalssammanfattning" className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
                   <div><dt className="text-xs font-semibold text-muted-foreground">Objekt</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalQty)} st</dd></div>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Servicetid</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalMinutes / 60)} h</dd></div>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Pris/år</dt><dd className="mt-1 break-words font-display text-base font-semibold text-info sm:text-lg">{fmtKr(k.perYear)}</dd></div>
                 </dl>
               </div>
-              <div className="mt-4 flex items-center justify-end gap-3">
+              <div className="mt-2 flex items-center justify-end gap-3 sm:mt-4">
                 <div className="flex shrink-0 items-center gap-2">
                   <Button variant="ghost" onClick={() => setTab("avtal")} className="hidden h-9 gap-1.5 px-3 text-sm text-muted-foreground hover:text-foreground md:inline-flex"><Eye size={16} />Förhandsgranska</Button>
                   <Button variant="ghost" onClick={onSave} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><Save size={16} />Spara</Button>
@@ -309,11 +309,25 @@ function App() {
                 </div>
               </div>
             </div>
+            <nav aria-label="Meny" className="flex gap-1 overflow-x-auto border-t border-border px-2 py-1.5 sm:hidden">
+              {TABS.filter((t) => t.id !== "avtal" && (t.id !== "anvandare" || isAdmin)).map((t) => {
+                const Icon = t.icon;
+                const active = tab === t.id;
+                return (
+                  <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
+                    className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                    <Icon size={15} />{t.label}
+                  </button>
+                );
+              })}
+              <button onClick={() => setTab("avtal")} className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"><Eye size={15} />Förhandsgranska</button>
+              <button onClick={() => lockApp()} aria-label="Lås appen" className="flex shrink-0 items-center rounded-lg px-2.5 py-1.5 text-muted-foreground hover:bg-muted"><Lock size={15} /></button>
+            </nav>
           </header>
 
-          <main className="w-full flex-1 space-y-4 px-4 py-5 pb-28 sm:pb-8">
+          <main className="w-full flex-1 space-y-4 px-3 py-4 pb-24 sm:px-4 sm:py-5 sm:pb-8">
             {tab === "hem" && (
-              <Hem store={store} onNew={() => setConfirmNew(true)}
+              <Hem store={store} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
                 onOpen={(name, v) => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
             )}
             {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} />}
@@ -569,18 +583,18 @@ function App() {
           </main>
 
           {/* Fast åtgärdsrad */}
-          <div className="fixed bottom-0 left-14 right-0 z-10 border-t border-border bg-card px-3 py-2 sm:hidden">
+          <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-card px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:hidden">
             <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2">
-              <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><Save size={18} />Spara</Button>
-              <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><FileText size={18} />PDF</Button>
-              <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><FileSpreadsheet size={18} />Excel</Button>
-              <Button variant="ghost" onClick={openMail} className={`${btnPrimary} h-auto min-h-12 flex-col gap-1 px-1 py-2 text-xs`}><Mail size={18} />Mejla</Button>
+              <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Save size={18} />Spara</Button>
+              <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileText size={18} />PDF</Button>
+              <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileSpreadsheet size={18} />Excel</Button>
+              <Button variant="ghost" onClick={openMail} className={`${btnPrimary} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Mail size={18} />Mejla</Button>
             </div>
           </div>
         </div>
 
         <ConfirmDialog open={confirmNew} onCancel={() => setConfirmNew(false)} onConfirm={startNew} />
-        {toast && <div className="fixed inset-x-4 bottom-24 z-20 mx-auto max-w-sm rounded-lg bg-foreground px-4 py-2 text-center text-sm text-background">{toast}</div>}
+        {toast && <div className="fixed inset-x-4 bottom-20 z-20 mx-auto max-w-sm rounded-lg bg-foreground px-4 py-2 text-center text-sm text-background">{toast}</div>}
       </div>
 
       <div className="hidden print-only">

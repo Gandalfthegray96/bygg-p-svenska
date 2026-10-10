@@ -41,12 +41,12 @@ export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
 
       <div className="divide-y divide-border rounded-2xl border border-border bg-card">
         {users.map((u) => (
-          <div key={u.id} className="flex flex-wrap items-center gap-3 p-4">
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium text-foreground">{u.name || u.email}{u.self && <span className="ml-2 text-xs text-muted-foreground">(du)</span>}</p>
-              <p className="truncate text-sm text-muted-foreground">{u.email} · skapad {new Date(u.createdAt).toLocaleDateString("sv-SE")}{!u.role && " · Väntar på godkännande"}</p>
+          <div key={u.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 p-4 sm:flex sm:gap-3">
+            <div className="col-span-2 min-w-0 sm:flex-1">
+              <p className="break-all font-medium text-foreground">{u.email}{u.self && <span className="ml-2 text-xs text-muted-foreground">(du)</span>}</p>
+              <p className="text-sm text-muted-foreground">{u.name && u.name !== u.email.split("@")[0] ? u.name + " · " : ""}{u.role ? ROLE_LABEL[u.role] : "Ingen behörighet"} · skapad {new Date(u.createdAt).toLocaleDateString("sv-SE")}{!u.role && " · Väntar på godkännande"}</p>
             </div>
-            <select className="ds-input w-44" value={u.role ?? ""} disabled={busy || u.self}
+            <select className="ds-input w-full sm:w-44" value={u.role ?? ""} disabled={busy || u.self}
               onChange={(e) => run(() => setRole({ data: { userId: u.id, role: (e.target.value || null) as AppRole | null } }), "Behörigheten ändrades")}>
               <option value="">Ingen behörighet</option>
               {Object.entries(ROLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
