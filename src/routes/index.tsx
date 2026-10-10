@@ -13,7 +13,6 @@ import { Hem } from "@/components/Hem";
 import { Kalender } from "@/components/Kalender";
 import { Anvandare } from "@/components/Anvandare";
 import { getMyRole } from "@/lib/users.functions";
-import { useServerFn } from "@tanstack/react-start";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -177,7 +176,7 @@ function App() {
   const [a, setA] = useState<Avtal>(emptyAvtal);
   const [hydrated, setHydrated] = useState(false);
   const [tab, setTab] = useState<Tab>("hem");
-  const fetchRole = useServerFn(getMyRole);
+  const fetchRole = getMyRole;
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => { fetchRole().then((r) => setIsAdmin(r.role === "admin")).catch(() => setIsAdmin(false)); }, []);
   const [store, setStore] = useState<Record<string, CustomerFolder>>({});

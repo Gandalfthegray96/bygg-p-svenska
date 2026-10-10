@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { KeyRound, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +8,8 @@ export const ROLE_LABEL: Record<AppRole, string> = { admin: "Admin", saljare: "S
 type U = Awaited<ReturnType<typeof listUsers>>[number];
 
 export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
-  const list = useServerFn(listUsers);
-  const setRole = useServerFn(setUserRole);
+  const list = listUsers;
+  const setRole = setUserRole;
   const [users, setUsers] = useState<U[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
