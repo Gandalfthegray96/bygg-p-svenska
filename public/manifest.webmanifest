@@ -1,7 +1,7 @@
 {
-  "name": "Prisräknare Underhållsavtal",
-  "short_name": "Prisräknare",
-  "description": "Räkna pris på förebyggande underhållsavtal: porter, servestid, timpeng, framkörning, rabatt och avrundning.",
+  "name": "UK Portservice Avtal",
+  "short_name": "UK Avtal",
+  "description": "Räkna pris på förebyggande underhållsavtal: objekt, servicetid, timpeng, framkörning, rabatt och avrundning.",
   "lang": "sv",
   "start_url": "/",
   "scope": "/",
