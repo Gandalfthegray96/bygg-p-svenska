@@ -56,9 +56,9 @@ function PdfPreview({ a }: { a: Avtal }) {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Avtalskalkylator – UK Portservice" },
+      { title: "UK Portservice Avtal" },
       { name: "description", content: "Gör hela avtalet för förebyggande underhåll: kund, objekt, pris, försättsblad och avtal som PDF och kalkyl som Excel." },
-      { property: "og:title", content: "Avtalskalkylator – UK Portservice" },
+      { property: "og:title", content: "UK Portservice Avtal" },
       { property: "og:description", content: "Kund, objekt, pris och färdigt avtal som PDF och Excel – direkt i telefonen." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

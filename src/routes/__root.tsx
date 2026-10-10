@@ -80,17 +80,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Prisräknare Underhållsavtal" },
+      { title: "UK Portservice Avtal" },
       {
         name: "description",
         content:
-          "Räkna pris på förebyggande underhållsavtal: porter, servestid, timpeng, framkörning, rabatt och avrundning.",
+          "Räkna pris på förebyggande underhållsavtal: objekt, servicetid, timpeng, framkörning, rabatt och avrundning.",
       },
-      { property: "og:title", content: "Prisräknare Underhållsavtal" },
+      { property: "og:title", content: "UK Portservice Avtal" },
       {
         property: "og:description",
         content:
-          "Räkna pris på underhållsavtal: porter, servestid, timpeng, framkörning, rabatt och avrundning.",
+          "Räkna pris på underhållsavtal: objekt, servicetid, timpeng, framkörning, rabatt och avrundning.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
