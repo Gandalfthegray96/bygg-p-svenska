@@ -13,7 +13,7 @@
 - [x] Kalkyl-ändringar enligt mallen: rabatt bara på arbetskostnad, pris per tillfälle, utjämning +/- per tillfälle, 5-årstotal
 - [x] Export: avtal som PDF + kalkyl som Excel laddas ner till telefonens "Mina filer" — ingen SharePoint-koppling i appen (beslutat 2026-09-29)
 - [x] Kalender åt båda håll: Outlook → app (publicerad ICS-länk), app → Outlook (prenumerationslänk per konto)
-- [ ] Avsändarnamn "UKPS Avtalskalkylator" på konto-/lösenordsmejl — väntar på egen e-postdomän
+- [ ] Avsändarnamn "UK Portservice Avtal" på konto-/lösenordsmejl — väntar på egen e-postdomän
 - [ ] Moln-lagring (Lovable Cloud) + kundmappar med versioner v1/v2/v3
 - [ ] Publicering så appen kan installeras på Android-startskärmen
 

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "tanstack_start_ts",
+      "name": "uk-portservice-avtal",
       "dependencies": {
         "@hookform/resolvers": "^5.2.2",
         "@pdf-lib/fontkit": "^1.1.1",

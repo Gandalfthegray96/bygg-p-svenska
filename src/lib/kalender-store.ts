@@ -61,7 +61,7 @@ const esc = (s: string) => s.replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n");
 export function eventToIcs(e: KalEvent): string {
   const end = e.end || new Date(new Date(e.start).getTime() + 3600000).toISOString();
   return [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//UK Portservice//Avtalskalkylator//SV",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//UK Portservice//Avtal//SV",
     "BEGIN:VEVENT", `UID:${e.id}@ukportservice`, `DTSTAMP:${fmt(new Date().toISOString())}`,
     `DTSTART:${fmt(e.start)}`, `DTEND:${fmt(end)}`, `SUMMARY:${esc(e.title)}`,
     e.place ? `LOCATION:${esc(e.place)}` : "", e.note ? `DESCRIPTION:${esc(e.note)}` : "",
