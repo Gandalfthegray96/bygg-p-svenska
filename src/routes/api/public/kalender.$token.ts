@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/public/kalender/$token")({
           .eq("user_id", feed.user_id).eq("key", "uc-kalender").maybeSingle();
         const events = (Array.isArray(row?.value) ? row.value : []) as Ev[];
         const now = fmt(new Date().toISOString());
-        const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//UK Portservice//Avtalskalkylator//SV",
+        const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//UK Portservice//Avtal//SV",
           "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:UKPS Servicebesök", "REFRESH-INTERVAL;VALUE=DURATION:PT1H"];
         for (const e of events) {
           if (e.source !== "app" || !e.start || isNaN(Date.parse(e.start))) continue;
