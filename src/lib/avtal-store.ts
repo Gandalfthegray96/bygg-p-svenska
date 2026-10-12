@@ -63,8 +63,11 @@ export function saveVersion(a: Avtal, existingId?: string): { id: string; versio
   const store = loadStore();
   const folder: CustomerFolder = (existingId ? store[existingId] : undefined) ?? { id: existingId || crypto.randomUUID(), name, versions: [] };
   const version = (folder.versions.at(-1)?.version ?? 0) + 1;
+  if (!folder.contacts) folder.contacts = Object.values(store).find((f) => f.contacts?.length && customerKey(f.name) === customerKey(name))?.contacts;
+  if (!folder.contacts) delete folder.contacts;
   folder.name = name;
   folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(a) });
+  logTo(folder, version === 1 ? "skapat" : "version", version === 1 ? "Avtal skapat (v1)" : `Ny version sparad (v${version})`);
   store[folder.id] = folder;
   saveStore(store);
   return { id: folder.id, version };
@@ -94,11 +97,42 @@ export function saveDraft(a: Avtal) {
   pushKey(DRAFT_KEY, raw);
 }
 
+const STATUS_TEXT: Record<Status, string> = { skickat: "Avtal skickat", signerat: "Avtal signerat", utkast: "Återställt till utkast" };
+
 export function setVersionStatus(id: string, version: number, status: Status) {
   const store = loadStore();
-  const v = store[id]?.versions.find((x) => x.version === version);
-  if (!v) return;
+  const f = store[id];
+  const v = f?.versions.find((x) => x.version === version);
+  if (!f || !v) return;
+  if ((v.status ?? "utkast") === status) return;
   v.status = status;
+  logTo(f, status, `${STATUS_TEXT[status]} (v${version})`);
+  saveStore(store);
+}
+
+/** Manuell anteckning på ett avtal. */
+export function addNote(id: string, text: string) {
+  const t = text.trim();
+  const store = loadStore();
+  const f = store[id];
+  if (!f || !t) return;
+  logTo(f, "notering", t);
+  saveStore(store);
+}
+
+export function deleteNote(id: string, noteId: string) {
+  const store = loadStore();
+  const f = store[id];
+  if (!f?.log) return;
+  f.log = f.log.filter((x) => !(x.id === noteId && x.kind === "notering"));
+  saveStore(store);
+}
+
+/** Kontaktpersoner sparas på alla avtalsposter för samma kund så kundkortet blir komplett. */
+export function setCustomerContacts(name: string, contacts: Contact[]) {
+  const key = customerKey(name);
+  const store = loadStore();
+  for (const f of Object.values(store)) if (customerKey(f.name) === key) f.contacts = contacts;
   saveStore(store);
 }
 
