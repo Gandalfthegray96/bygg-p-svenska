@@ -43,6 +43,13 @@
       "when": 1791809928654,
       "tag": "0005_admin_delete_user",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791829365339,
+      "tag": "0006_shared_avtal_register",
+      "breakpoints": true
     }
   ]
 }
