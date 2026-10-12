@@ -40,7 +40,7 @@ function saveStore(s: Record<string, CustomerFolder>) {
 export function saveVersion(a: Avtal, existingId?: string): { id: string; version: number } {
   const name = a.customer.bestallare.trim() || "Namnlös kund";
   const store = loadStore();
-  const folder = (existingId && store[existingId]) ?? { id: existingId || crypto.randomUUID(), name, versions: [] };
+  const folder: CustomerFolder = (existingId ? store[existingId] : undefined) ?? { id: existingId || crypto.randomUUID(), name, versions: [] };
   const version = (folder.versions.at(-1)?.version ?? 0) + 1;
   folder.name = name;
   folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(a) });

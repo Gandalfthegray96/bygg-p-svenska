@@ -111,7 +111,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
                 className={`ds-badge order-4 outline-none sm:order-none ${STATUS_CLS[x.status]}`}>
                 {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
-              <Button variant="outline" size="sm" className="order-5 justify-self-end sm:order-none" onClick={() => onOpen(x.name, x.v)}>Öppna</Button>
+              <Button variant="outline" size="sm" className="order-5 justify-self-end sm:order-none" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
             </li>
           ))}
         </ul>

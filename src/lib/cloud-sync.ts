@@ -29,8 +29,9 @@ export async function pullAll(uid: string) {
   for (const r of shared.data ?? []) {
     const raw = (r.folder && typeof r.folder === "object" ? r.folder : {}) as Record<string, unknown>;
     // Äldre rader nycklas med kundnamnet och saknar id i folder-json; postens id blir då radnamnet.
-    const id = typeof raw.id === "string" && raw.id.trim() ? raw.id : r.name;
-    store[id] = { ...raw, id, name: raw.name ?? r.name };
+    const rawId = raw["id"];
+    const id = typeof rawId === "string" && rawId.trim() ? rawId : r.name;
+    store[id] = { ...raw, id, name: raw["name"] ?? r.name };
     lastShared[id] = JSON.stringify(r.folder);
   }
   localStorage.setItem(SHARED_STORE_KEY, JSON.stringify(store));
