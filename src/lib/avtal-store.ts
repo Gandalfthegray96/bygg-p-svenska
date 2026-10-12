@@ -1,4 +1,4 @@
-import { pushKey } from "./cloud-sync";
+import { pushKey, pushShared } from "./cloud-sync";
 import { type Avtal, normalizeAvtal } from "./kalkyl";
 
 export type Status = "utkast" | "skickat" | "signerat";
@@ -17,9 +17,8 @@ export function loadStore(): Record<string, CustomerFolder> {
 }
 
 function saveStore(s: Record<string, CustomerFolder>) {
-  const raw = JSON.stringify(s);
-  localStorage.setItem(STORE_KEY, raw);
-  pushKey(STORE_KEY, raw);
+  localStorage.setItem(STORE_KEY, JSON.stringify(s));
+  void pushShared(s);
 }
 
 export function saveVersion(a: Avtal): number {
