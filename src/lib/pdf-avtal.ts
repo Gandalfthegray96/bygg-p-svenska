@@ -103,7 +103,7 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   fa.flatten();
   if (opts.signTags) {
     // Adobe Sign text-taggar (vit text) – placerar signaturfälten exakt på underskriftslinjerna.
-    const sp = fu.getPages()[2];
+    const sp = fu.getPage(2);
     const tf = await fu.embedFont(StandardFonts.Helvetica);
     const tag = (t: string, x: number, y: number) => sp.drawText(t, { x, y, size: 10, font: tf, color: rgb(1, 1, 1) });
     tag("{{Sig1_es_:signer1:signature}}", 150, 152);
