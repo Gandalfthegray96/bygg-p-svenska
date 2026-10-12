@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { passwordErrorMessage } from "@/lib/password-error";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -28,7 +29,7 @@ function ResetPassword() {
     setBusy(true); setMsg("");
     const { error } = await supabase.auth.updateUser({ password: pw });
     setBusy(false);
-    if (error) setMsg("Det gick inte att byta lösenord. Be om en ny länk och försök igen.");
+    if (error) setMsg(passwordErrorMessage(error) ?? "Det gick inte att byta lösenord. Be om en ny länk och försök igen.");
     else setDone(true);
   };
 
