@@ -30,6 +30,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("alla");
   const [sort, setSort] = useState<Sort>("datum");
+  const [ansv, setAnsv] = useState("alla");
 
   const rows = useMemo<Row[]>(() =>
     Object.values(store).filter((f) => f.versions.length).map((f) => {
@@ -41,12 +42,14 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
   const stat = (s: Status) => { const l = rows.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
   const sent = stat("skickat"), signed = stat("signerat"), draft = stat("utkast");
 
+  const ansvariga = useMemo(() => [...new Set(rows.map((r) => r.ansvarig.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "sv")), [rows]);
+
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
-    const l = rows.filter((r) => (filter === "alla" || r.status === filter) &&
+    const l = rows.filter((r) => (filter === "alla" || r.status === filter) && (ansv === "alla" || r.ansvarig.trim() === ansv) &&
       (!s || [r.name, r.avtalNr, r.ansvarig, r.adress].some((x) => x.toLowerCase().includes(s))));
     return l.sort((a, b) => sort === "varde" ? b.perYear - a.perYear : sort === "kund" ? a.name.localeCompare(b.name, "sv") : b.v.savedAt.localeCompare(a.v.savedAt));
-  }, [rows, q, filter, sort]);
+  }, [rows, q, filter, sort, ansv]);
 
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "alla" : f));
 
@@ -64,12 +67,16 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
           <h2 className="truncate font-display text-[15px] font-semibold text-foreground">Avtalsöversikt</h2>
           <Button onClick={onNew} className="gap-1.5"><Plus size={16} />Nytt avtal</Button>
         </div>
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <label className="relative block min-w-0">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Sök kund, avtalsnr, ansvarig, adress" className="ds-input pl-9" aria-label="Sök avtal" />
           </label>
-          <div className="grid grid-cols-2 gap-2 sm:contents">
+          <div className="grid grid-cols-3 gap-2 sm:contents">
+            <select value={ansv} onChange={(e) => setAnsv(e.target.value)} className="ds-input sm:w-40" aria-label="Filtrera ansvarig">
+              <option value="alla">Alla säljare</option>
+              {ansvariga.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
             <select value={filter} onChange={(e) => setFilter(e.target.value as Filter)} className="ds-input sm:w-40" aria-label="Filtrera status">
               <option value="alla">Alla statusar</option>
               {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
