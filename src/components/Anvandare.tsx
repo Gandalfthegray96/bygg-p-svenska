@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { KeyRound, UserCheck } from "lucide-react";
+import { KeyRound, Trash2, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { listUsers, setUserRole, type AppRole } from "@/lib/users.functions";
+import { deleteUser, listUsers, setUserRole, type AppRole } from "@/lib/users.functions";
 
 export const ROLE_LABEL: Record<AppRole, string> = { admin: "Admin", saljare: "Säljare", tekniker: "Tekniker" };
 type U = Awaited<ReturnType<typeof listUsers>>[number];
@@ -57,6 +57,14 @@ export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
                 if (error) throw error;
               }, `Länk för nytt lösenord skickad till ${u.email}`)
             }><KeyRound size={16} /></Button>
+            {!u.self && (
+              <Button variant="outline" size="sm" disabled={busy} title="Ta bort användare" aria-label={`Ta bort ${u.email}`}
+                className="text-destructive hover:text-destructive"
+                onClick={() => {
+                  if (!window.confirm(`Vill du verkligen ta bort ${u.email}? Kontot och dess sparade data raderas permanent.`)) return;
+                  run(() => deleteUser(u.id), `${u.email} togs bort`);
+                }}><Trash2 size={16} /></Button>
+            )}
           </div>
         ))}
         {!loaded && !err && <p className="p-4 text-sm text-muted-foreground">Hämtar användare …</p>}
