@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
-import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
+import { avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
 import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
@@ -185,7 +185,8 @@ function App() {
   const [confirmNew, setConfirmNew] = useState(false);
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
-  const startNew = () => { setA(emptyAvtal()); setCurrentVersion(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
+  const [currentId, setCurrentId] = useState<string | undefined>();
+  const startNew = () => { setA(emptyAvtal()); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
 
   useEffect(() => {
     const d = loadDraft();
@@ -202,10 +203,13 @@ function App() {
   const updateRow = (id: string, patch: Partial<ObjRow>) => setA((p) => ({ ...p, rows: p.rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) }));
 
   const onSave = () => {
-    const v = saveVersion(a);
-    setCurrentVersion(v);
+    const owner = avtalNrOwner(store, c.avtalNr, currentId);
+    if (owner) { setToast(`Avtalsnumret används redan av ${owner}, välj ett annat`); return; }
+    const r = saveVersion(a, currentId);
+    setCurrentId(r.id);
+    setCurrentVersion(r.version);
     setStore(loadStore());
-    setToast(`Sparat som v${v} under ${c.bestallare || "Namnlös kund"}`);
+    setToast(`Sparat som v${r.version} under ${c.bestallare || "Namnlös kund"}`);
   };
 
   const onPdf = async () => {
@@ -219,10 +223,10 @@ function App() {
 
   // Mejlat avtal får automatiskt status "Skickat" (sparas som version om det inte finns någon).
   const markSent = () => {
-    const name = c.bestallare.trim() || "Namnlös kund";
+    let id = currentId;
     let v = currentVersion;
-    if (!v) { v = saveVersion(a); setCurrentVersion(v); }
-    setVersionStatus(name, v, "skickat");
+    if (!id || !v) { const r = saveVersion(a, currentId); id = r.id; v = r.version; setCurrentId(id); setCurrentVersion(v); }
+    setVersionStatus(id, v, "skickat");
     setStore(loadStore());
   };
 
@@ -342,7 +346,7 @@ function App() {
           <main className="w-full flex-1 space-y-4 px-3 py-4 pb-24 sm:px-4 sm:py-5 sm:pb-8">
             {tab === "hem" && (
               <Hem store={store} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
-                onOpen={(name, v) => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
+                onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
             )}
             {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} />}
             {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
@@ -570,7 +574,7 @@ function App() {
                     .map((f) => { const q = search.trim().toLowerCase(); return q && !f.name.toLowerCase().includes(q) ? { ...f, versions: f.versions.filter((v) => (v.data.customer.avtalNr || "").toLowerCase().includes(q)) } : f; })
                     .filter((f) => f.versions.length > 0)
                     .sort((x, y) => x.name.localeCompare(y.name, "sv")).map((f) => (
-                    <div key={f.name}>
+                    <div key={f.id}>
                       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><FolderOpen size={16} className="text-info" /> {f.name}</h3>
                       <ul className="space-y-1">
                         {[...f.versions].reverse().map((v) => (
@@ -580,14 +584,14 @@ function App() {
                               {new Date(v.savedAt).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" })} · {fmtKr(calculate(normalizeAvtal(v.data)).perYear)} per år
                             </span>
                             <select value={v.status ?? "utkast"} aria-label="Status"
-                              onChange={(e) => { setVersionStatus(f.name, v.version, e.target.value as Status); setStore(loadStore()); }}
+                              onChange={(e) => { setVersionStatus(f.id, v.version, e.target.value as Status); setStore(loadStore()); }}
                               className={`ds-badge outline-none ${STATUS[v.status ?? "utkast"].cls}`}>
                               {(Object.keys(STATUS) as Status[]).map((s) => <option key={s} value={s}>{STATUS[s].label}</option>)}
                             </select>
                             <Button variant="ghost" className="rounded-md bg-secondary px-2 py-1 text-xs font-medium text-info"
-                              onClick={() => { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</Button>
+                              onClick={() => { setA(normalizeAvtal(v.data)); setCurrentId(f.id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`); }}>Öppna</Button>
                             <Button variant="ghost" className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive" aria-label="Ta bort version"
-                              onClick={() => { if (confirm(`Ta bort ${f.name} v${v.version}?`)) { deleteVersion(f.name, v.version); setStore(loadStore()); } }}><X size={14} /></Button>
+                              onClick={() => { if (confirm(`Ta bort ${f.name} v${v.version}?`)) { deleteVersion(f.id, v.version); setStore(loadStore()); } }}><X size={14} /></Button>
                           </li>
                         ))}
                       </ul>
