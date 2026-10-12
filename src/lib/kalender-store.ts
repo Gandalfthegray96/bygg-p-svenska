@@ -22,7 +22,10 @@ export function getFeedUrl(): string {
     localStorage.setItem(FEED_KEY, raw);
     pushKey(FEED_KEY, raw);
   }
-  return `${window.location.origin}/api/public/kalender/${token}.ics`;
+  // Hämtas direkt från databasen – oberoende av var appen körs (Vercel/preview).
+  const base = import.meta.env.VITE_SUPABASE_URL as string;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+  return `${base}/rest/v1/rpc/kalender_ics?token=${token}&apikey=${key}`;
 }
 
 function unfold(s: string) { return s.replace(/\r?\n[ \t]/g, ""); }
