@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, Plus, Search } from "lucide-react";
+import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, Plus, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { KundKort } from "./KundKort";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
@@ -31,6 +32,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
   const [filter, setFilter] = useState<Filter>("alla");
   const [sort, setSort] = useState<Sort>("datum");
   const [ansv, setAnsv] = useState("alla");
+  const [kund, setKund] = useState<string | null>(null);
 
   const rows = useMemo<Row[]>(() =>
     Object.values(store).filter((f) => f.versions.length).map((f) => {
@@ -111,11 +113,16 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
                 className={`ds-badge order-4 outline-none sm:order-none ${STATUS_CLS[x.status]}`}>
                 {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
-              <Button variant="outline" size="sm" className="order-5 justify-self-end sm:order-none" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
+              <div className="order-5 flex gap-1.5 justify-self-end sm:order-none">
+                <Button variant="ghost" size="sm" className="gap-1" onClick={() => setKund(x.name)}><UserRound size={14} />Kundkort</Button>
+                <Button variant="outline" size="sm" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
+              </div>
             </li>
           ))}
         </ul>
       </section>
+      {kund && <KundKort name={kund} store={store} onClose={() => setKund(null)} onChanged={() => onChanged?.()}
+        onOpen={(id, n, v) => { setKund(null); onOpen(id, n, v); }} />}
     </div>
   );
 }

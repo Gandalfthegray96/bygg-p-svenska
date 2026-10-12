@@ -1,20 +1,41 @@
+import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
 import { type Avtal, normalizeAvtal } from "./kalkyl";
 
 export type Status = "utkast" | "skickat" | "signerat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status };
+export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering";
+export type Activity = { id: string; at: string; by: string; kind: ActivityKind; text: string };
+export type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
-export type CustomerFolder = { id: string; name: string; versions: Version[] };
+export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[] };
 
 const STORE_KEY = "uc-avtal-store";
 const DRAFT_KEY = "uc-avtal-draft";
+
+let actor = "";
+if (typeof window !== "undefined") {
+  void supabase.auth.getSession().then(({ data }) => { actor = data.session?.user.email ?? ""; });
+  supabase.auth.onAuthStateChange((_e, s) => { actor = s?.user.email ?? ""; });
+}
+const actorName = () => actor.split("@")[0] || "Okänd";
+
+function logTo(f: CustomerFolder, kind: ActivityKind, text: string) {
+  (f.log ??= []).push({ id: crypto.randomUUID(), at: new Date().toISOString(), by: actorName(), kind, text });
+}
 
 /** Säkerställer id och namn på en sparad post (äldre filer saknar id och nycklas med kundnamnet). */
 export function normalizeFolder(key: string, f: Partial<CustomerFolder> & { versions?: Version[] }): CustomerFolder {
   const id = typeof f.id === "string" && f.id.trim() ? f.id : key;
   const name = (f.name ?? key).trim() || key;
-  return { id, name, versions: Array.isArray(f.versions) ? f.versions : [] };
+  const out: CustomerFolder = { id, name, versions: Array.isArray(f.versions) ? f.versions : [] };
+  if (Array.isArray(f.log)) out.log = f.log;
+  if (Array.isArray(f.contacts)) out.contacts = f.contacts;
+  return out;
 }
+
+/** Kundnyckel: samma kundnamn (skiftlägesokänsligt) = samma kund. */
+export const customerKey = (name: string) => name.trim().toLowerCase();
 
 export function loadStore(): Record<string, CustomerFolder> {
   try {
@@ -42,8 +63,11 @@ export function saveVersion(a: Avtal, existingId?: string): { id: string; versio
   const store = loadStore();
   const folder: CustomerFolder = (existingId ? store[existingId] : undefined) ?? { id: existingId || crypto.randomUUID(), name, versions: [] };
   const version = (folder.versions.at(-1)?.version ?? 0) + 1;
+  const shared = Object.values(store).find((f) => f.contacts?.length && customerKey(f.name) === customerKey(name))?.contacts;
+  if (!folder.contacts && shared) folder.contacts = shared;
   folder.name = name;
   folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(a) });
+  logTo(folder, version === 1 ? "skapat" : "version", version === 1 ? "Avtal skapat (v1)" : `Ny version sparad (v${version})`);
   store[folder.id] = folder;
   saveStore(store);
   return { id: folder.id, version };
@@ -73,11 +97,42 @@ export function saveDraft(a: Avtal) {
   pushKey(DRAFT_KEY, raw);
 }
 
+const STATUS_TEXT: Record<Status, string> = { skickat: "Avtal skickat", signerat: "Avtal signerat", utkast: "Återställt till utkast" };
+
 export function setVersionStatus(id: string, version: number, status: Status) {
   const store = loadStore();
-  const v = store[id]?.versions.find((x) => x.version === version);
-  if (!v) return;
+  const f = store[id];
+  const v = f?.versions.find((x) => x.version === version);
+  if (!f || !v) return;
+  if ((v.status ?? "utkast") === status) return;
   v.status = status;
+  logTo(f, status, `${STATUS_TEXT[status]} (v${version})`);
+  saveStore(store);
+}
+
+/** Manuell anteckning på ett avtal. */
+export function addNote(id: string, text: string) {
+  const t = text.trim();
+  const store = loadStore();
+  const f = store[id];
+  if (!f || !t) return;
+  logTo(f, "notering", t);
+  saveStore(store);
+}
+
+export function deleteNote(id: string, noteId: string) {
+  const store = loadStore();
+  const f = store[id];
+  if (!f?.log) return;
+  f.log = f.log.filter((x) => !(x.id === noteId && x.kind === "notering"));
+  saveStore(store);
+}
+
+/** Kontaktpersoner sparas på alla avtalsposter för samma kund så kundkortet blir komplett. */
+export function setCustomerContacts(name: string, contacts: Contact[]) {
+  const key = customerKey(name);
+  const store = loadStore();
+  for (const f of Object.values(store)) if (customerKey(f.name) === key) f.contacts = contacts;
   saveStore(store);
 }
 
