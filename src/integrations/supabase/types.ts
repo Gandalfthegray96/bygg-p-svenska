@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      avtal_register: {
+        Row: {
+          folder: Json
+          name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          folder: Json
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          folder?: Json
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
