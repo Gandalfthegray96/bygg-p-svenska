@@ -86,6 +86,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      kalender: { Args: { token: string }; Returns: unknown }
     }
     Enums: {
       app_role: "admin" | "saljare" | "tekniker"
