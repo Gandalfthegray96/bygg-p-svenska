@@ -63,8 +63,8 @@ export function saveVersion(a: Avtal, existingId?: string): { id: string; versio
   const store = loadStore();
   const folder: CustomerFolder = (existingId ? store[existingId] : undefined) ?? { id: existingId || crypto.randomUUID(), name, versions: [] };
   const version = (folder.versions.at(-1)?.version ?? 0) + 1;
-  if (!folder.contacts) folder.contacts = Object.values(store).find((f) => f.contacts?.length && customerKey(f.name) === customerKey(name))?.contacts;
-  if (!folder.contacts) delete folder.contacts;
+  const shared = Object.values(store).find((f) => f.contacts?.length && customerKey(f.name) === customerKey(name))?.contacts;
+  if (!folder.contacts && shared) folder.contacts = shared;
   folder.name = name;
   folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(a) });
   logTo(folder, version === 1 ? "skapat" : "version", version === 1 ? "Avtal skapat (v1)" : `Ny version sparad (v${version})`);

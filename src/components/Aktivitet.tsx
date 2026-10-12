@@ -12,11 +12,11 @@ const ICON: Record<ActivityKind, { icon: typeof Send; cls: string }> = {
   notering: { icon: MessageSquare, cls: "bg-primary/15 text-foreground" },
 };
 
-export type LogItem = Activity & { avtal?: string; postId: string };
+export type LogItem = Activity & { avtal?: string | undefined; postId: string };
 
 /** Tidslinje med automatiska händelser och manuella anteckningar (nyast först). */
 export function Tidslinje({ items, onAdd, onDelete, canWrite = true }: {
-  items: LogItem[]; onAdd?: (text: string) => void; onDelete?: (postId: string, id: string) => void; canWrite?: boolean;
+  items: LogItem[]; onAdd?: ((text: string) => void) | undefined; onDelete?: (postId: string, id: string) => void; canWrite?: boolean;
 }) {
   const [text, setText] = useState("");
   const sorted = [...items].sort((a, b) => b.at.localeCompare(a.at));

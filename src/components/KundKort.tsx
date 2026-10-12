@@ -5,7 +5,7 @@ import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
 import { addNote, customerKey, deleteNote, setCustomerContacts, type Contact, type CustomerFolder, type Version } from "@/lib/avtal-store";
 import { Tidslinje, type LogItem } from "./Aktivitet";
 
-const STATUS: Record<string, { t: string; cls: string }> = {
+const STATUS: Record<"signerat" | "skickat" | "utkast", { t: string; cls: string }> = {
   signerat: { t: "Signerat", cls: "bg-success/15 text-success" },
   skickat: { t: "Väntar på svar", cls: "bg-info/15 text-info" },
   utkast: { t: "Utkast", cls: "bg-muted text-muted-foreground" },
