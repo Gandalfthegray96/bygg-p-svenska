@@ -36,6 +36,13 @@
       "when": 1791788517650,
       "tag": "0004_kalender_ics_any_accept",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791809928654,
+      "tag": "0005_admin_delete_user",
+      "breakpoints": true
     }
   ]
 }
