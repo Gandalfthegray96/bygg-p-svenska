@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { pullAll, stopSync } from "@/lib/cloud-sync";
+import { passwordErrorMessage } from "@/lib/password-error";
 
 export async function lockApp() {
   stopSync();
@@ -59,7 +60,7 @@ export function AppGate({ children }: { children: ReactNode }) {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
-      setError(/invalid login/i.test(msg) ? "Fel e-post eller lösenord" : /not confirmed/i.test(msg) ? "Bekräfta din e-postadress först" : /already registered/i.test(msg) ? "Det finns redan ett konto med den adressen" : /password/i.test(msg) ? "Lösenordet är för svagt (minst 6 tecken)" : "Något gick fel, försök igen");
+      setError(/invalid login/i.test(msg) ? "Fel e-post eller lösenord" : /not confirmed/i.test(msg) ? "Bekräfta din e-postadress först" : /already registered/i.test(msg) ? "Det finns redan ett konto med den adressen" : passwordErrorMessage(err) ?? "Något gick fel, försök igen");
       setPw("");
     }
     setBusy(false);
