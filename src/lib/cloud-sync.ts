@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Personliga nycklar som speglas till kontot i molnet.
 export const SYNC_KEYS = ["uc-avtal-draft", "uc-kalender", "uc-kalender-ics-url", "uc-kalender-feed"] as const;
-// Avtalsregistret är gemensamt för hela företaget (en rad per kund).
+// Avtalsregistret är gemensamt för hela företaget (en rad per avtalspost; radens namnkolumn innehåller postens id).
 export const SHARED_STORE_KEY = "uc-avtal-store";
 const OWNER_KEY = "uc-sync-owner";
 
@@ -27,8 +27,11 @@ export async function pullAll(uid: string) {
   const store: Record<string, unknown> = {};
   lastShared = {};
   for (const r of shared.data ?? []) {
-    store[r.name] = r.folder;
-    lastShared[r.name] = JSON.stringify(r.folder);
+    const raw = (r.folder && typeof r.folder === "object" ? r.folder : {}) as Record<string, unknown>;
+    // Äldre rader nycklas med kundnamnet och saknar id i folder-json; postens id blir då radnamnet.
+    const id = typeof raw.id === "string" && raw.id.trim() ? raw.id : r.name;
+    store[id] = { ...raw, id, name: raw.name ?? r.name };
+    lastShared[id] = JSON.stringify(r.folder);
   }
   localStorage.setItem(SHARED_STORE_KEY, JSON.stringify(store));
   localStorage.setItem(OWNER_KEY, uid);
@@ -42,8 +45,8 @@ export function stopSync() {
 export async function pushShared(store: Record<string, unknown>) {
   if (!userId) return;
   const upserts = Object.entries(store)
-    .filter(([n, f]) => lastShared[n] !== JSON.stringify(f))
-    .map(([name, folder]) => ({ name, folder: folder as never, updated_at: new Date().toISOString(), updated_by: userId }));
+    .filter(([id, f]) => lastShared[id] !== JSON.stringify(f))
+    .map(([id, folder]) => ({ name: id, folder: folder as never, updated_at: new Date().toISOString(), updated_by: userId }));
   const removed = Object.keys(lastShared).filter((n) => !(n in store));
   if (upserts.length) {
     const { error } = await supabase.from("avtal_register").upsert(upserts);
