@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { KundKort } from "./KundKort";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
@@ -31,6 +32,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
   const [filter, setFilter] = useState<Filter>("alla");
   const [sort, setSort] = useState<Sort>("datum");
   const [ansv, setAnsv] = useState("alla");
+  const [kund, setKund] = useState<string | null>(null);
 
   const rows = useMemo<Row[]>(() =>
     Object.values(store).filter((f) => f.versions.length).map((f) => {
@@ -100,10 +102,11 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
             <li key={x.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto]">
               <button onClick={() => onOpen(x.id, x.name, x.v)} className="min-w-0 text-left">
                 <p className="truncate font-medium text-foreground">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
-                </p>
               </button>
+              <p className="col-start-1 -mt-2 truncate text-xs text-muted-foreground sm:row-start-1 sm:mt-5">
+                {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")} ·{" "}
+                <button onClick={() => setKund(x.name)} className="font-semibold text-info hover:underline">Kundkort</button>
+              </p>
               <span className="order-3 col-span-2 truncate text-xs text-muted-foreground sm:order-none sm:col-span-1">{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
               <span className="text-right text-sm font-semibold tabular-nums text-foreground">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
               <select value={x.status} aria-label="Status"
@@ -116,6 +119,8 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
           ))}
         </ul>
       </section>
+      {kund && <KundKort name={kund} store={store} onClose={() => setKund(null)} onChanged={() => onChanged?.()}
+        onOpen={(id, n, v) => { setKund(null); onOpen(id, n, v); }} />}
     </div>
   );
 }
