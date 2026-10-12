@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
+import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -249,6 +249,20 @@ function App() {
     setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
 
+  // Adobe Sign (utan API): ladda ner PDF med signaturtaggar, kopiera kundens e-post, öppna Adobe Sign.
+  const openSign = async () => {
+    const w = window.open("https://acrobat.adobe.com/link/sign", "_blank");
+    try {
+      const bytes = await buildAvtalPdf(a, { signTags: true });
+      markSent();
+      try { await navigator.clipboard.writeText(c.epost); } catch { /* */ }
+      await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, currentVersion)}_signering.pdf`, "application/pdf", ".pdf");
+      setToast(c.epost ? `Kundens e-post kopierad – släpp PDF:en i Adobe Sign` : "Släpp PDF:en i Adobe Sign");
+    } catch {
+      setToast("Kunde inte skapa PDF:en");
+    }
+    if (!w) window.open("https://acrobat.adobe.com/link/sign", "_blank");
+  };
 
   return (
     <div className="min-h-screen">
@@ -304,6 +318,7 @@ function App() {
                   <Button variant="ghost" onClick={onPdf} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileText size={16} />PDF</Button>
                   <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileSpreadsheet size={16} />Excel</Button>
                   <Button variant="ghost" onClick={openMail} className={`hidden h-9 gap-1.5 px-3 text-sm font-semibold sm:inline-flex ${btnPrimary}`}><Mail size={16} />Mejla</Button>
+                  <Button variant="ghost" onClick={openSign} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><PenLine size={16} />Sign</Button>
                   <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
                     className="h-9 w-9 border border-border bg-card p-0 text-foreground hover:bg-muted"><Plus size={18} /></Button>
                 </div>
@@ -584,11 +599,12 @@ function App() {
 
           {/* Fast åtgärdsrad */}
           <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-card px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:hidden">
-            <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2">
+            <div className="mx-auto grid max-w-2xl grid-cols-5 gap-2">
               <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Save size={18} />Spara</Button>
               <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileText size={18} />PDF</Button>
               <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileSpreadsheet size={18} />Excel</Button>
               <Button variant="ghost" onClick={openMail} className={`${btnPrimary} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Mail size={18} />Mejla</Button>
+              <Button variant="ghost" onClick={openSign} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><PenLine size={18} />Sign</Button>
             </div>
           </div>
         </div>

@@ -74,7 +74,7 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
   return doc;
 }
 
-export async function buildAvtalPdf(a: Avtal): Promise<Uint8Array> {
+export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {}): Promise<Uint8Array> {
   const c = a.customer;
   const k = calculate(a);
   const [fsb, fu, pris, b1] = await Promise.all([load("/pdf/forsattsblad.pdf"), load("/pdf/avtal.pdf"), load("/pdf/prislista.pdf"), bilaga1(a)]);
@@ -101,6 +101,14 @@ export async function buildAvtalPdf(a: Avtal): Promise<Uint8Array> {
   });
   fa.updateFieldAppearances(await arial(fu));
   fa.flatten();
+  if (opts.signTags) {
+    // Adobe Sign text-taggar (vit text) – placerar signaturfälten exakt på underskriftslinjerna.
+    const sp = fu.getPages()[2];
+    const tf = await fu.embedFont(StandardFonts.Helvetica);
+    const tag = (t: string, x: number, y: number) => sp.drawText(t, { x, y, size: 10, font: tf, color: rgb(1, 1, 1) });
+    tag("{{Sig1_es_:signer1:signature}}", 150, 152);
+    tag("{{Sig2_es_:signer2:signature}}", 364, 152);
+  }
 
   const out = await PDFDocument.create();
   const add = async (src: PDFDocument, idx: number[]) => (await out.copyPages(src, idx)).forEach((p) => out.addPage(p));
