@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
-import { avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
+import { Tidslinje } from "@/components/Aktivitet";
+import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
 import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
@@ -398,6 +399,13 @@ function App() {
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">Antal objekt ({k.totalQty}) och servicebesök/år ({k.maxVisits}) fylls i automatiskt.</p>
                 </Card>
+                {currentId && store[currentId] && (
+                  <Card title="Aktivitetslogg">
+                    <Tidslinje items={(store[currentId].log ?? []).map((x) => ({ ...x, postId: currentId }))}
+                      onAdd={(t) => { addNote(currentId, t); setStore(loadStore()); }}
+                      onDelete={(pid, id) => { deleteNote(pid, id); setStore(loadStore()); }} />
+                  </Card>
+                )}
               </>
             )}
 
