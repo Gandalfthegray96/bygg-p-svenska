@@ -210,7 +210,7 @@ export function Preview({ a }: { a: Avtal }) {
             ))}
           </tbody>
         </table>
-        <p><b>Avtalskunder erhåller 10% rabatt på ordinarie timpriser och 10% på material</b><br />(gäller samtliga lagerförda reservdelar)</p>
+        <p><b>{rabattText(a)}</b><br />(gäller samtliga lagerförda reservdelar)</p>
         <p>Betalningstid: 30 dagar netto.<br />Material faktureras vid leverans.<br />Arbete faktureras löpande.</p>
         <p>Leveransvillkor: Allmänna leveransbestämmelser Port 19 och Port 07A.</p>
         <p>Priserna gäller från och med avtalsdatum tillsvidare. Vi förbehåller oss rätten att justera priser utan föregående avisering till följd av förändringar i kostnader, råvarupriser eller andra marknadsförhållanden.</p>

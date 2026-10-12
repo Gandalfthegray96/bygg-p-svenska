@@ -498,6 +498,11 @@ function App() {
                     <TextField label="Utjämning per besök (kr)" value={a.adjust} placeholder="T.ex. 150 eller -893" onChange={(v) => setA((p) => ({ ...p, adjust: v }))} />
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">Rabatten gäller bara arbetet, inte framkörningen. Skriv ett minus framför för att dra av, t.ex. -893 eller -1,50. Utjämningen läggs på varje servicebesök.</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <NumField label="Prislista: rabatt timpriser (%)" value={a.rabattTim} onChange={(n) => setA((p) => ({ ...p, rabattTim: Math.min(100, n) }))} />
+                    <NumField label="Prislista: rabatt material (%)" value={a.rabattMaterial} onChange={(n) => setA((p) => ({ ...p, rabattMaterial: Math.min(100, n) }))} />
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">Visas i avtalets prislista (Bilaga 2) för löpande arbeten och material.</p>
                 </Card>
                 <Card title="Sammanställning per servicebesök">
                   {k.visits.length === 0 && <p className="text-sm text-muted-foreground">Ange servicetid för objekten för att se priset.</p>}
