@@ -1,20 +1,41 @@
+import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
 import { type Avtal, normalizeAvtal } from "./kalkyl";
 
 export type Status = "utkast" | "skickat" | "signerat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status };
+export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering";
+export type Activity = { id: string; at: string; by: string; kind: ActivityKind; text: string };
+export type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
-export type CustomerFolder = { id: string; name: string; versions: Version[] };
+export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[] };
 
 const STORE_KEY = "uc-avtal-store";
 const DRAFT_KEY = "uc-avtal-draft";
+
+let actor = "";
+if (typeof window !== "undefined") {
+  void supabase.auth.getSession().then(({ data }) => { actor = data.session?.user.email ?? ""; });
+  supabase.auth.onAuthStateChange((_e, s) => { actor = s?.user.email ?? ""; });
+}
+const actorName = () => actor.split("@")[0] || "Okänd";
+
+function logTo(f: CustomerFolder, kind: ActivityKind, text: string) {
+  (f.log ??= []).push({ id: crypto.randomUUID(), at: new Date().toISOString(), by: actorName(), kind, text });
+}
 
 /** Säkerställer id och namn på en sparad post (äldre filer saknar id och nycklas med kundnamnet). */
 export function normalizeFolder(key: string, f: Partial<CustomerFolder> & { versions?: Version[] }): CustomerFolder {
   const id = typeof f.id === "string" && f.id.trim() ? f.id : key;
   const name = (f.name ?? key).trim() || key;
-  return { id, name, versions: Array.isArray(f.versions) ? f.versions : [] };
+  const out: CustomerFolder = { id, name, versions: Array.isArray(f.versions) ? f.versions : [] };
+  if (Array.isArray(f.log)) out.log = f.log;
+  if (Array.isArray(f.contacts)) out.contacts = f.contacts;
+  return out;
 }
+
+/** Kundnyckel: samma kundnamn (skiftlägesokänsligt) = samma kund. */
+export const customerKey = (name: string) => name.trim().toLowerCase();
 
 export function loadStore(): Record<string, CustomerFolder> {
   try {
