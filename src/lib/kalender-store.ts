@@ -23,8 +23,8 @@ export function getFeedUrl(): string {
     pushKey(FEED_KEY, raw);
   }
   // Hämtas direkt från databasen – oberoende av var appen körs (Vercel/preview).
-  const base = import.meta.env.VITE_SUPABASE_URL as string;
-  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+  const base = import.meta.env["VITE_SUPABASE_URL"] as string;
+  const key = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string;
   return `${base}/rest/v1/rpc/kalender_ics?token=${token}&apikey=${key}`;
 }
 
