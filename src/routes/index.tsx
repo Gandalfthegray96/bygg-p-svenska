@@ -563,7 +563,7 @@ function App() {
             {tab === "avtal" && <PdfPreview a={a} />}
 
             {tab === "sparade" && (
-              <Card title="Sparade avtal per kund">
+              <Card title="Sparade avtal">
                 <div className="relative mb-4">
                   <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Sök kund eller avtalsnummer" className={`${inputCls} pl-9`} />
