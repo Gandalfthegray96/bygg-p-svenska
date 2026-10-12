@@ -2,7 +2,7 @@
 // layout och text i originalen ändras aldrig. Bilaga 1 (Kostnad) är det enda bladet som skapas.
 import { PDFDocument, StandardFonts, rgb, type PDFForm } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
-import { type Avtal, calculate } from "@/lib/kalkyl";
+import { type Avtal, calculate, rabattText } from "@/lib/kalkyl";
 
 // Arial-kompatibelt typsnitt (Liberation Sans, samma mått som Arial) för ifyllda fält
 let arialBytes: ArrayBuffer | undefined;
@@ -108,6 +108,14 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
     const tag = (t: string, x: number, y: number) => sp.drawText(t, { x, y, size: 10, font: tf, color: rgb(1, 1, 1) });
     tag("{{Sig1_es_:signer1:signature}}", 150, 152);
     tag("{{Sig2_es_:signer2:signature}}", 364, 152);
+  }
+
+  // Prislistan: ersätt rabattraden (originalet säger 10 %/10 %) med avtalets egna procentsatser.
+  if (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10) {
+    const pp = pris.getPage(0);
+    const pb = await pris.embedFont(StandardFonts.HelveticaBold);
+    pp.drawRectangle({ x: 74, y: 435, width: 450, height: 15, color: rgb(1, 1, 1) });
+    pp.drawText(rabattText(a), { x: 76.6, y: 439.1, size: 12, font: pb, color: rgb(0, 0, 0) });
   }
 
   const out = await PDFDocument.create();

@@ -1,6 +1,6 @@
 const cover = { url: "/pdf/avtal-cover.jpg" };
 const header = { url: "/pdf/avtal-header.jpg" };
-import { type Avtal, calculate, fmtKr } from "@/lib/kalkyl";
+import { type Avtal, calculate, fmtKr, rabattText } from "@/lib/kalkyl";
 
 // Bilaga 2 – Prislista 2026 Q2 (fasta listpriser, påverkar inte kalkylen)
 const PRISLISTA: [string, string][] = [
