@@ -251,7 +251,6 @@ function App() {
 
   // Adobe Sign (utan API): ladda ner PDF med signaturtaggar, kopiera kundens e-post, öppna Adobe Sign.
   const openSign = async () => {
-    const w = window.open("https://acrobat.adobe.com/link/sign", "_blank");
     try {
       const bytes = await buildAvtalPdf(a, { signTags: true });
       markSent();
@@ -261,7 +260,7 @@ function App() {
     } catch {
       setToast("Kunde inte skapa PDF:en");
     }
-    if (!w) window.open("https://acrobat.adobe.com/link/sign", "_blank");
+    window.open("https://acrobat.adobe.com/link/sign", "_blank", "noopener");
   };
 
   return (
