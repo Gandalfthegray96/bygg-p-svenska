@@ -22,6 +22,20 @@
       "when": 1791548395247,
       "tag": "0002_profiles_and_admin_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791788501439,
+      "tag": "0003_kalender_ics_feed",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791788517650,
+      "tag": "0004_kalender_ics_any_accept",
+      "breakpoints": true
     }
   ]
 }

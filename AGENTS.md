@@ -17,3 +17,4 @@
 - Sidebar glass styling uses the shared glassNavigation Button variant and semantic glass tokens; the header summary reads calculate() results to keep navigation and totals consistent without changing calculation rules.
 - Account sync: local stores (avtal-store, kalender-store) stay the synchronous source in the UI and mirror each key to the `user_data` table via src/lib/cloud-sync.ts; AppGate pulls the signed-in account's data before rendering — keeps the existing offline-first code untouched while syncing between devices.
 - User roles (admin/saljare/tekniker) live in `public.user_roles`, checked via `has_role()`; account admin runs in the browser (src/lib/users.functions.ts) with RLS enforcing admin-only access — works on Vercel without server env vars or a service key.
+- Outlook calendar subscription is served by the database function `kalender_ics` (public RPC URL with publishable key) so it works regardless of where the app is hosted.
