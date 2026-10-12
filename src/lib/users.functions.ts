@@ -54,3 +54,11 @@ export async function setUserRole({ data }: { data: { userId: string; role: AppR
   }
   return { ok: true };
 }
+
+export async function deleteUser(userId: string) {
+  const uid = await me();
+  await assertAdmin(uid);
+  if (userId === uid) throw new Error("Du kan inte ta bort ditt eget konto");
+  const { error } = await supabase.rpc("admin_delete_user", { _user_id: userId });
+  if (error) throw new Error(error.message);
+}

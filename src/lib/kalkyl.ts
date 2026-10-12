@@ -47,6 +47,9 @@ export type Avtal = {
   hourRate: number;
   tripFee: number;
   discount: number;
+  /** Rabatt i prislistan (Bilaga 2) – påverkar inte avtalspriset */
+  rabattTim: number;
+  rabattMaterial: number;
   adjust: string;
   show: ShowPrices;
 };
@@ -79,6 +82,8 @@ export function emptyAvtal(): Avtal {
     hourRate: 975,
     tripFee: 745,
     discount: 0,
+    rabattTim: 10,
+    rabattMaterial: 10,
     adjust: "",
     show: { visit: true, year: true, total5: true },
   };
@@ -94,6 +99,16 @@ export function normalizeAvtal(a: Partial<Avtal> | null | undefined): Avtal {
     show: { ...base.show, ...(a.show ?? {}) },
     rows: Array.isArray(a.rows) && a.rows.length ? a.rows.map((r) => ({ ...newRow(), ...r, visits: clampVisits(r.visits) })) : base.rows,
   };
+}
+
+/** Texten om avtalskundrabatt i prislistan, t.ex. "Avtalskunder erhåller 15% rabatt på ordinarie timpriser och 10% på material". */
+export function rabattText(a: Pick<Avtal, "rabattTim" | "rabattMaterial">): string {
+  const p = (n: number) => `${String(Number(n) || 0).replace(".", ",")}%`;
+  const t = Number(a.rabattTim) || 0, m = Number(a.rabattMaterial) || 0;
+  if (t > 0 && m > 0) return `Avtalskunder erhåller ${p(t)} rabatt på ordinarie timpriser och ${p(m)} på material`;
+  if (t > 0) return `Avtalskunder erhåller ${p(t)} rabatt på ordinarie timpriser`;
+  if (m > 0) return `Avtalskunder erhåller ${p(m)} rabatt på material`;
+  return "Ordinarie timpriser och materialpriser gäller";
 }
 
 /** "150" → 150, "-893" → -893, "1 234,50" → 1234.5, "" → 0 */
