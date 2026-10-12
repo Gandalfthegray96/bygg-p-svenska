@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
-type Row = { name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; adress: string };
+type Row = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; adress: string };
 type Filter = "alla" | Status;
 type Sort = "datum" | "varde" | "kund";
 
@@ -26,7 +26,7 @@ function Stat({ label, value, sub, icon, active, onClick }: { label: string; val
   );
 }
 
-export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (name: string, v: Version) => void; onNew: () => void; onChanged?: () => void }) {
+export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onNew: () => void; onChanged?: () => void }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("alla");
   const [sort, setSort] = useState<Sort>("datum");
@@ -36,7 +36,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
     Object.values(store).filter((f) => f.versions.length).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
-      return { name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
+      return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
     }), [store]);
 
   const stat = (s: Status) => { const l = rows.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
@@ -97,8 +97,8 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
 
         <ul className="divide-y divide-border rounded-lg border border-border">
           {shown.map((x) => (
-            <li key={x.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto]">
-              <button onClick={() => onOpen(x.name, x.v)} className="min-w-0 text-left">
+            <li key={x.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto]">
+              <button onClick={() => onOpen(x.id, x.name, x.v)} className="min-w-0 text-left">
                 <p className="truncate font-medium text-foreground">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
                 <p className="truncate text-xs text-muted-foreground">
                   {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
@@ -107,7 +107,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
               <span className="order-3 col-span-2 truncate text-xs text-muted-foreground sm:order-none sm:col-span-1">{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
               <span className="text-right text-sm font-semibold tabular-nums text-foreground">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
               <select value={x.status} aria-label="Status"
-                onChange={(e) => { setVersionStatus(x.name, x.v.version, e.target.value as Status); onChanged?.(); }}
+                onChange={(e) => { setVersionStatus(x.id, x.v.version, e.target.value as Status); onChanged?.(); }}
                 className={`ds-badge order-4 outline-none sm:order-none ${STATUS_CLS[x.status]}`}>
                 {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
               </select>
