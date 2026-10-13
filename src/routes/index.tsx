@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { Tidslinje } from "@/components/Aktivitet";
-import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
+import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
 import { KanbanSquare, Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Zap, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
