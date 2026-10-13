@@ -4,13 +4,14 @@ import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { Tidslinje } from "@/components/Aktivitet";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
 import { Hem } from "@/components/Hem";
+import { Pipeline } from "@/components/Pipeline";
 import { Kalender } from "@/components/Kalender";
 import { Anvandare } from "@/components/Anvandare";
 import { getMyRole } from "@/lib/users.functions";
@@ -72,9 +73,10 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "hem" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
+type Tab = "hem" | "pipeline" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "hem", label: "Hem", icon: House },
+  { id: "pipeline", label: "Pipeline", icon: KanbanSquare },
   { id: "kund", label: "Kund", icon: User },
   { id: "forsatt", label: "Försättsblad", icon: FileText },
   { id: "objekt", label: "Objekt", icon: Building2 },
@@ -153,7 +155,9 @@ function NumField({ label, value, onChange, min = 0, max }: { label: string; val
 const STATUS: Record<Status, { label: string; cls: string }> = {
   utkast: { label: "Utkast", cls: "bg-muted text-muted-foreground" },
   skickat: { label: "Skickat", cls: "bg-info/15 text-info" },
+  forhandling: { label: "Förhandling", cls: "bg-warning/15 text-foreground" },
   signerat: { label: "Signerat", cls: "bg-success/15 text-success" },
+  forlorat: { label: "Förlorat", cls: "bg-destructive/15 text-destructive" },
 };
 
 function ConfirmDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
@@ -347,6 +351,10 @@ function App() {
           <main className="w-full flex-1 space-y-4 px-3 py-4 pb-24 sm:px-4 sm:py-5 sm:pb-8">
             {tab === "hem" && (
               <Hem store={store} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
+                onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
+            )}
+            {tab === "pipeline" && (
+              <Pipeline store={store} onChanged={() => setStore(loadStore())}
                 onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
             )}
             {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} />}
