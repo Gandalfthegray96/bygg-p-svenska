@@ -1,11 +1,18 @@
 import { useRef, useState } from "react";
 import { FolderUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { classify, pdfText, type ImportHit, type ImportKind } from "@/lib/pdf-import";
+import { classify, mergeKalkyler, pdfText, type ImportHit, type ImportKind, type Kalkyl } from "@/lib/pdf-import";
 import { avtalNrOwner, importAvtal, type CustomerFolder, type Status } from "@/lib/avtal-store";
 import { fmtKr } from "@/lib/kalkyl";
 
-type Item = ImportHit & { on: boolean; status: Status; dup: string | null };
+type Item = ImportHit & { on: boolean; status: Status; dup: string | null; kalk: string };
+/** kalk = "källfilens path|index" eller "path|all" — vilken kalkyl som ska användas för avtalet. */
+const kalkOf = (items: Item[], x: Item): Kalkyl | null => {
+  const [p, k] = [x.kalk.slice(0, x.kalk.lastIndexOf("|")), x.kalk.slice(x.kalk.lastIndexOf("|") + 1)];
+  const src = items.find((y) => y.path === p);
+  if (!src?.kalkyler.length) return null;
+  return k === "all" ? mergeKalkyler(src.kalkyler) : src.kalkyler[Number(k)] ?? null;
+};
 type FsEntry = { isFile: boolean; isDirectory: boolean; name: string; fullPath: string; file?: (cb: (f: File) => void, err: (e: unknown) => void) => void; createReader?: () => { readEntries: (cb: (e: FsEntry[]) => void, err: (e: unknown) => void) => void } };
 
 async function walk(e: FsEntry, out: { file: File; path: string }[]) {
@@ -43,7 +50,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       try { text = await pdfText(await file.arrayBuffer()); } catch { /* trasig pdf */ }
       const h = classify(text, file.name, path, folder);
       const dup = h.avtalNr ? avtalNrOwner(store, h.avtalNr) || (out.find((x) => x.avtalNr && x.avtalNr.toLowerCase() === h.avtalNr.toLowerCase())?.kund ?? null) : null;
-      out.push({ ...h, on: h.kind === "ok" && !dup, status: "signerat", dup });
+      out.push({ ...h, on: h.kind !== "ej" && !dup, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}` });
       setBusy({ n: i + 1, of: files.length });
     }
     setItems(out); setBusy(null); setTab(out.some((x) => x.kind === "ok") ? "ok" : "granska");
@@ -67,7 +74,11 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
   const valda = items.filter((x) => x.on && x.kind !== "ej" && !x.dup);
   const spara = () => {
     if (!valda.length) return;
-    const n = importAvtal(valda);
+    const n = importAvtal(valda.map((x) => {
+      const k = kalkOf(items, x);
+      const src = x.kalk.startsWith(`${x.path}|`) ? "" : x.kalk.slice(0, x.kalk.lastIndexOf("|"));
+      return k ? { ...x, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : x;
+    }));
     alert(`${n} avtal importerade till registret.`);
     onDone();
   };
@@ -113,7 +124,16 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                         <select className="ds-input" value={x.status} onChange={(e) => upd(i, { status: e.target.value as Status })} aria-label="Status">
                           <option value="signerat">Signerat</option><option value="skickat">Väntar på svar</option><option value="utkast">Utkast</option>
                         </select>
-                        {x.perYear !== null && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{x.objekt.reduce((s, o) => s + o.qty, 0)} objekt ({x.objekt.length} typer) · {x.besokPerAr} besök/år · pris i PDF: {fmtKr(x.perYear)} / år (kalkylen justeras till detta)</p>}
+                        <select className="ds-input col-span-2 sm:col-span-4" value={x.kalk} onChange={(e) => upd(i, { kalk: e.target.value })} aria-label="Kalkyl">
+                          {items.filter((y) => y.kalkyler.length).map((y) => (
+                            <optgroup key={y.path} label={y.path === x.path ? "Kalkyl i denna fil" : `Slå ihop med kalkyl från: ${y.file}`}>
+                              {y.kalkyler.map((k, ki) => <option key={ki} value={`${y.path}|${ki}`}>{k.namn} – {k.objekt.reduce((s, o) => s + o.qty, 0)} objekt{k.perYear !== null ? `, ${fmtKr(k.perYear)}/år` : ""}</option>)}
+                              {y.kalkyler.length > 1 && <option value={`${y.path}|all`}>Alla {y.kalkyler.length} sammanslagna</option>}
+                            </optgroup>
+                          ))}
+                          {!x.kalkyler.length && <option value={x.kalk}>Ingen kalkyl i filen{x.perYear !== null ? ` (pris ${fmtKr(x.perYear)}/år)` : ""}</option>}
+                        </select>
+                        {(() => { const k = kalkOf(items, x); return k && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{k.objekt.reduce((s, o) => s + o.qty, 0)} objekt ({k.objekt.length} typer) · {k.besokPerAr} besök/år{k.perYear !== null && <> · pris: {fmtKr(k.perYear)} / år (kalkylen justeras till detta)</>}</p>; })()}
                       </div>
                     )}
                   </div>

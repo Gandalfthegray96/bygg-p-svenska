@@ -23,3 +23,14 @@ test("objekttabellen i Bilaga 1 läses in", () => {
   expect(JSON.stringify(r.objekt)).toBe(JSON.stringify([{ name: "Takskjutport", qty: 3 }, { name: "Lastbrygga", qty: 2 }]));
   expect(r.besokPerAr).toBe(2);
 });
+
+test("formulärfält och 'E-post Faktura' ger inte fel klassning, flera kalkyler hittas", () => {
+  const t = "[[Fält Kund 2: Essity AB]]\n[[Fält Dokument beteckning: LIH_C0157]]\nAvtal mellan parter\nE-post Faktura:\nLilla Edet\nObjekt Antal\nPort el 71\nAntal servicetillfällen per år: 2\nKostnad per år (exkl. moms): 81 400,00 kr\nMölnlycke\nObjekt Antal\nRullport 16 Lyftbord 2\nKostnad per år (exkl. moms): 26 200,00 kr";
+  const h = classify(t, "a.pdf", "a.pdf", "X");
+  expect(h.kind).toBe("granska");
+  expect(h.kund).toBe("Essity AB");
+  expect(h.avtalNr).toBe("LIH_C0157");
+  expect(h.kalkyler.length).toBe(2);
+  expect(h.kalkyler[1]!.objekt.length).toBe(2);
+  expect(h.perYear).toBe(107600);
+});
