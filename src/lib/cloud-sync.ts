@@ -34,8 +34,29 @@ export async function pullAll(uid: string) {
     store[id] = { ...raw, id, name: raw["name"] ?? r.name };
     lastShared[id] = JSON.stringify(r.folder);
   }
+  // Äldre avtal som bara ligger i kontots personliga synk lyfts in i det gemensamma registret.
+  const personal = data.find((r) => r.key === SHARED_STORE_KEY)?.value;
+  let migrated = 0;
+  if (personal && typeof personal === "object" && !Array.isArray(personal)) {
+    const nrOf = (f: unknown) => {
+      const v = (f as { versions?: { data?: { customer?: { avtalNr?: string } } }[] })?.versions;
+      return (v?.at(-1)?.data?.customer?.avtalNr ?? "").trim().toLowerCase();
+    };
+    const nrs = new Set(Object.values(store).map(nrOf).filter(Boolean));
+    for (const [key, f] of Object.entries(personal as Record<string, unknown>)) {
+      if (!f || typeof f !== "object") continue;
+      const raw = f as Record<string, unknown>;
+      const id = typeof raw["id"] === "string" && (raw["id"] as string).trim() ? (raw["id"] as string) : key;
+      const nr = nrOf(raw);
+      if (id in store || (nr && nrs.has(nr))) continue;
+      store[id] = { ...raw, id, name: raw["name"] ?? key };
+      if (nr) nrs.add(nr);
+      migrated++;
+    }
+  }
   localStorage.setItem(SHARED_STORE_KEY, JSON.stringify(store));
   localStorage.setItem(OWNER_KEY, uid);
+  if (migrated) await pushShared(store);
 }
 
 export function stopSync() {
