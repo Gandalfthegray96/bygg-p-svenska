@@ -9,11 +9,13 @@ type Row = { id: string; name: string; v: Version; status: Status; perYear: numb
 type Filter = "alla" | Status;
 type Sort = "datum" | "varde" | "kund";
 
-const STATUS_LABEL: Record<Status, string> = { utkast: "Utkast", skickat: "Väntar på svar", signerat: "Signerat" };
+const STATUS_LABEL: Record<Status, string> = { utkast: "Utkast", skickat: "Väntar på svar", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
 const STATUS_CLS: Record<Status, string> = {
   signerat: "bg-success/15 text-success",
   skickat: "bg-info/15 text-info",
   utkast: "bg-muted text-muted-foreground",
+  forhandling: "bg-primary/20 text-foreground",
+  forlorat: "bg-destructive/15 text-destructive",
 };
 
 function Stat({ label, value, sub, icon, active, onClick }: { label: string; value: string; sub: string; icon: ReactNode; active: boolean; onClick: () => void }) {

@@ -2,9 +2,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
 import { type Avtal, normalizeAvtal } from "./kalkyl";
 
-export type Status = "utkast" | "skickat" | "signerat";
+export type Status = "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status };
-export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering";
+export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat";
 export type Activity = { id: string; at: string; by: string; kind: ActivityKind; text: string };
 export type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
@@ -97,7 +97,7 @@ export function saveDraft(a: Avtal) {
   pushKey(DRAFT_KEY, raw);
 }
 
-const STATUS_TEXT: Record<Status, string> = { skickat: "Avtal skickat", signerat: "Avtal signerat", utkast: "Återställt till utkast" };
+const STATUS_TEXT: Record<Status, string> = { skickat: "Avtal skickat", signerat: "Avtal signerat", utkast: "Återställt till utkast", forhandling: "Uppföljning / förhandling", forlorat: "Avtal förlorat / avböjt" };
 
 export function setVersionStatus(id: string, version: number, status: Status) {
   const store = loadStore();
