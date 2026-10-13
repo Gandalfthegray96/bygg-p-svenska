@@ -20,6 +20,6 @@ test("gammalt avtal utan avtalsnr ska granskas, kund från mappen", () => {
 test("objekttabellen i Bilaga 1 läses in", () => {
   const t = "Bilaga 1\nObjekt Antal\nTakskjutport 3\nLastbrygga 2\nTotalt antal objekt: 5\nAntal servicetillfällen per år: 2\nKostnad per år (exkl. moms): 12 000,00 kr";
   const r = parseObjekt(t);
-  expect(r.objekt).toEqual([{ name: "Takskjutport", qty: 3 }, { name: "Lastbrygga", qty: 2 }]);
+  expect(JSON.stringify(r.objekt)).toBe(JSON.stringify([{ name: "Takskjutport", qty: 3 }, { name: "Lastbrygga", qty: 2 }]));
   expect(r.besokPerAr).toBe(2);
 });

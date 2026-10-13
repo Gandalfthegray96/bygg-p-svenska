@@ -44,7 +44,7 @@ export function parseObjekt(t: string): { objekt: ImportObj[]; besokPerAr: numbe
     if (/^Totalt antal objekt|servicetillfällen|^Kostnad/i.test(l)) break;
     if (/^Objekt\s+Antal$/i.test(l)) continue;
     const m = l.match(/^(.+?)\s+(\d{1,4})$/);
-    if (m && !/^(Bilaga|Sida)/i.test(m[1])) objekt.push({ name: m[1].trim(), qty: Number(m[2]) });
+    if (m && m[1] && !/^(Bilaga|Sida)/i.test(m[1])) objekt.push({ name: m[1].trim(), qty: Number(m[2]) });
   }
   return { objekt, besokPerAr };
 }
