@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
-import { type Avtal, normalizeAvtal } from "./kalkyl";
+import { type Avtal, emptyAvtal, fmtKr, normalizeAvtal } from "./kalkyl";
 
 export type Status = "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status; downloadedAt?: string };
@@ -175,4 +175,23 @@ export function avtalNrOwner(store: Record<string, CustomerFolder>, nr: string, 
     if (v && v === t) return f.name;
   }
   return null;
+}
+
+/** Mapp-import: varje godkänd PDF blir en egen avtalspost. Priset från PDF:en noteras i loggen. */
+export function importAvtal(items: { kund: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; status: Status }[]): number {
+  const store = loadStore();
+  let n = 0;
+  for (const it of items) {
+    if (avtalNrOwner(store, it.avtalNr)) continue;
+    const a = emptyAvtal();
+    a.rows = [];
+    Object.assign(a.customer, { bestallare: it.kund.trim() || "Namnlös kund", avtalNr: it.avtalNr, anlAdress: it.adress, ...(it.datum ? { datum: it.datum } : {}) });
+    const f: CustomerFolder = { id: crypto.randomUUID(), name: a.customer.bestallare, versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: it.status }] };
+    logTo(f, "skapat", `Importerat från PDF: ${it.path}`);
+    if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
+    store[f.id] = f;
+    n++;
+  }
+  saveStore(store);
+  return n;
 }
