@@ -7,6 +7,8 @@ import { Tidslinje, type LogItem } from "./Aktivitet";
 
 const STATUS: Record<"signerat" | "skickat" | "utkast", { t: string; cls: string }> = {
   signerat: { t: "Signerat", cls: "bg-success/15 text-success" },
+  forhandling: { t: "Förhandling", cls: "bg-primary/20 text-foreground" },
+  forlorat: { t: "Förlorat", cls: "bg-destructive/15 text-destructive" },
   skickat: { t: "Väntar på svar", cls: "bg-info/15 text-info" },
   utkast: { t: "Utkast", cls: "bg-muted text-muted-foreground" },
 };
