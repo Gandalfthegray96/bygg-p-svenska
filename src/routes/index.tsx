@@ -232,10 +232,27 @@ function App() {
     setToast(`Sparat som v${r.version} under ${c.bestallare || "Namnlös kund"}`);
   };
 
+  // Säkerställer sparad version och varnar om den redan laddats ner (markering i avtalsminnet).
+  const ensureSaved = () => {
+    if (currentId && currentVersion) return { id: currentId, v: currentVersion };
+    const r = saveVersion(a, currentId); setCurrentId(r.id); setCurrentVersion(r.version);
+    return { id: r.id, v: r.version };
+  };
+  const downloadOk = (id: string, v: number) => {
+    const at = loadStore()[id]?.versions.find((x) => x.version === v)?.downloadedAt;
+    if (!at) return true;
+    const when = new Date(at).toLocaleString("sv-SE", { dateStyle: "medium", timeStyle: "short" });
+    return window.confirm(`Avtalet (v${v}) laddades redan ner ${when}.\nVill du ladda ner det igen?`);
+  };
+
   const onPdf = async () => {
+    const { id, v } = ensureSaved();
+    if (!downloadOk(id, v)) return;
     try {
       const bytes = await buildAvtalPdf(a);
-      await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, currentVersion)}.pdf`, "application/pdf", ".pdf");
+      await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, v)}.pdf`, "application/pdf", ".pdf");
+      markDownloaded(id, v, "PDF");
+      setStore(loadStore());
     } catch {
       setToast("Kunde inte skapa PDF:en");
     }
@@ -275,11 +292,15 @@ function App() {
 
   // Adobe Sign (utan API): ladda ner PDF med signaturtaggar, kopiera kundens e-post, öppna Adobe Sign.
   const openSign = async () => {
+    const { id, v } = ensureSaved();
+    if (!downloadOk(id, v)) { window.open("https://acrobat.adobe.com/link/sign", "_blank", "noopener"); return; }
     try {
       const bytes = await buildAvtalPdf(a, { signTags: true });
       markSent();
       try { await navigator.clipboard.writeText(c.epost); } catch { /* */ }
-      await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, currentVersion)}_signering.pdf`, "application/pdf", ".pdf");
+      await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, v)}_signering.pdf`, "application/pdf", ".pdf");
+      markDownloaded(id, v, "Signerings-PDF");
+      setStore(loadStore());
       setToast(c.epost ? `Kundens e-post kopierad – släpp PDF:en i Adobe Sign` : "Släpp PDF:en i Adobe Sign");
     } catch {
       setToast("Kunde inte skapa PDF:en");
