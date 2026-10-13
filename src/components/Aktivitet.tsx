@@ -9,7 +9,7 @@ const ICON: Record<ActivityKind, { icon: typeof Send; cls: string }> = {
   skickat: { icon: Send, cls: "bg-info/15 text-info" },
   signerat: { icon: CheckCircle2, cls: "bg-success/15 text-success" },
   utkast: { icon: Undo2, cls: "bg-muted text-muted-foreground" },
-  forhandling: { icon: MessagesSquare, cls: "bg-warning/15 text-foreground" },
+  forhandling: { icon: MessagesSquare, cls: "bg-primary/20 text-foreground" },
   forlorat: { icon: XCircle, cls: "bg-destructive/15 text-destructive" },
   notering: { icon: MessageSquare, cls: "bg-primary/15 text-foreground" },
 };

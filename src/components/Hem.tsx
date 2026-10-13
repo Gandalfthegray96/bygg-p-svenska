@@ -14,7 +14,7 @@ const STATUS_CLS: Record<Status, string> = {
   signerat: "bg-success/15 text-success",
   skickat: "bg-info/15 text-info",
   utkast: "bg-muted text-muted-foreground",
-  forhandling: "bg-warning/15 text-foreground",
+  forhandling: "bg-primary/20 text-foreground",
   forlorat: "bg-destructive/15 text-destructive",
 };
 
