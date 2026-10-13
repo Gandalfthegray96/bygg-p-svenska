@@ -2,10 +2,10 @@ import { useMemo, useState } from "react";
 import { Mail, Phone, Plus, Trash2, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
-import { addNote, customerKey, deleteNote, setCustomerContacts, type Contact, type CustomerFolder, type Version } from "@/lib/avtal-store";
+import { addNote, customerKey, deleteNote, setCustomerContacts, type Contact, type CustomerFolder, type Version, type Status } from "@/lib/avtal-store";
 import { Tidslinje, type LogItem } from "./Aktivitet";
 
-const STATUS: Record<"signerat" | "skickat" | "utkast", { t: string; cls: string }> = {
+const STATUS: Record<Status, { t: string; cls: string }> = {
   signerat: { t: "Signerat", cls: "bg-success/15 text-success" },
   forhandling: { t: "Förhandling", cls: "bg-primary/20 text-foreground" },
   forlorat: { t: "Förlorat", cls: "bg-destructive/15 text-destructive" },
