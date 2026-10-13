@@ -113,7 +113,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                         <select className="ds-input" value={x.status} onChange={(e) => upd(i, { status: e.target.value as Status })} aria-label="Status">
                           <option value="signerat">Signerat</option><option value="skickat">Väntar på svar</option><option value="utkast">Utkast</option>
                         </select>
-                        {x.perYear !== null && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">Pris i PDF: {fmtKr(x.perYear)} / år (sparas i loggen)</p>}
+                        {x.perYear !== null && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{x.objekt.length} objekt · {x.besokPerAr} besök/år · pris i PDF: {fmtKr(x.perYear)} / år (kalkylen justeras till detta)</p>}
                       </div>
                     )}
                   </div>

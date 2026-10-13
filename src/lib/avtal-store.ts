@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
-import { type Avtal, emptyAvtal, fmtKr, normalizeAvtal } from "./kalkyl";
+import { type Avtal, calculate, clampVisits, emptyAvtal, fmtKr, newRow, normalizeAvtal } from "./kalkyl";
 
 export type Status = "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status; downloadedAt?: string };
