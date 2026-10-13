@@ -15,6 +15,7 @@ import { Pipeline } from "@/components/Pipeline";
 import { Kalender } from "@/components/Kalender";
 import { Anvandare } from "@/components/Anvandare";
 import { Express } from "@/components/Express";
+import { Indexering } from "@/components/Indexering";
 import { getMyRole } from "@/lib/users.functions";
 
 function PdfPreview({ a }: { a: Avtal }) {
@@ -604,6 +605,12 @@ function App() {
                       <input value={1} readOnly className={`${inputCls} bg-muted`} />
                     </label>
                   </div>
+                </Card>
+                <Card title="Årlig indexreglering">
+                  <Indexering a={a} onApply={(next, pct) => {
+                    setA(next);
+                    if (currentId) { addNote(currentId, `Indexreglering +${String(pct).replace(".", ",")} % (spara ny version för att behålla)`); setStore(loadStore()); }
+                  }} />
                 </Card>
               </>
             )}
