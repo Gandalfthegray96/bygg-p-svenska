@@ -1,9 +1,10 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, TrendingUp, Search, UserRound } from "lucide-react";
+import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
 import { ImportPdf } from "./ImportPdf";
+import { SagUppDialog, UppsagdaLista } from "./Uppsagt";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
@@ -39,9 +40,12 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
   const [kund, setKund] = useState<string | null>(null);
   const [index, setIndex] = useState(false);
   const [imp, setImp] = useState(false);
+  const [upp, setUpp] = useState<string | null>(null);
+  const [visaUpp, setVisaUpp] = useState(false);
+  const nUpp = Object.values(store).filter((f) => f.uppsagd && f.versions.length).length;
 
   const rows = useMemo<Row[]>(() =>
-    Object.values(store).filter((f) => f.versions.length).map((f) => {
+    Object.values(store).filter((f) => f.versions.length && !f.uppsagd).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
       return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
@@ -71,13 +75,17 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
       </div>
 
       {imp && <ImportPdf store={store} onClose={() => setImp(false)} onDone={() => { setImp(false); onChanged?.(); }} />}
-      {index && <IndexBatch store={store} onClose={() => setIndex(false)} onDone={() => { setIndex(false); onChanged?.(); }} />}
+      {index && <IndexBatch store={Object.fromEntries(Object.entries(store).filter(([, f]) => !f.uppsagd))} onClose={() => setIndex(false)} onDone={() => { setIndex(false); onChanged?.(); }} />}
+
+      {visaUpp && <UppsagdaLista store={store} onChanged={() => onChanged?.()} />}
+      {upp && store[upp] && <SagUppDialog folder={store[upp]} onClose={() => setUpp(null)} onDone={() => { setUpp(null); onChanged?.(); }} />}
 
       <section className="ds-panel space-y-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           <h2 className="truncate font-display text-[15px] font-semibold text-foreground">Avtalsöversikt</h2>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setImp((x) => !x)} className="gap-1.5" aria-label="Importera"><FolderUp size={16} /><span className="hidden sm:inline">Importera</span></Button>
+            <Button variant={visaUpp ? "default" : "outline"} onClick={() => setVisaUpp((x) => !x)} className="gap-1.5" aria-label="Uppsagda avtal"><Ban size={16} /><span className="hidden sm:inline">Uppsagda ({nUpp})</span></Button>
             <Button variant="outline" onClick={() => setIndex((x) => !x)} className="gap-1.5" aria-label="Indexreglering"><TrendingUp size={16} /><span className="hidden sm:inline">Indexreglering</span></Button>
             <Button onClick={onNew} className="gap-1.5"><Plus size={16} />Nytt avtal</Button>
           </div>
@@ -128,6 +136,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
               </select>
               <div className="order-5 flex gap-1.5 justify-self-end sm:order-none">
                 <Button variant="ghost" size="sm" className="gap-1" onClick={() => setKund(x.name)}><UserRound size={14} />Kundkort</Button>
+                <Button variant="ghost" size="sm" className="gap-1 text-destructive" onClick={() => setUpp(x.id)}><Ban size={14} />Säg upp</Button>
                 <Button variant="outline" size="sm" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
               </div>
             </li>
