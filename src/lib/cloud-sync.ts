@@ -57,6 +57,12 @@ export async function pullAll(uid: string) {
   localStorage.setItem(SHARED_STORE_KEY, JSON.stringify(store));
   localStorage.setItem(OWNER_KEY, uid);
   if (migrated) await pushShared(store);
+  // När allt finns i registret tas den gamla personliga kopian bort, så raderade avtal inte återuppstår.
+  if (personal) {
+    const ids = Object.keys(store);
+    const { count } = await supabase.from("avtal_register").select("name", { count: "exact", head: true }).in("name", ids);
+    if (count === ids.length) await supabase.from("user_data").delete().eq("key", SHARED_STORE_KEY).eq("user_id", uid);
+  }
 }
 
 export function stopSync() {
