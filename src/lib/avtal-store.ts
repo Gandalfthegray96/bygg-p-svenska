@@ -7,8 +7,10 @@ export type Version = { version: number; savedAt: string; data: Avtal; status?: 
 export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat" | "nedladdat";
 export type Activity = { id: string; at: string; by: string; kind: ActivityKind; text: string };
 export type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
+export type Uppsagd = { datum: string; orsak: string; notering: string; by: string; at: string };
+export const UPPSAGD_ORSAKER = ["Pris", "Bytt leverantör", "Verksamheten flyttad/nedlagd", "Portar utbytta/borttagna", "Missnöjd med service", "Egen regi", "Annat"];
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
-export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[] };
+export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[]; uppsagd?: Uppsagd };
 
 const STORE_KEY = "uc-avtal-store";
 const DRAFT_KEY = "uc-avtal-draft";
@@ -31,6 +33,7 @@ export function normalizeFolder(key: string, f: Partial<CustomerFolder> & { vers
   const out: CustomerFolder = { id, name, versions: Array.isArray(f.versions) ? f.versions : [] };
   if (Array.isArray(f.log)) out.log = f.log;
   if (Array.isArray(f.contacts)) out.contacts = f.contacts;
+  if (f.uppsagd && typeof f.uppsagd === "object") out.uppsagd = f.uppsagd;
   return out;
 }
 
@@ -79,6 +82,32 @@ export function deleteVersion(id: string, version: number) {
   if (!f) return;
   f.versions = f.versions.filter((v) => v.version !== version);
   if (f.versions.length === 0) delete store[id];
+  saveStore(store);
+}
+
+/** Säger upp ett avtal: datum, orsak och notering sparas och loggas. Avtalet flyttas till "Uppsagda avtal". */
+export function sagUpp(id: string, u: { datum: string; orsak: string; notering: string }) {
+  const store = loadStore();
+  const f = store[id];
+  if (!f) return;
+  f.uppsagd = { ...u, by: actorName(), at: new Date().toISOString() };
+  logTo(f, "notering", `Avtal uppsagt ${u.datum} – ${u.orsak}${u.notering ? `: ${u.notering}` : ""}`);
+  saveStore(store);
+}
+
+export function angraUppsagning(id: string) {
+  const store = loadStore();
+  const f = store[id];
+  if (!f?.uppsagd) return;
+  delete f.uppsagd;
+  logTo(f, "notering", "Uppsägning ångrad");
+  saveStore(store);
+}
+
+/** Tar bort avtalsposten helt från appen (finns kvar i SharePoint). */
+export function deleteAvtal(id: string) {
+  const store = loadStore();
+  delete store[id];
   saveStore(store);
 }
 
