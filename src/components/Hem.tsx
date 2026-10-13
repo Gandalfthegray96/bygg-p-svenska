@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, Plus, TrendingUp, Search, UserRound } from "lucide-react";
+import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, TrendingUp, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
@@ -38,6 +38,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
   const [ansv, setAnsv] = useState("alla");
   const [kund, setKund] = useState<string | null>(null);
   const [index, setIndex] = useState(false);
+  const [imp, setImp] = useState(false);
 
   const rows = useMemo<Row[]>(() =>
     Object.values(store).filter((f) => f.versions.length).map((f) => {

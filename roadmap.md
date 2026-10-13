@@ -19,6 +19,10 @@
 
 - [x] Mejlets ämne: "Avtalsförslag <avtalsnr>"
 
+- [x] Nedladdningsmarkering + varning om avtalet redan laddats ner
+- [x] Obligatoriska signaturfält + ort och datum i signerings-PDF
+- [x] Mapp-import av PDF-avtal med sållning (klara / granska / ej avtal)
+
 ## Klart
 - [x] Objekt-fält: Tillverkningsnummer, Fabrikat, Besiktningsnummer
 - [x] Manuellt slutpris-fält (justeringsfält enligt kalkylmallen väntar på bygget ovan)
