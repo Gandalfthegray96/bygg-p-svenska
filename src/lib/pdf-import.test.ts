@@ -34,3 +34,11 @@ test("formulärfält och 'E-post Faktura' ger inte fel klassning, flera kalkyler
   expect(h.kalkyler[1]!.objekt.length).toBe(2);
   expect(h.perYear).toBe(107600);
 });
+
+test("avtalsnr ur filnamn och korta mappnamn ignoreras", () => {
+  const { avtalNrFromFile: f } = require("./pdf-import");
+  expect(f("OF LIH_C0157-1.pdf")).toBe("LIH_C0157");
+  const h = classify("Kalkyl utan rubrik", "OF LIH_C0157.pdf", "OF/A/OF LIH_C0157.pdf", "A");
+  expect(h.avtalNr).toBe("LIH_C0157");
+  expect(h.kund).toBe("");
+});

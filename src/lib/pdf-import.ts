@@ -18,16 +18,19 @@ const amount = (s: string) => { const n = Number(s.replace(/[\s\u00a0.]/g, "").r
 const field = (t: string, name: string) => pick(t, new RegExp(`\\[\\[Fält ${name}: ([^\\]]*)\\]\\]`));
 const perYearOf = (t: string) => amount(pick(t, /(?:Kostnad|Pris|Avgift)\s+per\s+år[^\d\n]{0,40}([\d\s.]+(?:,\d{1,2})?)/i));
 
+/** Avtalsnr ur filnamn, t.ex. "OF LIH_C0157-1.pdf" → "LIH_C0157". */
+export const avtalNrFromFile = (file: string) => file.match(/([A-Za-z]{2,5}_[A-Za-z]?\d{3,6})/)?.[1] ?? "";
+
 /** Klassar en PDF utifrån dess text. folder = mappen filen ligger i (används som kundnamn om inget hittas). */
 export function classify(text: string, file: string, path: string, folder: string): ImportHit {
   const t = text.replace(/\u00a0/g, " ");
   const hay = `${file}\n${t}`;
   const avtal = AVTAL_ORD.filter((r) => r.test(hay)).length;
   const ej = EJ_AVTAL.some((r) => r.test(t.slice(0, 1500)));
-  const avtalNr = pick(t, /Avtal\s*(?:s?nr|nummer)\.?\s*:?\s*([A-Za-z]{0,6}[\-\s]?\d[\w\-/]{0,20})/i) || field(t, "Dokument beteckning");
+  const avtalNr = pick(t, /Avtal\s*(?:s?nr|nummer)\.?\s*:?\s*([A-Za-z]{0,6}[\-\s]?\d[\w\-/]{0,20})/i) || field(t, "Dokument beteckning") || avtalNrFromFile(file);
   let kund = field(t, "Kund 2") || pick(t, /Beställare\s*:?\s*\n?\s*([^\n]{2,60})/);
   if (/^(UK Portservice AB|Entrepren|Org\.?\s*nr)/i.test(kund)) kund = "";
-  kund = kund || folder;
+  kund = kund || (folder.trim().length > 2 ? folder : "");
   const datum = pick(t, /(20\d\d-\d\d-\d\d)/);
   const adress = pick(t, /(?:Anläggningsadress|Adress obj\w*|Objektsadress)\s*:?\s*([^\n]{3,80})/i) || field(t, "Projekt");
   const kalkyler = parseKalkyler(t);
