@@ -110,6 +110,23 @@ export function setVersionStatus(id: string, version: number, status: Status) {
   saveStore(store);
 }
 
+/** Batch-indexering: ny version per avtal med uppräknade priser, status behålls, loggas. */
+export function indexeraBatch(ids: string[], pct: number, scale: (a: Avtal) => Avtal): number {
+  const store = loadStore();
+  let n = 0;
+  for (const id of ids) {
+    const f = store[id];
+    const last = f?.versions.at(-1);
+    if (!f || !last) continue;
+    const version = last.version + 1;
+    f.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(scale(normalizeAvtal(last.data))), status: last.status ?? "utkast" });
+    logTo(f, "version", `Indexreglering +${String(pct).replace(".", ",")} % (v${version})`);
+    n++;
+  }
+  saveStore(store);
+  return n;
+}
+
 /** Manuell anteckning på ett avtal. */
 export function addNote(id: string, text: string) {
   const t = text.trim();
