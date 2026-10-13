@@ -4,7 +4,7 @@ import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { Tidslinje } from "@/components/Aktivitet";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { KanbanSquare, Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Zap, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -14,6 +14,7 @@ import { Hem } from "@/components/Hem";
 import { Pipeline } from "@/components/Pipeline";
 import { Kalender } from "@/components/Kalender";
 import { Anvandare } from "@/components/Anvandare";
+import { Express } from "@/components/Express";
 import { getMyRole } from "@/lib/users.functions";
 
 function PdfPreview({ a }: { a: Avtal }) {
@@ -73,7 +74,7 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "hem" | "pipeline" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
+type Tab = "hem" | "pipeline" | "express" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "hem", label: "Hem", icon: House },
   { id: "pipeline", label: "Pipeline", icon: KanbanSquare },
@@ -81,11 +82,24 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "forsatt", label: "Försättsblad", icon: FileText },
   { id: "objekt", label: "Objekt", icon: Building2 },
   { id: "pris", label: "Pris", icon: Coins },
-  { id: "avtal", label: "Förhandsgranskning", icon: FileCheck2 },
+  { id: "avtal", label: "Granskning", icon: FileCheck2 },
+  { id: "express", label: "Express", icon: Zap },
   { id: "sparade", label: "Sparade", icon: Archive },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
+
+const AVTAL_SUB: Tab[] = ["kund", "forsatt", "objekt", "pris", "avtal"];
+const MAIN: { id: Tab; label: string; icon: typeof User }[] = [
+  { id: "hem", label: "Hem", icon: House },
+  { id: "pipeline", label: "Pipeline", icon: KanbanSquare },
+  { id: "express", label: "Express", icon: Zap },
+  { id: "kund", label: "Avtal", icon: FileText },
+  { id: "sparade", label: "Sparade", icon: Archive },
+  { id: "kalender", label: "Kalender", icon: CalendarDays },
+  { id: "anvandare", label: "Användare", icon: Users },
+];
+const isMainActive = (main: Tab, tab: Tab) => (main === "kund" ? AVTAL_SUB.includes(tab) : main === tab);
 
 const inputCls = "ds-input";
 const btnPrimary = "bg-primary text-primary-foreground hover:bg-primary/90";
@@ -276,21 +290,21 @@ function App() {
     <div className="min-h-screen">
       <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
         {/* Sidomeny */}
-        <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 hidden h-screen w-14 sm:flex shrink-0 flex-col items-center gap-4 py-6 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[72px] sm:rounded-2xl">
+        <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 hidden h-screen w-14 sm:flex shrink-0 flex-col items-center gap-2 py-5 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[84px] sm:rounded-2xl">
           <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
-          {TABS.filter((t) => t.id !== "avtal" && (t.id !== "anvandare" || isAdmin)).map((t) => {
+          {MAIN.filter((t) => t.id !== "anvandare" || isAdmin).map((t) => {
             const Icon = t.icon;
-            const active = tab === t.id;
+            const active = isMainActive(t.id, tab);
             return (
               <Button variant="glassNavigation"
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 title={t.label}
-                aria-label={t.label}
                 aria-current={active ? "page" : undefined}
-                className="h-10 w-10 shrink-0 p-0 [&_svg]:size-5"
+                className="h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
               >
                 <Icon size={19} strokeWidth={active ? 2.3 : 1.9} />
+                <span className="text-[10.5px] font-medium leading-none">{t.label}</span>
               </Button>
             );
           })}
@@ -298,9 +312,10 @@ function App() {
             onClick={() => lockApp()}
             title="Lås appen"
             aria-label="Lås appen"
-            className="mt-auto h-10 w-10 shrink-0 p-0 [&_svg]:size-5"
+            className="mt-auto h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
           >
             <Lock size={19} />
+            <span className="text-[10.5px] font-medium leading-none">Lås</span>
           </Button>
         </nav>
 
@@ -313,7 +328,7 @@ function App() {
                   <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</p>
                   <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
                 </div>
-                <dl aria-label="Avtalssammanfattning" className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+                <dl aria-label="Avtalssammanfattning" className={`${tab === "express" ? "hidden" : "grid"} w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`}>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Objekt</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalQty)} st</dd></div>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Servicetid</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalMinutes / 60)} h</dd></div>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Pris/år</dt><dd className="mt-1 break-words font-display text-base font-semibold text-info sm:text-lg">{fmtKr(k.perYear)}</dd></div>
@@ -333,9 +348,9 @@ function App() {
               </div>
             </div>
             <nav aria-label="Meny" className="flex gap-1 overflow-x-auto border-t border-border px-2 py-1.5 sm:hidden">
-              {TABS.filter((t) => t.id !== "avtal" && (t.id !== "anvandare" || isAdmin)).map((t) => {
+              {MAIN.filter((t) => t.id !== "anvandare" || isAdmin).map((t) => {
                 const Icon = t.icon;
-                const active = tab === t.id;
+                const active = isMainActive(t.id, tab);
                 return (
                   <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
                     className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
@@ -343,7 +358,6 @@ function App() {
                   </button>
                 );
               })}
-              <button onClick={() => setTab("avtal")} className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"><Eye size={15} />Förhandsgranska</button>
               <button onClick={() => lockApp()} aria-label="Lås appen" className="flex shrink-0 items-center rounded-lg px-2.5 py-1.5 text-muted-foreground hover:bg-muted"><Lock size={15} /></button>
             </nav>
           </header>
@@ -356,6 +370,24 @@ function App() {
             {tab === "pipeline" && (
               <Pipeline store={store} onChanged={() => setStore(loadStore())}
                 onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
+            )}
+            {AVTAL_SUB.includes(tab) && (
+              <nav aria-label="Avtalets delar" className="-mt-1 flex gap-1 overflow-x-auto rounded-xl border border-border bg-muted/50 p-1">
+                {AVTAL_SUB.map((id) => {
+                  const t = TABS.find((x) => x.id === id)!;
+                  const Icon = t.icon;
+                  const active = tab === id;
+                  return (
+                    <button key={id} type="button" onClick={() => setTab(id)} aria-current={active ? "page" : undefined}
+                      className={`flex shrink-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ${active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                      <Icon size={15} />{t.label}
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
+            {tab === "express" && (
+              <Express onOpenFull={(x) => { setA(x); setCurrentVersion(undefined); setCurrentId(undefined); setOpenId(""); setTab("kund"); setToast("Expresskalkylen öppnad som nytt avtal – fyll i kunduppgifterna"); }} />
             )}
             {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} />}
             {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
