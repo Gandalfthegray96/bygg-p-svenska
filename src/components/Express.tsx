@@ -11,7 +11,7 @@ export function buildExpressAvtal(lines: Record<string, Line>, rabattTim: number
   const base = emptyAvtal();
   const rows = OBJEKT_TYPER.filter((t) => (lines[t]?.qty ?? 0) > 0).map((t) => {
     const l = lines[t]!;
-    return { ...newRow(), name: t, qty: l.qty, minutes: l.minutes, visits: l.visits };
+    return { ...newRow(), name: t, qty: l.qty, minutes: Number.isFinite(l.minutes) ? l.minutes : 0, visits: l.visits };
   });
   return { ...base, rows: rows.length ? rows : base.rows, rabattTim, rabattMaterial, discount };
 }
