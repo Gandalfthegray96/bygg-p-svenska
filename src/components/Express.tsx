@@ -11,7 +11,7 @@ export function buildExpressAvtal(lines: Record<string, Line>, rabattTim: number
   const base = emptyAvtal();
   const rows = OBJEKT_TYPER.filter((t) => (lines[t]?.qty ?? 0) > 0).map((t) => {
     const l = lines[t]!;
-    return { ...newRow(), name: t, qty: l.qty, minutes: l.minutes, visits: l.visits };
+    return { ...newRow(), name: t, qty: l.qty, minutes: Number.isFinite(l.minutes) ? l.minutes : 0, visits: l.visits };
   });
   return { ...base, rows: rows.length ? rows : base.rows, rabattTim, rabattMaterial, discount };
 }
@@ -75,16 +75,19 @@ export function Express({ onOpenFull }: { onOpenFull: (a: Avtal) => void }) {
                     <span className="min-w-0 truncate text-sm font-medium text-foreground">{t}</span>
                     <Stepper label={`antal ${t}`} value={l.qty} onChange={(n) => set(t, { qty: n })} />
                   </div>
-                  {l.qty > 0 && (
-                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                      <label className="flex items-center gap-1.5">Min/st
-                        <input type="number" inputMode="numeric" min={0} value={l.minutes} onFocus={(e) => e.target.select()}
-                          onChange={(e) => set(t, { minutes: Math.max(0, Number(e.target.value) || 0) })}
-                          className="ds-input h-8 w-20 py-1 text-sm" />
-                      </label>
-                      <span className="flex items-center gap-1.5">Besök/år <Stepper label={`besök per år ${t}`} min={1} max={12} value={l.visits} onChange={(n) => set(t, { visits: n })} /></span>
-                    </div>
-                  )}
+                  <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground ${l.qty > 0 ? "" : "opacity-60"}`}>
+                    <span className="flex items-center gap-1.5">Tid/st (min)
+                      <Button variant="ghost" type="button" aria-label={`Minska tid ${t}`} onClick={() => set(t, { minutes: Math.max(0, l.minutes - 5) })}
+                        className="h-8 w-8 rounded-lg border border-border bg-card p-0 text-foreground hover:bg-muted"><Minus size={14} /></Button>
+                      <input type="number" inputMode="numeric" min={0} aria-label={`Tid per styck ${t}`} value={Number.isFinite(l.minutes) ? l.minutes : ""} onFocus={(e) => e.target.select()}
+                        onChange={(e) => set(t, { minutes: e.target.value === "" ? NaN : Math.max(0, Number(e.target.value)) })}
+                        onBlur={() => { if (!Number.isFinite(l.minutes)) set(t, { minutes: 0 }); }}
+                        className="ds-input h-8 w-16 py-1 text-center text-sm" />
+                      <Button variant="ghost" type="button" aria-label={`Öka tid ${t}`} onClick={() => set(t, { minutes: (l.minutes || 0) + 5 })}
+                        className="h-8 w-8 rounded-lg border border-border bg-card p-0 text-foreground hover:bg-muted"><Plus size={14} /></Button>
+                    </span>
+                    <span className="flex items-center gap-1.5">Besök/år <Stepper label={`besök per år ${t}`} min={1} max={12} value={l.visits} onChange={(n) => set(t, { visits: n })} /></span>
+                  </div>
                 </li>
               );
             })}
