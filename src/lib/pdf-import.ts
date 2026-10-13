@@ -17,7 +17,7 @@ export function classify(text: string, file: string, path: string, folder: strin
   const hay = `${file}\n${t}`;
   const avtal = AVTAL_ORD.filter((r) => r.test(hay)).length;
   const ej = EJ_AVTAL.some((r) => r.test(t.slice(0, 1500)));
-  const avtalNr = pick(t, /Avtal\s*(?:s?nr|nummer)\.?\s*:?\s*([A-Za-z0-9][\w\-/]{1,24})/i);
+  const avtalNr = pick(t, /Avtal\s*(?:s?nr|nummer)\.?\s*:?\s*([A-Za-z]{0,6}[\-\s]?\d[\w\-/]{0,20})/i);
   const kund = pick(t, /Beställare\s*:?\s*\n?\s*([^\n]{2,60})/) .replace(/^(UK Portservice AB)$/i, "") || folder;
   const datum = pick(t, /(20\d\d-\d\d-\d\d)/);
   const adress = pick(t, /(?:Anläggningsadress|Adress obj\w*|Objektsadress)\s*:?\s*([^\n]{3,80})/i);
