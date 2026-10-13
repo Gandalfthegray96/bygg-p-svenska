@@ -1,6 +1,6 @@
 // Bygger avtalet av era ORIGINAL-PDF:er (public/pdf/). Endast befintliga formulärfält fylls i —
 // layout och text i originalen ändras aldrig. Bilaga 1 (Kostnad) är det enda bladet som skapas.
-import { PDFDocument, StandardFonts, rgb, type PDFForm } from "pdf-lib";
+import { PDFDocument, PDFName, PDFString, StandardFonts, rgb, type PDFForm, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { type Avtal, calculate, rabattText } from "@/lib/kalkyl";
 
@@ -101,15 +101,6 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   });
   fa.updateFieldAppearances(await arial(fu));
   fa.flatten();
-  if (opts.signTags) {
-    // Adobe Sign text-taggar (vit text) – placerar signaturfälten exakt på underskriftslinjerna.
-    const sp = fu.getPage(2);
-    const tf = await fu.embedFont(StandardFonts.Helvetica);
-    const tag = (t: string, x: number, y: number) => sp.drawText(t, { x, y, size: 10, font: tf, color: rgb(1, 1, 1) });
-    tag("{{Sig1_es_:signer1:signature}}", 150, 152);
-    tag("{{Sig2_es_:signer2:signature}}", 364, 152);
-  }
-
   // Prislistan: ersätt rabattraden (originalet säger 10 %/10 %) med avtalets egna procentsatser.
   if (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10) {
     const pp = pris.getPage(0);
@@ -125,5 +116,34 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   await add(b1, b1.getPageIndices());     // Bilaga 1 – före signering
   await add(fu, [2]);                     // Sida 3 – signatursida
   await add(pris, pris.getPageIndices()); // Bilaga 2 – Prislista, sist
+  if (opts.signTags) await signFields(out, out.getPage(fsb.getPageCount() + 2 + b1.getPageCount()), c.postort);
   return out.save();
+}
+
+/** Obligatoriskt signaturfält (/Sig) – kunden måste signera; namnen följer Adobe Signs fältkonvention. */
+function sigField(doc: PDFDocument, page: PDFPage, name: string, tip: string, x: number, y: number, w: number, h: number) {
+  const ctx = doc.context;
+  const field = ctx.obj({
+    FT: "Sig", T: PDFString.of(name), TU: PDFString.of(tip), Ff: 2, Type: "Annot", Subtype: "Widget",
+    Rect: [x, y, x + w, y + h], F: 4, P: page.ref,
+    MK: { BC: [0.2, 0.2, 0.2], BG: [1, 1, 0.85] },
+  });
+  const ref = ctx.register(field);
+  page.node.addAnnot(ref);
+  doc.getForm().acroForm.addField(ref);
+}
+
+// Interaktiva fält på signatursidan: kundens ort & datum (obligatoriskt) och underskrift (obligatorisk),
+// samt UK Portservices underskrift. Koordinater = linjerna i originalmallen.
+async function signFields(doc: PDFDocument, page: PDFPage, postort: string) {
+  const form = doc.getForm();
+  const ort = form.createTextField("OrtDatum_es_:signer1");
+  ort.setText(`${postort.replace(/^[\d\s]+/, "").trim()} ${new Date().toISOString().slice(0, 10)}`.trim());
+  ort.enableRequired();
+  ort.acroField.dict.set(PDFName.of("TU"), PDFString.of("Ort och datum (obligatoriskt)"));
+  ort.addToPage(page, { x: 147.84, y: 213.48, width: 196.68, height: 17.52, borderWidth: 0.6, borderColor: rgb(0.2, 0.2, 0.2), backgroundColor: rgb(1, 1, 0.85) });
+  ort.setFontSize(10);
+  ort.updateAppearances(await doc.embedFont(StandardFonts.Helvetica));
+  sigField(doc, page, "Sig1_es_:signer1:signature", "Beställarens underskrift (obligatorisk)", 147.84, 150.4, 196.68, 22);
+  sigField(doc, page, "Sig2_es_:signer2:signature", "UK Portservice underskrift", 362.64, 150.4, 196.8, 22);
 }

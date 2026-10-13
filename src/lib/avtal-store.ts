@@ -1,10 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
-import { type Avtal, normalizeAvtal } from "./kalkyl";
+import { type Avtal, emptyAvtal, fmtKr, normalizeAvtal } from "./kalkyl";
 
 export type Status = "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
-export type Version = { version: number; savedAt: string; data: Avtal; status?: Status };
-export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat";
+export type Version = { version: number; savedAt: string; data: Avtal; status?: Status; downloadedAt?: string };
+export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat" | "nedladdat";
 export type Activity = { id: string; at: string; by: string; kind: ActivityKind; text: string };
 export type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
@@ -110,6 +110,17 @@ export function setVersionStatus(id: string, version: number, status: Status) {
   saveStore(store);
 }
 
+/** Markerar att versionen laddats ner (PDF/signering) – syns på alla enheter och i loggen. */
+export function markDownloaded(id: string, version: number, what: string) {
+  const store = loadStore();
+  const f = store[id];
+  const v = f?.versions.find((x) => x.version === version);
+  if (!f || !v) return;
+  v.downloadedAt = new Date().toISOString();
+  logTo(f, "nedladdat", `${what} nedladdad (v${version})`);
+  saveStore(store);
+}
+
 /** Batch-indexering: ny version per avtal med uppräknade priser, status behålls, loggas. */
 export function indexeraBatch(ids: string[], pct: number, scale: (a: Avtal) => Avtal): number {
   const store = loadStore();
@@ -164,4 +175,23 @@ export function avtalNrOwner(store: Record<string, CustomerFolder>, nr: string, 
     if (v && v === t) return f.name;
   }
   return null;
+}
+
+/** Mapp-import: varje godkänd PDF blir en egen avtalspost. Priset från PDF:en noteras i loggen. */
+export function importAvtal(items: { kund: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; status: Status }[]): number {
+  const store = loadStore();
+  let n = 0;
+  for (const it of items) {
+    if (avtalNrOwner(store, it.avtalNr)) continue;
+    const a = emptyAvtal();
+    a.rows = [];
+    Object.assign(a.customer, { bestallare: it.kund.trim() || "Namnlös kund", avtalNr: it.avtalNr, anlAdress: it.adress, ...(it.datum ? { datum: it.datum } : {}) });
+    const f: CustomerFolder = { id: crypto.randomUUID(), name: a.customer.bestallare, versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: it.status }] };
+    logTo(f, "skapat", `Importerat från PDF: ${it.path}`);
+    if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
+    store[f.id] = f;
+    n++;
+  }
+  saveStore(store);
+  return n;
 }

@@ -1,8 +1,9 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, Plus, TrendingUp, Search, UserRound } from "lucide-react";
+import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, TrendingUp, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
+import { ImportPdf } from "./ImportPdf";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
@@ -37,6 +38,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
   const [ansv, setAnsv] = useState("alla");
   const [kund, setKund] = useState<string | null>(null);
   const [index, setIndex] = useState(false);
+  const [imp, setImp] = useState(false);
 
   const rows = useMemo<Row[]>(() =>
     Object.values(store).filter((f) => f.versions.length).map((f) => {
@@ -68,12 +70,14 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
         <Stat label="Årligt avtalsvärde" icon={<Coins size={14} className="text-success" />} value={fmtKr(signed.sum)} sub={`${rows.length} avtal totalt`} active={filter === "alla"} onClick={() => setFilter("alla")} />
       </div>
 
+      {imp && <ImportPdf store={store} onClose={() => setImp(false)} onDone={() => { setImp(false); onChanged?.(); }} />}
       {index && <IndexBatch store={store} onClose={() => setIndex(false)} onDone={() => { setIndex(false); onChanged?.(); }} />}
 
       <section className="ds-panel space-y-3">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
           <h2 className="truncate font-display text-[15px] font-semibold text-foreground">Avtalsöversikt</h2>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImp((x) => !x)} className="gap-1.5" aria-label="Importera"><FolderUp size={16} /><span className="hidden sm:inline">Importera</span></Button>
             <Button variant="outline" onClick={() => setIndex((x) => !x)} className="gap-1.5" aria-label="Indexreglering"><TrendingUp size={16} /><span className="hidden sm:inline">Indexreglering</span></Button>
             <Button onClick={onNew} className="gap-1.5"><Plus size={16} />Nytt avtal</Button>
           </div>
