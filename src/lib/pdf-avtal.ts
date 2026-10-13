@@ -116,7 +116,7 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   await add(b1, b1.getPageIndices());     // Bilaga 1 – före signering
   await add(fu, [2]);                     // Sida 3 – signatursida
   await add(pris, pris.getPageIndices()); // Bilaga 2 – Prislista, sist
-  if (opts.signTags) await signFields(out, out.getPage(fsb.getPageCount() + 2 + b1.getPageCount()));
+  if (opts.signTags) await signFields(out, out.getPage(fsb.getPageCount() + 2 + b1.getPageCount()), c.postort);
   return out.save();
 }
 
@@ -135,10 +135,10 @@ function sigField(doc: PDFDocument, page: PDFPage, name: string, tip: string, x:
 
 // Interaktiva fält på signatursidan: kundens ort & datum (obligatoriskt) och underskrift (obligatorisk),
 // samt UK Portservices underskrift. Koordinater = linjerna i originalmallen.
-async function signFields(doc: PDFDocument, page: PDFPage) {
+async function signFields(doc: PDFDocument, page: PDFPage, postort: string) {
   const form = doc.getForm();
   const ort = form.createTextField("OrtDatum_es_:signer1");
-  ort.setText(`${new Date().toISOString().slice(0, 10)}`);
+  ort.setText(`${postort.replace(/^[\d\s]+/, "").trim()} ${new Date().toISOString().slice(0, 10)}`.trim());
   ort.enableRequired();
   ort.acroField.dict.set(PDFName.of("TU"), PDFString.of("Ort och datum (obligatoriskt)"));
   ort.addToPage(page, { x: 147.84, y: 213.48, width: 196.68, height: 17.52, borderWidth: 0.6, borderColor: rgb(0.2, 0.2, 0.2), backgroundColor: rgb(1, 1, 0.85) });

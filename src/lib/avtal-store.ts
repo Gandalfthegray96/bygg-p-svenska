@@ -3,8 +3,8 @@ import { pushKey, pushShared } from "./cloud-sync";
 import { type Avtal, normalizeAvtal } from "./kalkyl";
 
 export type Status = "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
-export type Version = { version: number; savedAt: string; data: Avtal; status?: Status };
-export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat";
+export type Version = { version: number; savedAt: string; data: Avtal; status?: Status; downloadedAt?: string };
+export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat" | "nedladdat";
 export type Activity = { id: string; at: string; by: string; kind: ActivityKind; text: string };
 export type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
@@ -107,6 +107,17 @@ export function setVersionStatus(id: string, version: number, status: Status) {
   if ((v.status ?? "utkast") === status) return;
   v.status = status;
   logTo(f, status, `${STATUS_TEXT[status]} (v${version})`);
+  saveStore(store);
+}
+
+/** Markerar att versionen laddats ner (PDF/signering) – syns på alla enheter och i loggen. */
+export function markDownloaded(id: string, version: number, what: string) {
+  const store = loadStore();
+  const f = store[id];
+  const v = f?.versions.find((x) => x.version === version);
+  if (!f || !v) return;
+  v.downloadedAt = new Date().toISOString();
+  logTo(f, "nedladdat", `${what} nedladdad (v${version})`);
   saveStore(store);
 }
 
