@@ -120,24 +120,28 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
 
         <ul className="divide-y divide-border rounded-lg border border-border">
           {shown.map((x) => (
-            <li key={x.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto]">
-              <button onClick={() => onOpen(x.id, x.name, x.v)} className="min-w-0 text-left">
-                <p className="truncate font-medium text-foreground">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
-                </p>
-              </button>
-              <span className="order-3 col-span-2 truncate text-xs text-muted-foreground sm:order-none sm:col-span-1">{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
-              <span className="text-right text-sm font-semibold tabular-nums text-foreground">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
-              <select value={x.status} aria-label="Status"
-                onChange={(e) => { setVersionStatus(x.id, x.v.version, e.target.value as Status); onChanged?.(); }}
-                className={`ds-badge order-4 outline-none sm:order-none ${STATUS_CLS[x.status]}`}>
-                {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-              </select>
-              <div className="order-5 flex gap-1.5 justify-self-end sm:order-none">
-                <Button variant="ghost" size="sm" className="gap-1" onClick={() => setKund(x.name)}><UserRound size={14} />Kundkort</Button>
-                <Button variant="ghost" size="sm" className="gap-1 text-destructive" onClick={() => setUpp(x.id)}><Ban size={14} />Säg upp</Button>
-                <Button variant="outline" size="sm" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
+            <li key={x.id} className="flex flex-col gap-2 p-3 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto] sm:items-center sm:gap-x-3">
+              <div className="flex min-w-0 items-start justify-between gap-3 sm:contents">
+                <button onClick={() => onOpen(x.id, x.name, x.v)} className="min-w-0 flex-1 text-left">
+                  <p className="break-words font-medium text-foreground sm:truncate">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
+                  <p className="break-words text-xs text-muted-foreground sm:truncate">
+                    {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
+                  </p>
+                </button>
+                <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground sm:order-3">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
+              </div>
+              <span className="text-xs text-muted-foreground sm:order-2 sm:truncate">{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 sm:contents">
+                <select value={x.status} aria-label="Status"
+                  onChange={(e) => { setVersionStatus(x.id, x.v.version, e.target.value as Status); onChanged?.(); }}
+                  className={`ds-badge outline-none sm:order-4 ${STATUS_CLS[x.status]}`}>
+                  {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+                </select>
+                <div className="flex gap-1.5 sm:order-5 sm:justify-self-end">
+                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => setKund(x.name)}><UserRound size={14} />Kundkort</Button>
+                  <Button variant="ghost" size="sm" className="gap-1 text-destructive" onClick={() => setUpp(x.id)}><Ban size={14} />Säg upp</Button>
+                  <Button variant="outline" size="sm" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
+                </div>
               </div>
             </li>
           ))}
