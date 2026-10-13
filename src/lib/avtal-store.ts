@@ -119,7 +119,7 @@ export function indexeraBatch(ids: string[], pct: number, scale: (a: Avtal) => A
     const last = f?.versions.at(-1);
     if (!f || !last) continue;
     const version = last.version + 1;
-    f.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(scale(normalizeAvtal(last.data))), status: last.status });
+    f.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(scale(normalizeAvtal(last.data))), status: last.status ?? "utkast" });
     logTo(f, "version", `Indexreglering +${String(pct).replace(".", ",")} % (v${version})`);
     n++;
   }
