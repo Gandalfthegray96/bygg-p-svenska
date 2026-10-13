@@ -122,7 +122,7 @@ export function parseAmount(s: string): number {
 /** Årlig indexreglering: räknar upp hela avtalspriset (timpeng, framkörning och utjämning) med fast procent. */
 export function indexera(a: Avtal, pct: number): Avtal {
   const f = 1 + (Number(pct) || 0) / 100;
-  const r = (n: number) => Math.round(n * f * 100) / 100;
+  const r = (n: number) => Math.round(n * f * 100 + 1e-6) / 100;
   const adj = parseAmount(a.adjust);
   return { ...a, hourRate: r(a.hourRate), tripFee: r(a.tripFee), adjust: adj ? String(r(adj)).replace(".", ",") : a.adjust };
 }
