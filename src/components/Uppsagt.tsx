@@ -6,7 +6,7 @@ import { angraUppsagning, deleteAvtal, sagUpp, UPPSAGD_ORSAKER, type CustomerFol
 
 export function SagUppDialog({ folder, onClose, onDone }: { folder: CustomerFolder; onClose: () => void; onDone: () => void }) {
   const [datum, setDatum] = useState(new Date().toISOString().slice(0, 10));
-  const [orsak, setOrsak] = useState(UPPSAGD_ORSAKER[0]);
+  const [orsak, setOrsak] = useState<string>(UPPSAGD_ORSAKER[0] ?? "Annat");
   const [notering, setNotering] = useState("");
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4" onClick={onClose}>
