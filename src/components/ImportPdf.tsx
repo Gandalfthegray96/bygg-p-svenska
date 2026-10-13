@@ -38,7 +38,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
     setBusy({ n: 0, of: files.length });
     for (const [i, { file, path }] of files.entries()) {
       const parts = path.split("/");
-      const folder = parts.length > 1 ? parts[parts.length - 2] : "";
+      const folder = parts.length > 1 ? parts[parts.length - 2] ?? "" : "";
       let text = "";
       try { text = await pdfText(await file.arrayBuffer()); } catch { /* trasig pdf */ }
       const h = classify(text, file.name, path, folder);

@@ -39,7 +39,7 @@ export async function pdfText(bytes: ArrayBuffer, maxPages = 6): Promise<string>
     const c = await (await doc.getPage(i)).getTextContent();
     let lastY: number | null = null;
     for (const it of c.items as { str: string; transform: number[] }[]) {
-      const y = it.transform[5];
+      const y = it.transform[5] ?? 0;
       out += lastY !== null && Math.abs(y - lastY) > 2 ? "\n" : " ";
       out += it.str; lastY = y;
     }
