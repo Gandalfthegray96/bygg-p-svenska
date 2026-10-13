@@ -6,6 +6,30 @@ import { avtalNrOwner, importAvtal, type CustomerFolder, type Status } from "@/l
 import { fmtKr } from "@/lib/kalkyl";
 
 type Item = ImportHit & { on: boolean; status: Status; dup: string | null; kalk: string };
+
+/** Filer med samma avtalsnr blir ett avtal: bästa filen blir huvudpost, övriga ger kalkyler/uppgifter. */
+function groupByAvtalNr(list: Item[]): Item[] {
+  const groups = new Map<string, Item[]>();
+  for (const x of list) if (x.avtalNr) { const k = x.avtalNr.toLowerCase(); groups.set(k, [...(groups.get(k) ?? []), x]); }
+  const score = (x: Item) => (x.kind === "ok" ? 4 : x.kind === "granska" ? 2 : 0) + (x.kalkyler.length ? 1 : 0) + (x.adress ? 0.5 : 0);
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    const main = [...g].sort((a, b) => score(b) - score(a))[0]!;
+    const rest = g.filter((x) => x !== main);
+    if (main.kind === "ej") main.kind = "granska";
+    main.reason = `Sammanslaget av ${g.length} filer – välj kalkyl`;
+    main.on = !main.dup;
+    for (const r of rest) {
+      main.kund ||= r.kund; main.adress ||= r.adress; main.datum ||= r.datum;
+      r.kind = "ej"; r.on = false; r.reason = `Ingår i avtal ${main.avtalNr} (${main.file})`;
+    }
+    if (!main.kalkyler.length) {
+      const src = rest.find((r) => r.kalkyler.length);
+      if (src) main.kalk = `${src.path}|${src.kalkyler.length > 1 ? "all" : 0}`;
+    }
+  }
+  return list;
+}
 /** kalk = "källfilens path|index" eller "path|all" — vilken kalkyl som ska användas för avtalet. */
 const kalkOf = (items: Item[], x: Item): Kalkyl | null => {
   const [p, k] = [x.kalk.slice(0, x.kalk.lastIndexOf("|")), x.kalk.slice(x.kalk.lastIndexOf("|") + 1)];
@@ -49,11 +73,13 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       let text = "";
       try { text = await pdfText(await file.arrayBuffer()); } catch { /* trasig pdf */ }
       const h = classify(text, file.name, path, folder);
-      const dup = h.avtalNr ? avtalNrOwner(store, h.avtalNr) || (out.find((x) => x.avtalNr && x.avtalNr.toLowerCase() === h.avtalNr.toLowerCase())?.kund ?? null) : null;
+      // Dubblettkontroll bara mot sparade avtal i registret – inte mot andra filer i importen.
+      const dup = h.avtalNr ? avtalNrOwner(store, h.avtalNr) : null;
       out.push({ ...h, on: h.kind !== "ej" && !dup, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}` });
       setBusy({ n: i + 1, of: files.length });
     }
-    setItems(out); setBusy(null); setTab(out.some((x) => x.kind === "ok") ? "ok" : "granska");
+    const merged = groupByAvtalNr(out);
+    setItems(merged); setBusy(null); setTab(merged.some((x) => x.kind === "ok") ? "ok" : "granska");
   };
 
   const onDrop = async (e: React.DragEvent) => {
