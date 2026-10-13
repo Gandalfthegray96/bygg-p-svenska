@@ -65,8 +65,8 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                       <span className={flag ? "flex items-center gap-1 font-semibold text-destructive" : "text-muted-foreground"}>{flag && <AlertTriangle size={12} />}{c.days} d</span>
                     </div>
                     <div className="flex justify-between">
-                      <Button variant="ghost" size="sm" className="h-7 px-1.5" disabled={ci === 0} aria-label="Flytta bakåt" onClick={() => move(c, COLS[ci - 1].id)}><ChevronLeft size={16} /></Button>
-                      <Button variant="ghost" size="sm" className="h-7 px-1.5" disabled={ci === COLS.length - 1} aria-label="Flytta framåt" onClick={() => move(c, COLS[ci + 1].id)}><ChevronRight size={16} /></Button>
+                      <Button variant="ghost" size="sm" className="h-7 px-1.5" disabled={ci === 0} aria-label="Flytta bakåt" onClick={() => move(c, COLS[ci - 1]!.id)}><ChevronLeft size={16} /></Button>
+                      <Button variant="ghost" size="sm" className="h-7 px-1.5" disabled={ci === COLS.length - 1} aria-label="Flytta framåt" onClick={() => move(c, COLS[ci + 1]!.id)}><ChevronRight size={16} /></Button>
                     </div>
                   </article>
                 );
