@@ -178,13 +178,21 @@ export function avtalNrOwner(store: Record<string, CustomerFolder>, nr: string, 
 }
 
 /** Mapp-import: varje godkänd PDF blir en egen avtalspost. Priset från PDF:en noteras i loggen. */
-export function importAvtal(items: { kund: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; status: Status }[]): number {
+export function importAvtal(items: { kund: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; status: Status; objekt?: { name: string; qty: number }[]; besokPerAr?: number }[]): number {
   const store = loadStore();
   let n = 0;
   for (const it of items) {
     if (avtalNrOwner(store, it.avtalNr)) continue;
     const a = emptyAvtal();
-    a.rows = [];
+    const besok = clampVisits(it.besokPerAr ?? 2);
+    const objekt = it.objekt?.length ? it.objekt : it.perYear !== null ? [{ name: "Importerat objekt (se PDF)", qty: 1 }] : [];
+    a.rows = objekt.map((o) => ({ ...newRow(), name: o.name, qty: Math.max(1, o.qty), visits: besok }));
+    // Justera per besök så att årspriset blir exakt som i PDF:en.
+    if (it.perYear !== null && a.rows.length) {
+      const diff = it.perYear - calculate(a).perYear;
+      const n = calculate(a).visits.length || 1;
+      a.adjust = String(Math.round((diff / n) * 100) / 100).replace(".", ",");
+    }
     Object.assign(a.customer, { bestallare: it.kund.trim() || "Namnlös kund", avtalNr: it.avtalNr, anlAdress: it.adress, ...(it.datum ? { datum: it.datum } : {}) });
     const f: CustomerFolder = { id: crypto.randomUUID(), name: a.customer.bestallare, versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: it.status }] };
     logTo(f, "skapat", `Importerat från PDF: ${it.path}`);
