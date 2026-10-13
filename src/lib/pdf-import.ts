@@ -3,7 +3,9 @@ export type ImportKind = "ok" | "granska" | "ej";
 export type ImportHit = {
   file: string; path: string; kind: ImportKind; reason: string;
   kund: string; avtalNr: string; datum: string; adress: string; perYear: number | null;
+  objekt: ImportObj[]; besokPerAr: number;
 };
+export type ImportObj = { name: string; qty: number };
 
 const AVTAL_ORD = [/förebyggande\s+underhåll/i, /underhållsavtal/i, /serviceavtal/i, /\bFU[\s_\-.]?(avtal|\d)/i, /garantiservice/i, /servicetillfällen/i];
 const EJ_AVTAL = [/\bfaktura\b/i, /följesedel/i, /offert\s*nr/i, /besiktningsprotokoll/i, /bruksanvisning|manual|datablad|monteringsanvisning/i, /arbetsorder/i];
@@ -22,11 +24,29 @@ export function classify(text: string, file: string, path: string, folder: strin
   const datum = pick(t, /(20\d\d-\d\d-\d\d)/);
   const adress = pick(t, /(?:Anläggningsadress|Adress obj\w*|Objektsadress)\s*:?\s*([^\n]{3,80})/i);
   const perYear = amount(pick(t, /(?:Kostnad|Pris|Avgift)\s+per\s+år[^\d\n]{0,40}([\d\s.]+(?:,\d{1,2})?)/i));
-  const base = { file, path, kund, avtalNr, datum, adress, perYear };
+  const { objekt, besokPerAr } = parseObjekt(t);
+  const base = { file, path, kund, avtalNr, datum, adress, perYear, objekt, besokPerAr };
   if (!t.trim()) return { ...base, kind: avtal ? "granska" : "ej", reason: "Ingen text i PDF:en (skannad?)" };
   if (!avtal || (ej && avtal < 2)) return { ...base, kind: "ej", reason: ej ? "Ser ut som faktura/offert/protokoll" : "Inget avtalsord hittades" };
   const saknas = [!avtalNr && "avtalsnr", !kund && "kund", perYear === null && "pris"].filter(Boolean);
   return saknas.length ? { ...base, kind: "granska", reason: `Äldre format – saknar ${saknas.join(", ")}` } : { ...base, kind: "ok", reason: "Avtal i dagens format" };
+}
+
+/** Plockar objekttabellen i Bilaga 1: rader mellan rubriken "Objekt Antal" och "Totalt antal objekt". */
+export function parseObjekt(t: string): { objekt: ImportObj[]; besokPerAr: number } {
+  const besok = Number(t.match(/servicetillfällen\s+per\s+år\s*:?\s*(\d{1,2})/i)?.[1]) || 0;
+  const besokPerAr = Math.min(12, Math.max(1, besok || 2));
+  const lines = t.split("\n").map((l) => l.replace(/\s+/g, " ").trim());
+  const start = lines.findIndex((l) => /^Objekt\s+Antal$/i.test(l));
+  const objekt: ImportObj[] = [];
+  if (start < 0) return { objekt, besokPerAr };
+  for (const l of lines.slice(start + 1)) {
+    if (/^Totalt antal objekt|servicetillfällen|^Kostnad/i.test(l)) break;
+    if (/^Objekt\s+Antal$/i.test(l)) continue;
+    const m = l.match(/^(.+?)\s+(\d{1,4})$/);
+    if (m && m[1] && !/^(Bilaga|Sida)/i.test(m[1])) objekt.push({ name: m[1].trim(), qty: Number(m[2]) });
+  }
+  return { objekt, besokPerAr };
 }
 
 /** Läser texten ur de första sidorna med pdf.js (körs i webbläsaren). */
