@@ -25,3 +25,6 @@
 - [x] Ifyllda fält i avtals-PDF:en med Arial
 
 - [x] Inloggningar per konto (e-post + lösenord) med synk mellan enheter
+- [x] Expresskalkyl (blixtikon) med 10 % rabatt timpris/material, "Öppna som fullt avtal"
+- [x] Huvudflik "Avtal" med underflikar (Kund, Försättsblad, Objekt, Pris, Granskning)
+- [x] Text under ikonerna i huvudmenyn
