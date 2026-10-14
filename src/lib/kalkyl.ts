@@ -112,8 +112,8 @@ export function rabattText(a: Pick<Avtal, "rabattTim" | "rabattMaterial">): stri
 }
 
 /** "150" → 150, "-893" → -893, "1 234,50" → 1234.5, "" → 0 */
-export function parseAmount(s: string): number {
-  const t = s.trim().replace(/\s/g, "").replace(/kr$/i, "").replace(",", ".").replace("−", "-");
+export function parseAmount(s: string | number | null | undefined): number {
+  const t = (s == null ? "" : String(s)).trim().replace(/\s/g, "").replace(/kr$/i, "").replace(",", ".").replace("−", "-");
   if (t === "" || t === "-" || t === "+") return 0;
   const n = Number(t);
   return Number.isFinite(n) ? n : 0;
