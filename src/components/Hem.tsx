@@ -122,12 +122,12 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
           {shown.map((x) => (
             <li key={x.id} className="flex flex-col gap-2 p-3 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto] sm:items-center sm:gap-x-3">
               <div className="flex min-w-0 items-start justify-between gap-3 sm:contents">
-                <button onClick={() => onOpen(x.id, x.name, x.v)} className="min-w-0 flex-1 text-left">
+                <div className="min-w-0 flex-1 text-left">
                   <p className="break-words font-medium text-foreground sm:truncate">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
                   <p className="break-words text-xs text-muted-foreground sm:truncate">
                     {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
                   </p>
-                </button>
+                </div>
                 <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground sm:order-3">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
               </div>
               <span className="text-xs text-muted-foreground sm:order-2 sm:truncate">{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
