@@ -290,22 +290,36 @@ function App() {
     setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
 
-  // Adobe Sign (utan API): ladda ner PDF med signaturtaggar, kopiera kundens e-post, öppna Adobe Sign.
+  // Sign: surfplatta/mobil → dela-menyn (välj Adobe Sign); dator → spara signerings-PDF (öppnas i Acrobat).
   const openSign = async () => {
     const { id, v } = ensureSaved();
-    if (!downloadOk(id, v)) { window.open("https://acrobat.adobe.com/link/sign", "_blank", "noopener"); return; }
+    if (!downloadOk(id, v)) return;
+    if (c.epost) { try { await navigator.clipboard.writeText(c.epost); } catch { /* */ } }
+    const touch = window.matchMedia("(pointer: coarse)").matches;
     try {
       const bytes = await buildAvtalPdf(a, { signTags: true });
+      const name = `Avtal_${fileBase(a, v)}_signering.pdf`;
+      const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
+      const file = new File([blob], name, { type: "application/pdf" });
+      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+      if (touch && nav.canShare?.({ files: [file] })) {
+        try {
+          await nav.share({ files: [file], title: name });
+        } catch (e) {
+          if ((e as Error).name === "AbortError") return;
+          throw e;
+        }
+      } else {
+        await saveFile(blob, name, "application/pdf", ".pdf");
+      }
       markSent();
-      try { await navigator.clipboard.writeText(c.epost); } catch { /* */ }
-      await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, v)}_signering.pdf`, "application/pdf", ".pdf");
       markDownloaded(id, v, "Signerings-PDF");
       setStore(loadStore());
-      setToast(c.epost ? `Kundens e-post kopierad – släpp PDF:en i Adobe Sign` : "Släpp PDF:en i Adobe Sign");
+      const mottagare = c.epost ? "Kundens e-post är kopierad – klistra in den som mottagare." : "";
+      setToast(touch ? `Välj Adobe Sign i delningsmenyn. ${mottagare}` : `Öppna PDF:en i Adobe Acrobat och begär e-signering. ${mottagare}`);
     } catch {
       setToast("Kunde inte skapa PDF:en");
     }
-    window.open("https://acrobat.adobe.com/link/sign", "_blank", "noopener");
   };
 
   return (
