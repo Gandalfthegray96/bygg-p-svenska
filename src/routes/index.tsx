@@ -45,7 +45,7 @@ function PdfPreview({ a }: { a: Avtal }) {
     }, 400);
     return () => { alive = false; clearTimeout(t); };
   }, [a]);
-  if (err) return <p className="text-sm text-destructive">Kunde inte visa avtalet. Använd PDF-knappen nedan.</p>;
+  if (err) return <p className="text-sm text-destructive">Kunde inte visa avtalet.</p>;
   if (!pages.length) return <p className="text-sm text-muted-foreground">Skapar avtalet …</p>;
   return (
     <div className="space-y-3">
