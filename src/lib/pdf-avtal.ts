@@ -145,5 +145,5 @@ async function signFields(doc: PDFDocument, page: PDFPage, postort: string) {
   ort.setFontSize(10);
   ort.updateAppearances(await doc.embedFont(StandardFonts.Helvetica));
   sigField(doc, page, "Sig1_es_:signer1:signature", "Beställarens underskrift (obligatorisk)", 147.84, 150.4, 196.68, 22);
-  sigField(doc, page, "Sig2_es_:signer2:signature", "UK Portservice underskrift", 362.64, 150.4, 196.8, 22);
+  // Ingen signaturruta för UK Portservice – vi signerar inte själva i Adobe Sign.
 }
