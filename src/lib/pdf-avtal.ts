@@ -34,7 +34,7 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
   const mall = await load("/pdf/avtal.pdf");
   const W = 595.28, H = 841.89;
   const banner = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 687, top: H });
-  const footer = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 50, top: 108 });
+  const footer = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 50, top: 101 });
   const dark = rgb(0.23, 0.23, 0.23), white = rgb(1, 1, 1), black = rgb(0, 0, 0);
   const wA = 330, wB = 110, x0 = (W - wA - wB) / 2, xB = x0 + wA, xEnd = xB + wB, rh = 19.5, fs = 11;
 
