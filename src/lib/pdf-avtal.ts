@@ -33,7 +33,7 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
   // Sidhuvud (banner) och sidfot hämtas från originalavtalets sida så att Bilaga 1 matchar övriga sidor.
   const mall = await load("/pdf/avtal.pdf");
   const W = 595.28, H = 841.89;
-  const [banner] = await doc.embedPdf(mall, [2]).then(async () => [await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 687, top: H })]);
+  const banner = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 687, top: H });
   const footer = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 50, top: 108 });
   const dark = rgb(0.23, 0.23, 0.23), white = rgb(1, 1, 1), black = rgb(0, 0, 0);
   const wA = 330, wB = 110, x0 = (W - wA - wB) / 2, xB = x0 + wA, xEnd = xB + wB, rh = 19.5, fs = 11;
@@ -72,10 +72,10 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
   y -= rh;
   cell(x0, wA, dark); cell(xB, wB, dark); txt("Objekt", x0, wA, "left", bold, white); txt("Antal", xB, wB, "center", bold, white); y -= rh;
   for (const r of a.rows) {
-    if (y - rh < 90) { newPage(); }
+    if (y - rh < 125) { newPage(); }
     cell(x0, wA); cell(xB, wB); txt(r.name || "", x0, wA, "left"); txt(String(r.qty), xB, wB, "center"); y -= rh;
   }
-  if (y - rh * 9 < 60) newPage();
+  if (y - rh * 9 < 125) newPage();
   cell(x0, wA, dark); cell(xB, wB); txt("Totalt antal objekt:", x0, wA, "right", bold, white); txt(String(k.totalQty), xB, wB, "center", boldIt); y -= rh * 3;
   cell(x0, wA, dark); cell(xB, wB); txt("Antal servicetillfällen per år:", x0, wA, "right", bold, white); txt(String(k.maxVisits), xB, wB, "center"); y -= rh * 3;
 
