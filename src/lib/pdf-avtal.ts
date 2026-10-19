@@ -30,18 +30,31 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const boldIt = await doc.embedFont(StandardFonts.HelveticaBoldOblique);
-  const logo = await doc.embedJpg(await (await fetch("/pdf/bilaga-header.jpg")).arrayBuffer());
+  // Sidhuvud (banner) och sidfot hämtas från originalavtalets sida så att Bilaga 1 matchar övriga sidor.
+  const mall = await load("/pdf/avtal.pdf");
   const W = 595.28, H = 841.89;
+  const [banner] = await doc.embedPdf(mall, [2]).then(async () => [await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 687, top: H })]);
+  const footer = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 50, top: 108 });
   const dark = rgb(0.23, 0.23, 0.23), white = rgb(1, 1, 1), black = rgb(0, 0, 0);
-  const wA = 250, wB = 86, x0 = (W - wA - wB) / 2, xB = x0 + wA, xEnd = xB + wB, rh = 19.5, fs = 11;
+  const wA = 330, wB = 110, x0 = (W - wA - wB) / 2, xB = x0 + wA, xEnd = xB + wB, rh = 19.5, fs = 11;
 
   let page = doc.addPage([W, H]);
-  let y = 0;
+  let y = 0, sida = 0;
   const newPage = () => {
     page = doc.addPage([W, H]);
-    const lw = 460.5 * 0.75, lh = 115.5 * 0.75;
-    page.drawImage(logo, { x: W - 30 - lw, y: H - 22 - lh, width: lw, height: lh });
-    y = H - 2.24 * 72;
+    sida++;
+    page.drawPage(banner, { x: 0, y: 687 });
+    page.drawPage(footer, { x: 0, y: 50 });
+    // Titelrad som på avtalssidorna: AVTAL + Avtal nr / Datum / Sida / Rev.
+    page.drawText("AVTAL", { x: 40, y: 652, size: 13, font: bold, color: black });
+    const lab = (s: string, rx: number, yy: number) => page.drawText(s, { x: rx - bold.widthOfTextAtSize(s, 8), y: yy, size: 8, font: bold });
+    const val = (s: string, x: number, yy: number) => page.drawText(s || "", { x, y: yy, size: 8, font });
+    lab("Avtal nr:", 335, 659); val(c.avtalNr, 345, 659);
+    page.drawLine({ start: { x: 343, y: 655 }, end: { x: 415, y: 655 }, thickness: 0.6 });
+    lab("Datum:", 335, 647); val(c.datum, 345, 647);
+    lab("Sida:", 487, 659); val(sida > 1 ? `Bilaga 1 (${sida})` : "Bilaga 1", 497, 659);
+    lab("Rev.", 487, 647); val(c.rev, 497, 647);
+    y = 615;
   };
   doc.removePage(0); newPage();
 
@@ -54,8 +67,9 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
   const cell = (x: number, w: number, fill?: typeof dark) =>
     page.drawRectangle({ x, y: y - rh, width: w, height: rh, ...(fill ? { color: fill } : {}), borderColor: black, borderWidth: 0.6 });
 
-  for (const l of [c.bestallare, c.avtalNr, c.coverTitle]) { txt(l || "", x0, wA + wB, "left", bold); y -= rh; }
-  y -= rh * 2;
+  page.drawText("Bilaga 1. Kostnad", { x: x0, y: y - 14, size: 12, font: bold }); y -= rh * 1.6;
+  for (const l of [c.bestallare, c.coverTitle]) { if (l) { txt(l, x0, wA + wB, "left", bold); y -= rh; } }
+  y -= rh;
   cell(x0, wA, dark); cell(xB, wB, dark); txt("Objekt", x0, wA, "left", bold, white); txt("Antal", xB, wB, "center", bold, white); y -= rh;
   for (const r of a.rows) {
     if (y - rh < 90) { newPage(); }
