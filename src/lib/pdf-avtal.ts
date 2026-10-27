@@ -131,7 +131,21 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   await add(fu, [2]);                     // Sida 3 – signatursida
   await add(pris, pris.getPageIndices()); // Bilaga 2 – Prislista, sist
   if (opts.signTags) await signFields(out, out.getPage(fsb.getPageCount() + 2 + b1.getPageCount()), c.postort);
-  return out.save();
+  else {
+    // Vanlig PDF: inga formulär/signaturfält kvar, så Acrobat Pro öppnar den direkt i "Redigera PDF"
+    // utan formulär- eller signaturläge. Ingen kryptering/behörighetsspärr sätts.
+    out.catalog.delete(PDFName.of("AcroForm"));
+    for (const p of out.getPages()) {
+      const annots = p.node.Annots();
+      if (!annots) continue;
+      const keep = annots.asArray().filter((r) => {
+        const d = out.context.lookup(r);
+        return !(d && "get" in d && (d as { get: (n: PDFName) => unknown }).get(PDFName.of("Subtype"))?.toString() === "/Widget");
+      });
+      p.node.set(PDFName.of("Annots"), out.context.obj(keep));
+    }
+  }
+  return out.save({ useObjectStreams: false });
 }
 
 /** Obligatoriskt signaturfält (/Sig) – kunden måste signera; namnen följer Adobe Signs fältkonvention. */
