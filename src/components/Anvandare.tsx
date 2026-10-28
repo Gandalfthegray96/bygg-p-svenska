@@ -43,8 +43,12 @@ export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
         {users.map((u) => (
           <div key={u.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 p-4 sm:flex sm:gap-3">
             <div className="col-span-2 min-w-0 sm:flex-1">
-              <p className="break-all font-medium text-foreground">{u.email}{u.self && <span className="ml-2 text-xs text-muted-foreground">(du)</span>}</p>
+              <p className="flex items-center gap-2 break-all font-medium text-foreground">
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${u.lastSeen && Date.now() - +new Date(u.lastSeen) < 15 * 60000 ? "bg-success" : "bg-muted-foreground/30"}`} />
+                {u.email}{u.self && <span className="text-xs text-muted-foreground">(du)</span>}
+              </p>
               <p className="text-sm text-muted-foreground">{u.name && u.name !== u.email.split("@")[0] ? u.name + " · " : ""}{u.role ? ROLE_LABEL[u.role] : "Ingen behörighet"} · skapad {new Date(u.createdAt).toLocaleDateString("sv-SE")}{!u.role && " · Väntar på godkännande"}</p>
+              <p className="text-xs text-muted-foreground">Senast aktiv: {senast(u.lastSeen)}</p>
             </div>
             <select className="ds-input w-full sm:w-44" value={u.role ?? ""} disabled={busy || u.self}
               onChange={(e) => run(() => setRole({ data: { userId: u.id, role: (e.target.value || null) as AppRole | null } }), "Behörigheten ändrades")}>
