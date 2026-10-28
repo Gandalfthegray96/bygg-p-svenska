@@ -26,7 +26,7 @@ export async function getMyRole() {
 export async function listUsers() {
   const uid = await me();
   await assertAdmin(uid);
-  const { data, error } = await supabase.from("profiles").select("id, email, name, created_at").order("created_at");
+  const { data, error } = await supabase.from("profiles").select("id, email, name, created_at, last_seen_at").order("created_at");
   if (error) throw new Error(error.message);
   const { data: roles } = await supabase.from("user_roles").select("user_id, role");
   return (data ?? []).map((u) => {
@@ -36,6 +36,7 @@ export async function listUsers() {
       email: u.email,
       name: u.name,
       createdAt: u.created_at,
+      lastSeen: u.last_seen_at as string | null,
       role: (mine.includes("admin") ? "admin" : mine[0] ?? null) as AppRole | null,
       self: u.id === uid,
     };

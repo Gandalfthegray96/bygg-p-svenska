@@ -40,18 +40,21 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          last_seen_at: string | null
           name: string
         }
         Insert: {
           created_at?: string
           email?: string
           id: string
+          last_seen_at?: string | null
           name?: string
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          last_seen_at?: string | null
           name?: string
         }
         Relationships: []
@@ -110,6 +113,7 @@ export type Database = {
       }
       kalender: { Args: { token: string }; Returns: unknown }
       kalender_ics: { Args: { token: string }; Returns: unknown }
+      touch_last_seen: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "saljare" | "tekniker"
