@@ -50,6 +50,13 @@
       "when": 1791829365339,
       "tag": "0006_shared_avtal_register",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793191386756,
+      "tag": "0007_profiles_last_seen",
+      "breakpoints": true
     }
   ]
 }
