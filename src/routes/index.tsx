@@ -4,7 +4,7 @@ import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { Tidslinje } from "@/components/Aktivitet";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { KanbanSquare, Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Zap, Mail, PenLine, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Zap, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -290,37 +290,6 @@ function App() {
     setToast("Mejlprogrammet öppnas – glöm inte bifoga avtalet (PDF)");
   };
 
-  // Sign: surfplatta/mobil → dela-menyn (välj Adobe Sign); dator → spara signerings-PDF (öppnas i Acrobat).
-  const openSign = async () => {
-    const { id, v } = ensureSaved();
-    if (!downloadOk(id, v)) return;
-    if (c.epost) { try { await navigator.clipboard.writeText(c.epost); } catch { /* */ } }
-    const touch = window.matchMedia("(pointer: coarse)").matches;
-    try {
-      const bytes = await buildAvtalPdf(a, { signTags: true });
-      const name = `Avtal_${fileBase(a, v)}_signering.pdf`;
-      const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
-      const file = new File([blob], name, { type: "application/pdf" });
-      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
-      if (touch && nav.canShare?.({ files: [file] })) {
-        try {
-          await nav.share({ files: [file], title: name });
-        } catch (e) {
-          if ((e as Error).name === "AbortError") return;
-          throw e;
-        }
-      } else {
-        await saveFile(blob, name, "application/pdf", ".pdf");
-      }
-      markSent();
-      markDownloaded(id, v, "Signerings-PDF");
-      setStore(loadStore());
-      const mottagare = c.epost ? "Kundens e-post är kopierad – klistra in den som mottagare." : "";
-      setToast(touch ? `Välj Adobe Sign i delningsmenyn. ${mottagare}` : `Öppna PDF:en i Adobe Acrobat och begär e-signering. ${mottagare}`);
-    } catch {
-      setToast("Kunde inte skapa PDF:en");
-    }
-  };
 
   return (
     <div className="min-h-screen">
@@ -377,7 +346,6 @@ function App() {
                   <Button variant="ghost" onClick={onPdf} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileText size={16} />PDF</Button>
                   <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><FileSpreadsheet size={16} />Excel</Button>
                   <Button variant="ghost" onClick={openMail} className={`hidden h-9 gap-1.5 px-3 text-sm font-semibold sm:inline-flex ${btnPrimary}`}><Mail size={16} />Mejla</Button>
-                  <Button variant="ghost" onClick={openSign} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><PenLine size={16} />Sign</Button>
                   <Button variant="ghost" onClick={() => setConfirmNew(true)} aria-label="Nytt avtal" title="Nytt avtal"
                     className="h-9 w-9 border border-border bg-card p-0 text-foreground hover:bg-muted"><Plus size={18} /></Button>
                 </div>
@@ -697,12 +665,11 @@ function App() {
 
           {/* Fast åtgärdsrad */}
           <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-card px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:hidden">
-            <div className="mx-auto grid max-w-2xl grid-cols-5 gap-2">
+            <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2">
               <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Save size={18} />Spara</Button>
               <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileText size={18} />PDF</Button>
               <Button variant="ghost" onClick={() => downloadExcel(a, currentVersion)} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileSpreadsheet size={18} />Excel</Button>
               <Button variant="ghost" onClick={openMail} className={`${btnPrimary} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Mail size={18} />Mejla</Button>
-              <Button variant="ghost" onClick={openSign} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><PenLine size={18} />Sign</Button>
             </div>
           </div>
         </div>
