@@ -17,6 +17,7 @@ import { Anvandare } from "@/components/Anvandare";
 import { Express } from "@/components/Express";
 import { Indexering } from "@/components/Indexering";
 import { getMyRole } from "@/lib/users.functions";
+import { Chat } from "@/components/Chat";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -675,6 +676,11 @@ function App() {
         </div>
 
         <ConfirmDialog open={confirmNew} onCancel={() => setConfirmNew(false)} onConfirm={startNew} />
+        <Chat store={store} onOpenAvtal={(id) => {
+          const f = store[id]; const v = f?.versions[f.versions.length - 1];
+          if (!f || !v) return;
+          setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${f.name} v${v.version}`);
+        }} />
         {toast && <div className="fixed inset-x-4 bottom-20 z-20 mx-auto max-w-sm rounded-lg bg-foreground px-4 py-2 text-center text-sm text-background">{toast}</div>}
       </div>
 
