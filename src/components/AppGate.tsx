@@ -42,6 +42,16 @@ export function AppGate({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // "Senast aktiv": stämpla vid öppning, var 5:e minut och när appen åter visas.
+  useEffect(() => {
+    if (state !== "open") return;
+    const ping = () => { if (document.visibilityState === "visible") supabase.rpc("touch_last_seen").then(() => {}); };
+    ping();
+    const t = setInterval(ping, 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", ping);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", ping); };
+  }, [state]);
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true); setError(""); setInfo("");
