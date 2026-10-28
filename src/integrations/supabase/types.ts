@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          avtal_id: string | null
+          avtal_label: string | null
+          body: string
+          created_at: string
+          id: string
+          recipient_id: string | null
+          sender_id: string
+        }
+        Insert: {
+          avtal_id?: string | null
+          avtal_label?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          recipient_id?: string | null
+          sender_id?: string
+        }
+        Update: {
+          avtal_id?: string | null
+          avtal_label?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          recipient_id?: string | null
+          sender_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -104,6 +134,14 @@ export type Database = {
     }
     Functions: {
       admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
+      chat_users: {
+        Args: never
+        Returns: {
+          email: string
+          id: string
+          name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
