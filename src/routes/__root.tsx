@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Button } from "@/components/ui/button";
 import { AppGate } from "../components/AppGate";
+import { UpdateNotice } from "../components/UpdateNotice";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -144,6 +145,7 @@ function RootComponent() {
       <AppGate>
         <Outlet />
       </AppGate>
+      <UpdateNotice />
     </QueryClientProvider>
   );
 }
