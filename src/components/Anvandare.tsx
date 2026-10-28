@@ -2,9 +2,19 @@ import { useEffect, useState } from "react";
 import { KeyRound, Trash2, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { TeamLogg } from "./TeamLogg";
 import { deleteUser, listUsers, setUserRole, type AppRole } from "@/lib/users.functions";
 
 export const ROLE_LABEL: Record<AppRole, string> = { admin: "Admin", saljare: "Säljare", tekniker: "Tekniker" };
+function senast(t: string | null) {
+  if (!t) return "aldrig";
+  const min = Math.round((Date.now() - +new Date(t)) / 60000);
+  if (min < 15) return "nu";
+  if (min < 60) return `för ${min} min sedan`;
+  const d = new Date(t), idag = new Date().toDateString() === d.toDateString();
+  const tid = d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+  return idag ? `idag ${tid}` : `${d.toLocaleDateString("sv-SE")} ${tid}`;
+}
 type U = Awaited<ReturnType<typeof listUsers>>[number];
 
 export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
@@ -73,6 +83,8 @@ export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
         ))}
         {!loaded && !err && <p className="p-4 text-sm text-muted-foreground">Hämtar användare …</p>}
       </div>
+
+      <div className="rounded-2xl border border-border bg-card p-4"><TeamLogg /></div>
     </div>
   );
 }
