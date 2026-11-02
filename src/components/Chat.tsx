@@ -12,10 +12,10 @@ const POS_KEY = "chat-pos";
 const READ_KEY = "chat-read";
 
 export function initials(name: string, email = "") {
-  const parts = (name || email.split("@")[0].replace(/[._-]+/g, " ")).trim().split(/\s+/).filter(Boolean);
+  const parts = (name || (email.split("@")[0] ?? "").replace(/[._-]+/g, " ")).trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "?";
-  const f = parts[0][0] ?? "";
-  const l = parts.length > 1 ? parts[parts.length - 1][0] : "";
+  const f = parts[0]?.[0] ?? "";
+  const l = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
   return (f + l).toUpperCase();
 }
 
@@ -28,7 +28,7 @@ function Linkify({ text }: { text: string }) {
     : <span key={i}>{p}</span>))}</>;
 }
 
-function Avatar({ u, size = 32 }: { u?: ChatUser; size?: number }) {
+function Avatar({ u, size = 32 }: { u?: ChatUser | undefined; size?: number }) {
   return (
     <span style={{ width: size, height: size, fontSize: size * 0.38 }}
       className="inline-flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
@@ -107,7 +107,7 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
 
   useEffect(() => {
     if (!open || !conv || !convMsgs.length) return;
-    const last = convMsgs[convMsgs.length - 1].created_at;
+    const last = convMsgs[convMsgs.length - 1]!.created_at;
     if (read[conv] !== last) {
       const next = { ...read, [conv]: last };
       setRead(next); localStorage.setItem(READ_KEY, JSON.stringify(next));
@@ -180,7 +180,7 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
 
           {!conv ? (
             <div className="flex-1 overflow-y-auto p-2">
-              <ConvRow label="Teamchatt" sub="Alla i teamet" unread={unreadBy.team} onClick={() => setConv("team")} />
+              <ConvRow label="Teamchatt" sub="Alla i teamet" unread={unreadBy["team"]} onClick={() => setConv("team")} />
               <p className="px-2 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Privat</p>
               {users.filter((u) => u.id !== me).map((u) => (
                 <ConvRow key={u.id} u={u} label={u.name || u.email} sub={u.email} unread={unreadBy[u.id]} onClick={() => setConv(u.id)} />
@@ -254,7 +254,7 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
   );
 }
 
-function ConvRow({ u, label, sub, unread, onClick }: { u?: ChatUser; label: string; sub: string; unread?: number; onClick: () => void }) {
+function ConvRow({ u, label, sub, unread, onClick }: { u?: ChatUser | undefined; label: string; sub: string; unread?: number | undefined; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-muted">
       <Avatar u={u} size={36} />
