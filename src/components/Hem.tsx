@@ -6,10 +6,12 @@ import { IndexBatch } from "./IndexBatch";
 import { ImportPdf } from "./ImportPdf";
 import { SagUppDialog, UppsagdaLista } from "./Uppsagt";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
+import { FOLLOW_UP_DAYS, canSee, daysSinceActivity, isStale } from "@/lib/uppfoljning";
+import { AlertTriangle } from "lucide-react";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
-type Row = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; adress: string };
-type Filter = "alla" | Status;
+type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; adress: string };
+type Filter = "alla" | Status | "forsenad";
 type Sort = "datum" | "varde" | "kund";
 
 const STATUS_LABEL: Record<Status, string> = { utkast: "Utkast", skickat: "Väntar på svar", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
@@ -32,7 +34,7 @@ function Stat({ label, value, sub, icon, active, onClick }: { label: string; val
   );
 }
 
-export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onNew: () => void; onChanged?: () => void }) {
+export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: "" } }: { me?: { role: string | null; name: string }; store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onNew: () => void; onChanged?: () => void }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("alla");
   const [sort, setSort] = useState<Sort>("datum");
@@ -48,8 +50,8 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
     Object.values(store).filter((f) => f.versions.length && !f.uppsagd).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
-      return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
-    }), [store]);
+      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
+    }), [store, me]);
 
   const stat = (s: Status) => { const l = rows.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
   const sent = stat("skickat"), signed = stat("signerat"), draft = stat("utkast");
@@ -58,15 +60,24 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
 
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
-    const l = rows.filter((r) => (filter === "alla" || r.status === filter) && (ansv === "alla" || r.ansvarig.trim() === ansv) &&
+    const l = rows.filter((r) => (filter === "alla" || (filter === "forsenad" ? r.stale : r.status === filter)) && (ansv === "alla" || r.ansvarig.trim() === ansv) &&
       (!s || [r.name, r.avtalNr, r.ansvarig, r.adress].some((x) => x.toLowerCase().includes(s))));
     return l.sort((a, b) => sort === "varde" ? b.perYear - a.perYear : sort === "kund" ? a.name.localeCompare(b.name, "sv") : b.v.savedAt.localeCompare(a.v.savedAt));
   }, [rows, q, filter, sort, ansv]);
 
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "alla" : f));
 
+  const nStale = rows.filter((r) => r.stale).length;
   return (
     <div className="space-y-4">
+      {nStale > 0 && (
+        <button onClick={() => toggle("forsenad")} aria-pressed={filter === "forsenad"}
+          className="flex w-full items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-left text-sm font-semibold text-destructive hover:bg-destructive/15">
+          <AlertTriangle size={18} className="shrink-0" />
+          <span className="flex-1">{nStale} avtal har väntat på svar i över {FOLLOW_UP_DAYS} dagar</span>
+          <span className="text-xs font-medium underline">{filter === "forsenad" ? "Visa alla" : "Visa dessa"}</span>
+        </button>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <Stat label="Aktiva avtal" icon={<CheckCircle2 size={14} className="text-success" />} value={String(signed.n)} sub={fmtKr(signed.sum) + " / år"} active={filter === "signerat"} onClick={() => toggle("signerat")} />
         <Stat label="Väntar på svar" icon={<Clock size={14} className="text-info" />} value={String(sent.n)} sub={fmtKr(sent.sum) + " / år"} active={filter === "skickat"} onClick={() => toggle("skickat")} />
@@ -130,7 +141,7 @@ export function Hem({ store, onOpen, onNew, onChanged }: { store: Record<string,
                 </div>
                 <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground sm:order-3">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
               </div>
-              <span className="text-xs text-muted-foreground sm:order-2 sm:truncate">{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
+              <span className="text-xs text-muted-foreground sm:order-2 sm:truncate">{x.stale && <span className="mr-2 inline-flex items-center gap-1 font-semibold text-destructive"><AlertTriangle size={12} />{x.days} dagar sedan skickat</span>}{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
               <div className="flex flex-wrap items-center justify-between gap-2 sm:contents">
                 <select value={x.status} aria-label="Status"
                   onChange={(e) => { setVersionStatus(x.id, x.v.version, e.target.value as Status); onChanged?.(); }}

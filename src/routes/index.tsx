@@ -10,7 +10,9 @@ import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
+import { supabase } from "@/integrations/supabase/client";
 import { Hem } from "@/components/Hem";
+import { FOLLOW_UP_DAYS, staleFor } from "@/lib/uppfoljning";
 import { Pipeline } from "@/components/Pipeline";
 import { Kalender } from "@/components/Kalender";
 import { Anvandare } from "@/components/Anvandare";
@@ -199,7 +201,15 @@ function App() {
   const [tab, setTab] = useState<Tab>("hem");
   const fetchRole = getMyRole;
   const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => { fetchRole().then((r) => setIsAdmin(r.role === "admin")).catch(() => setIsAdmin(false)); }, []);
+  const [me, setMe] = useState<{ role: string | null; name: string }>({ role: null, name: "" });
+  useEffect(() => {
+    fetchRole().then(async (r) => {
+      setIsAdmin(r.role === "admin");
+      const { data: u } = await supabase.auth.getUser();
+      const { data: p } = u.user ? await supabase.from("profiles").select("name").eq("id", u.user.id).maybeSingle() : { data: null };
+      setMe({ role: r.role, name: p?.name ?? "" });
+    }).catch(() => setIsAdmin(false));
+  }, []);
   const [store, setStore] = useState<Record<string, CustomerFolder>>({});
   const [currentVersion, setCurrentVersion] = useState<number | undefined>();
   const [toast, setToast] = useState("");
@@ -207,6 +217,15 @@ function App() {
   const [search, setSearch] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [currentId, setCurrentId] = useState<string | undefined>();
+  const stale = useMemo(() => staleFor(store, me), [store, me]);
+  useEffect(() => {
+    if (!stale.length || typeof Notification === "undefined" || sessionStorage.getItem("uppf-notis")) return;
+    const show = () => { sessionStorage.setItem("uppf-notis", "1"); new Notification("Avtal att följa upp", { body: `${stale.length} avtal har legat under Skickat i över ${FOLLOW_UP_DAYS} dagar – dags för uppföljning!`, icon: "/icon-192.png", tag: "uppfoljning" }); };
+    if (Notification.permission === "granted") show();
+    else if (Notification.permission === "default") Notification.requestPermission().then((p) => { if (p === "granted") show(); });
+  }, [stale.length]);
+  const badge = (id: Tab) => (id === "hem" || id === "pipeline") && stale.length > 0
+    ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">{stale.length}</span> : null;
   const startNew = () => { setA(emptyAvtal()); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
 
   useEffect(() => {
@@ -307,8 +326,9 @@ function App() {
                 onClick={() => setTab(t.id)}
                 title={t.label}
                 aria-current={active ? "page" : undefined}
-                className="h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
+                className="relative h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
               >
+                {badge(t.id)}
                 <Icon size={19} strokeWidth={active ? 2.3 : 1.9} />
                 <span className="text-[10.5px] font-medium leading-none">{t.label}</span>
               </Button>
@@ -358,8 +378,8 @@ function App() {
                 const active = isMainActive(t.id, tab);
                 return (
                   <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
-                    <Icon size={15} />{t.label}
+                    className={`relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                    {badge(t.id)}<Icon size={15} />{t.label}
                   </button>
                 );
               })}
@@ -369,7 +389,7 @@ function App() {
 
           <main className="w-full flex-1 space-y-4 px-3 py-4 pb-24 sm:px-4 sm:py-5 sm:pb-8">
             {tab === "hem" && (
-              <Hem store={store} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
+              <Hem store={store} me={me} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
                 onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
             )}
             {tab === "pipeline" && (
