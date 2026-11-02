@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { isStale, canSee } from "./uppfoljning";
 const f = (days: number, status = "skickat") => ({ id: "x", name: "K", versions: [{ version: 1, savedAt: new Date(Date.now() - days * 864e5).toISOString(), status, data: { customer: { varRef: "Anna Berg" } } }] }) as never;
 describe("uppföljning", () => {
