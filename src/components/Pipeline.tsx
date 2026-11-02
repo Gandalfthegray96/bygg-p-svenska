@@ -12,8 +12,8 @@ const COLS: { id: Status; label: string; cls: string }[] = [
   { id: "forlorat", label: "Förlorat / avböjt", cls: "bg-destructive" },
 ];
 const DAY = 86_400_000;
-/** Skickade avtal utan händelse på så här många dagar flaggas för uppföljning. */
-export const FOLLOW_UP_DAYS = 14;
+import { FOLLOW_UP_DAYS } from "@/lib/uppfoljning";
+export { FOLLOW_UP_DAYS };
 
 type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; days: number };
 
