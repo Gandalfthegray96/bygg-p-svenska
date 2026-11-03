@@ -7,7 +7,7 @@ export const LAST_NR_KEY = "uc-senaste-avtalsnr";
 export function nextAvtalNr(nr: string): string {
   const m = nr.trim().match(/^(.*?)(\d+)(\D*)$/);
   if (!m) return "";
-  const n = String(Number(m[2]) + 1).padStart(m[2].length, "0");
+  const n = String(Number(m[2]) + 1).padStart(m[2]!.length, "0");
   return `${m[1]}${n}${m[3]}`;
 }
 
