@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Personliga nycklar som speglas till kontot i molnet.
-export const SYNC_KEYS = ["uc-avtal-draft", "uc-kalender", "uc-kalender-ics-url", "uc-kalender-feed"] as const;
+export const SYNC_KEYS = ["uc-avtal-draft", "uc-kalender", "uc-kalender-ics-url", "uc-kalender-feed", "uc-senaste-avtalsnr"] as const;
 // Avtalsregistret är gemensamt för hela företaget (en rad per avtalspost; radens namnkolumn innehåller postens id).
 export const SHARED_STORE_KEY = "uc-avtal-store";
 const OWNER_KEY = "uc-sync-owner";
