@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { Tidslinje } from "@/components/Aktivitet";
+import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
 import { KanbanSquare, Archive, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Zap, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -226,7 +227,7 @@ function App() {
   }, [stale.length]);
   const badge = (id: Tab) => (id === "hem" || id === "pipeline") && stale.length > 0
     ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">{stale.length}</span> : null;
-  const startNew = () => { setA(emptyAvtal()); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
+  const startNew = () => { const n = emptyAvtal(); n.customer.avtalNr = nextAvtalNr(loadLastNr()); setA(n); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
 
   useEffect(() => {
     const d = loadDraft();
@@ -248,6 +249,7 @@ function App() {
     const r = saveVersion(a, currentId);
     setCurrentId(r.id);
     setCurrentVersion(r.version);
+    saveLastNr(c.avtalNr);
     setStore(loadStore());
     setToast(`Sparat som v${r.version} under ${c.bestallare || "Namnlös kund"}`);
   };
@@ -351,7 +353,7 @@ function App() {
             <div className="w-full px-3 py-2.5 sm:px-4 sm:py-4">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 sm:gap-y-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-foreground">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</p>
+                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-destructive">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</p>
                   <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
                 </div>
                 <dl aria-label="Avtalssammanfattning" className={`${tab === "express" ? "hidden" : "grid"} w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`}>
