@@ -11,7 +11,7 @@ import { AlertTriangle } from "lucide-react";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
 type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; avtalNr: string; ansvarig: string; adress: string };
-type Filter = "alla" | Status | "forsenad";
+export type Filter = "alla" | Status | "forsenad";
 type Sort = "datum" | "varde" | "kund";
 
 const STATUS_LABEL: Record<Status, string> = { offert: "Att skapa offert", utkast: "Utkast", skickat: "Väntar på svar", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
@@ -35,9 +35,9 @@ function Stat({ label, value, sub, icon, active, onClick }: { label: string; val
   );
 }
 
-export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: "" } }: { me?: { role: string | null; name: string }; store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onNew: () => void; onChanged?: () => void }) {
+export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: "" }, view = "lista", initialFilter = "alla", onGoList }: { view?: "oversikt" | "lista"; initialFilter?: Filter; onGoList?: (f: Filter) => void; me?: { role: string | null; name: string }; store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onNew: () => void; onChanged?: () => void }) {
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<Filter>("alla");
+  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [sort, setSort] = useState<Sort>("datum");
   const [ansv, setAnsv] = useState("alla");
   const [kund, setKund] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
     return l.sort((a, b) => sort === "varde" ? b.perYear - a.perYear : sort === "kund" ? a.name.localeCompare(b.name, "sv") : b.v.savedAt.localeCompare(a.v.savedAt));
   }, [rows, q, filter, sort, ansv]);
 
-  const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "alla" : f));
+  const toggle = (f: Filter) => view === "oversikt" ? onGoList?.(f) : setFilter((cur) => (cur === f ? "alla" : f));
 
   const nStale = rows.filter((r) => r.stale).length;
   const act = rows.filter((r) => r.status === "signerat");
@@ -84,6 +84,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
           <span className="text-xs font-medium underline">{filter === "forsenad" ? "Visa alla" : "Visa dessa"}</span>
         </button>
       )}
+      {view === "oversikt" && <>
       <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex min-w-0 flex-col gap-1 rounded-2xl bg-sidebar p-4 text-sidebar-foreground shadow-md">
           <span className="text-xs font-semibold opacity-80">Årligt avtalsvärde (aktiva)</span>
@@ -96,13 +97,13 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
           <span className="text-xs text-muted-foreground">Täckningsgrad {pct(tg)}</span>
         </div>
         <div className="ds-panel flex min-w-0 flex-col gap-1">
-          <span className="text-xs font-semibold text-muted-foreground">Servicekapacitet / år</span>
+          <span className="text-xs font-semibold text-muted-foreground">Årlig servicevolym</span>
           <span className="truncate font-display text-3xl font-bold tabular-nums text-foreground">{new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(kpi.h)} h</span>
-          <span className="text-xs text-muted-foreground">{kpi.trips} framkörningar</span>
+          <span className="text-xs text-muted-foreground">planerad servicetid · {kpi.trips} framkörningar</span>
         </div>
         <div className="ds-panel flex min-w-0 flex-col gap-1">
-          <span className="text-xs font-semibold text-muted-foreground">Portbestånd</span>
-          <span className="truncate font-display text-3xl font-bold tabular-nums text-foreground">{kpi.obj} objekt</span>
+          <span className="text-xs font-semibold text-muted-foreground">Objekt i aktiva avtal</span>
+          <span className="truncate font-display text-3xl font-bold tabular-nums text-foreground">{kpi.obj} st</span>
           <span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0))} / avtal</span>
         </div>
       </div>
@@ -110,9 +111,11 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         <Stat label="Aktiva avtal" icon={<CheckCircle2 size={14} className="text-success" />} value={String(signed.n)} sub={fmtKr(signed.sum) + " / år"} active={filter === "signerat"} onClick={() => toggle("signerat")} />
         <Stat label="Väntar på svar" icon={<Clock size={14} className="text-info" />} value={String(sent.n)} sub={fmtKr(sent.sum) + " / år"} active={filter === "skickat"} onClick={() => toggle("skickat")} />
         <Stat label="Utkast" icon={<FilePen size={14} />} value={String(draft.n)} sub={fmtKr(draft.sum) + " / år"} active={filter === "utkast"} onClick={() => toggle("utkast")} />
-        <Stat label="Årligt avtalsvärde" icon={<Coins size={14} className="text-success" />} value={fmtKr(signed.sum)} sub={`${rows.length} avtal totalt`} active={filter === "alla"} onClick={() => setFilter("alla")} />
+        <Stat label="Årligt avtalsvärde" icon={<Coins size={14} className="text-success" />} value={fmtKr(signed.sum)} sub={`${rows.length} avtal totalt`} active={filter === "alla"} onClick={() => (view === "oversikt" ? onGoList?.("alla") : setFilter("alla"))} />
       </div>
 
+      </>}
+      {view === "lista" && <>
       {imp && <ImportPdf store={store} onClose={() => setImp(false)} onDone={() => { setImp(false); onChanged?.(); }} />}
       {index && <IndexBatch store={Object.fromEntries(Object.entries(store).filter(([, f]) => !f.uppsagd))} onClose={() => setIndex(false)} onDone={() => { setIndex(false); onChanged?.(); }} />}
 
@@ -186,6 +189,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
           ))}
         </ul>
       </section>
+      </>}
       {kund && <KundKort name={kund} store={store} onClose={() => setKund(null)} onChanged={() => onChanged?.()}
         onOpen={(id, n, v) => { setKund(null); onOpen(id, n, v); }} />}
     </div>
