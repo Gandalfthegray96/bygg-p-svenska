@@ -11,6 +11,7 @@ const ICON: Record<ActivityKind, { icon: typeof Send; cls: string }> = {
   utkast: { icon: Undo2, cls: "bg-muted text-muted-foreground" },
   forhandling: { icon: MessagesSquare, cls: "bg-primary/20 text-foreground" },
   forlorat: { icon: XCircle, cls: "bg-destructive/15 text-destructive" },
+  offert: { icon: Inbox, cls: "bg-warning/20 text-foreground" },
   nedladdat: { icon: Download, cls: "bg-muted text-muted-foreground" },
   notering: { icon: MessageSquare, cls: "bg-primary/15 text-foreground" },
 };

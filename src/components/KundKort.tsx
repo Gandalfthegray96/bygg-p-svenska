@@ -6,6 +6,7 @@ import { addNote, customerKey, deleteNote, setCustomerContacts, type Contact, ty
 import { Tidslinje, type LogItem } from "./Aktivitet";
 
 const STATUS: Record<Status, { t: string; cls: string }> = {
+  offert: { t: "Att skapa offert", cls: "bg-warning/20 text-foreground" },
   signerat: { t: "Signerat", cls: "bg-success/15 text-success" },
   forhandling: { t: "Förhandling", cls: "bg-primary/20 text-foreground" },
   forlorat: { t: "Förlorat", cls: "bg-destructive/15 text-destructive" },
