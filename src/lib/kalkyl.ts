@@ -186,3 +186,17 @@ export const fmtKr = (n: number) => {
   return new Intl.NumberFormat("sv-SE", { minimumFractionDigits: dec, maximumFractionDigits: 2 }).format(n) + " kr";
 };
 export const fmtNum = (n: number) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 2 }).format(n);
+
+/** Intern självkostnad (aldrig synlig för kund). */
+export const SJALVKOSTNAD_TIMME = 508;
+export const SJALVKOSTNAD_FRAMKORNING = 7 * 50; // 7 kr/km × 50 km snitt
+
+/** Täckningsbidrag per år, byggt på calculate(). */
+export function lonsamhet(a: Avtal) {
+  const c = calculate(a);
+  const hours = c.visits.reduce((s, v) => s + v.hours, 0);
+  const trips = c.visits.reduce((s, v) => s + v.trips, 0);
+  const kostnad = hours * SJALVKOSTNAD_TIMME + trips * SJALVKOSTNAD_FRAMKORNING;
+  const tb = c.perYear - kostnad;
+  return { intakt: c.perYear, kostnad, tb, tg: c.perYear > 0 ? (tb / c.perYear) * 100 : 0, hours, trips, besok: c.visits.length, objekt: c.totalQty };
+}
