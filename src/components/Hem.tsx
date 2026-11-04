@@ -10,7 +10,7 @@ import { FOLLOW_UP_DAYS, canSee, daysSinceActivity, isStale } from "@/lib/uppfol
 import { AlertTriangle } from "lucide-react";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
-type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; adress: string };
+type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; avtalNr: string; ansvarig: string; adress: string };
 type Filter = "alla" | Status | "forsenad";
 type Sort = "datum" | "varde" | "kund";
 
