@@ -14,8 +14,9 @@ type Row = { stale: boolean; days: number; id: string; name: string; v: Version;
 type Filter = "alla" | Status | "forsenad";
 type Sort = "datum" | "varde" | "kund";
 
-const STATUS_LABEL: Record<Status, string> = { utkast: "Utkast", skickat: "Väntar på svar", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
+const STATUS_LABEL: Record<Status, string> = { offert: "Att skapa offert", utkast: "Utkast", skickat: "Väntar på svar", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
 const STATUS_CLS: Record<Status, string> = {
+  offert: "bg-accent text-accent-foreground",
   signerat: "bg-success/15 text-success",
   skickat: "bg-info/15 text-info",
   utkast: "bg-muted text-muted-foreground",

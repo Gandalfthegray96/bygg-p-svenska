@@ -2,15 +2,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
 import { type Avtal, calculate, clampVisits, emptyAvtal, fmtKr, newRow, normalizeAvtal } from "./kalkyl";
 
-export type Status = "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
+export type Status = "offert" | "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status; downloadedAt?: string };
-export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat" | "nedladdat";
+export type ActivityKind = "skapat" | "version" | "skickat" | "signerat" | "utkast" | "notering" | "forhandling" | "forlorat" | "nedladdat" | "offert";
 export type Activity = { id: string; at: string; by: string; kind: ActivityKind; text: string };
 export type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
 export type Uppsagd = { datum: string; orsak: string; notering: string; by: string; at: string };
 export const UPPSAGD_ORSAKER = ["Pris", "Bytt leverantör", "Verksamheten flyttad/nedlagd", "Portar utbytta/borttagna", "Missnöjd med service", "Egen regi", "Annat"];
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
-export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[]; uppsagd?: Uppsagd };
+export type Forfragan = { beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string; at: string; by: string };
+export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[]; uppsagd?: Uppsagd; forfragan?: Forfragan };
 
 const STORE_KEY = "uc-avtal-store";
 const DRAFT_KEY = "uc-avtal-draft";
@@ -34,6 +35,7 @@ export function normalizeFolder(key: string, f: Partial<CustomerFolder> & { vers
   if (Array.isArray(f.log)) out.log = f.log;
   if (Array.isArray(f.contacts)) out.contacts = f.contacts;
   if (f.uppsagd && typeof f.uppsagd === "object") out.uppsagd = f.uppsagd;
+  if (f.forfragan && typeof f.forfragan === "object") out.forfragan = f.forfragan;
   return out;
 }
 
@@ -126,7 +128,7 @@ export function saveDraft(a: Avtal) {
   pushKey(DRAFT_KEY, raw);
 }
 
-const STATUS_TEXT: Record<Status, string> = { skickat: "Avtal skickat", signerat: "Avtal signerat", utkast: "Återställt till utkast", forhandling: "Uppföljning / förhandling", forlorat: "Avtal förlorat / avböjt" };
+const STATUS_TEXT: Record<Status, string> = { offert: "Flyttad till Att skapa offert", skickat: "Avtal skickat", signerat: "Avtal signerat", utkast: "Återställt till utkast", forhandling: "Uppföljning / förhandling", forlorat: "Avtal förlorat / avböjt" };
 
 export function setVersionStatus(id: string, version: number, status: Status) {
   const store = loadStore();
@@ -231,4 +233,23 @@ export function importAvtal(items: { kund: string; avtalNr: string; datum: strin
   }
   saveStore(store);
   return n;
+}
+
+/** Ny förfrågan (t.ex. från mejl): skapas som avtalspost v1 med status "offert" så den syns i Pipeline. */
+export function createForfragan(f: { kund: string; adress: string; beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string }): string {
+  const store = loadStore();
+  const a = emptyAvtal();
+  a.customer.bestallare = f.kund.trim();
+  a.customer.adress = f.adress.trim();
+  a.customer.kontaktperson = f.kontakt.trim();
+  a.customer.erRef = f.kontakt.trim();
+  a.customer.telefon = f.telefon.trim();
+  a.customer.epost = f.epost.trim();
+  const id = crypto.randomUUID();
+  const folder: CustomerFolder = { id, name: f.kund.trim() || "Namnlös kund", versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: "offert" }],
+    forfragan: { beskrivning: f.beskrivning.trim(), kontakt: f.kontakt.trim(), telefon: f.telefon.trim(), epost: f.epost.trim(), kalla: f.kalla.trim(), at: new Date().toISOString(), by: actorName() } };
+  logTo(folder, "offert", `Förfrågan registrerad${f.kalla ? ` (${f.kalla})` : ""}: ${f.beskrivning.trim().slice(0, 120)}`);
+  store[id] = folder;
+  saveStore(store);
+  return id;
 }

@@ -1,11 +1,16 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Plus, Mail, Phone } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
-import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
+import { createForfragan, setVersionStatus, type Forfragan, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
 const COLS: { id: Status; label: string; cls: string }[] = [
-  { id: "utkast", label: "Utkast / förfrågan", cls: "bg-muted-foreground" },
+  { id: "offert", label: "Att skapa offert", cls: "bg-accent-foreground" },
+  { id: "utkast", label: "Utkast", cls: "bg-muted-foreground" },
   { id: "skickat", label: "Skickat", cls: "bg-info" },
   { id: "forhandling", label: "Uppföljning / förhandling", cls: "bg-primary" },
   { id: "signerat", label: "Signerat", cls: "bg-success" },
@@ -15,17 +20,24 @@ const DAY = 86_400_000;
 import { FOLLOW_UP_DAYS } from "@/lib/uppfoljning";
 export { FOLLOW_UP_DAYS };
 
-type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; days: number };
+type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; days: number; ff?: Forfragan | undefined };
 
 export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onChanged: () => void }) {
   const [drag, setDrag] = useState<string | null>(null);
   const [over, setOver] = useState<Status | null>(null);
+  const [nyOpen, setNyOpen] = useState(false);
+  const empty = { kund: "", adress: "", beskrivning: "", kontakt: "", telefon: "", epost: "", kalla: "Mejl" };
+  const [ny, setNy] = useState(empty);
+  const spara = () => { createForfragan(ny); setNy(empty); setNyOpen(false); onChanged(); };
+  const fld = (k: keyof typeof empty, label: string, type = "text") => (
+    <div className="space-y-1"><Label htmlFor={`ff-${k}`}>{label}</Label><Input id={`ff-${k}`} type={type} value={ny[k]} onChange={(e) => setNy({ ...ny, [k]: e.target.value })} /></div>
+  );
 
   const cards = useMemo<Card[]>(() => Object.values(store).filter((f) => f.versions.length).map((f) => {
     const v = f.versions.at(-1)!;
     const a = normalizeAvtal(v.data);
     const last = [v.savedAt, ...(f.log ?? []).map((l) => l.at)].sort().at(-1)!;
-    return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((Date.now() - new Date(last).getTime()) / DAY) };
+    return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((Date.now() - new Date(last).getTime()) / DAY), ff: f.forfragan };
   }), [store]);
 
   const move = (c: Card, s: Status) => { setVersionStatus(c.id, c.v.version, s); onChanged(); };
@@ -35,6 +47,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
     <div className="space-y-3">
       <div className="ds-panel flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-[15px] font-semibold text-foreground">Säljpipeline</h2>
+        <Button size="sm" onClick={() => setNyOpen(true)}><Plus size={15} />Ny förfrågan</Button>
         {stale > 0 && <span className="flex items-center gap-1.5 rounded-md bg-destructive/15 px-2.5 py-1 text-xs font-semibold text-destructive"><AlertTriangle size={14} />{stale} avtal behöver följas upp</span>}
       </div>
       <div className="flex snap-x gap-3 overflow-x-auto pb-2">
@@ -50,6 +63,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                 <h3 className="flex-1 truncate text-sm font-semibold text-foreground">{col.label}</h3>
                 <span className="text-xs tabular-nums text-muted-foreground">{list.length}</span>
               </header>
+              {col.id === "offert" && <Button variant="outline" size="sm" className="h-8" onClick={() => setNyOpen(true)}><Plus size={14} />Ny förfrågan</Button>}
               <p className="px-1 text-xs tabular-nums text-muted-foreground">{fmtKr(list.reduce((t, c) => t + c.perYear, 0))} / år</p>
               {list.map((c) => {
                 const flag = c.status === "skickat" && c.days >= FOLLOW_UP_DAYS;
@@ -60,6 +74,16 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                       <span className="block truncate text-sm font-semibold text-foreground">{c.name}</span>
                       <span className="block truncate text-xs text-muted-foreground">{c.avtalNr ? `Nr ${c.avtalNr}` : "Inget avtalsnr"}{c.ansvarig ? ` · ${c.ansvarig}` : ""}</span>
                     </button>
+                    {c.ff && (
+                      <div className="space-y-1 rounded-md bg-muted/60 p-2 text-xs text-foreground">
+                        {c.ff.beskrivning && <p className="line-clamp-4 whitespace-pre-wrap">{c.ff.beskrivning}</p>}
+                        {c.ff.kontakt && <p className="font-medium">{c.ff.kontakt}</p>}
+                        {c.ff.telefon && <a href={`tel:${c.ff.telefon}`} className="flex items-center gap-1 text-info"><Phone size={12} />{c.ff.telefon}</a>}
+                        {c.ff.epost && <a href={`mailto:${c.ff.epost}`} className="flex items-center gap-1 truncate text-info"><Mail size={12} />{c.ff.epost}</a>}
+                        <p className="text-muted-foreground">{c.ff.kalla ? `${c.ff.kalla} · ` : ""}{new Date(c.ff.at).toLocaleDateString("sv-SE")}{c.ff.by ? ` · ${c.ff.by}` : ""}</p>
+                      </div>
+                    )}
+                    {c.status === "offert" && <Button size="sm" className="h-7 w-full" onClick={() => onOpen(c.id, c.name, c.v)}>Skapa kalkyl</Button>}
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold tabular-nums text-foreground">{fmtKr(c.perYear)}/år</span>
                       <span className={flag ? "flex items-center gap-1 font-semibold text-destructive" : "text-muted-foreground"}>{flag && <AlertTriangle size={12} />}{c.days} d</span>
@@ -76,6 +100,25 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
           );
         })}
       </div>
+      <Dialog open={nyOpen} onOpenChange={setNyOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Ny förfrågan – att skapa offert</DialogTitle></DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {fld("kund", "Kund *")}
+            {fld("adress", "Adress")}
+            {fld("kontakt", "Kontaktperson")}
+            {fld("telefon", "Telefon", "tel")}
+            {fld("epost", "E-post", "email")}
+            {fld("kalla", "Källa (t.ex. Mejl, Telefon)")}
+          </div>
+          <div className="space-y-1"><Label htmlFor="ff-besk">Vad gäller förfrågan?</Label>
+            <Textarea id="ff-besk" rows={6} placeholder="Klistra in mejlet eller skriv antal portar, typer, önskemål…" value={ny.beskrivning} onChange={(e) => setNy({ ...ny, beskrivning: e.target.value })} /></div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNyOpen(false)}>Avbryt</Button>
+            <Button disabled={!ny.kund.trim()} onClick={spara}>Spara förfrågan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

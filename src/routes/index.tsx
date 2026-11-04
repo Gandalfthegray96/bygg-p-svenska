@@ -172,6 +172,7 @@ function NumField({ label, value, onChange, min = 0, max }: { label: string; val
 }
 
 const STATUS: Record<Status, { label: string; cls: string }> = {
+  offert: { label: "Att skapa offert", cls: "bg-accent text-accent-foreground" },
   utkast: { label: "Utkast", cls: "bg-muted text-muted-foreground" },
   skickat: { label: "Skickat", cls: "bg-info/15 text-info" },
   forhandling: { label: "Förhandling", cls: "bg-primary/20 text-foreground" },
