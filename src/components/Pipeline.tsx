@@ -20,7 +20,7 @@ const DAY = 86_400_000;
 import { FOLLOW_UP_DAYS } from "@/lib/uppfoljning";
 export { FOLLOW_UP_DAYS };
 
-type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; days: number; ff?: Forfragan };
+type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; days: number; ff?: Forfragan | undefined };
 
 export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onChanged: () => void }) {
   const [drag, setDrag] = useState<string | null>(null);
