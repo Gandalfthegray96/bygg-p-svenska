@@ -5,7 +5,7 @@ import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
 import { ImportPdf } from "./ImportPdf";
 import { SagUppDialog, UppsagdaLista } from "./Uppsagt";
-import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
+import { calculate, fmtKr, lonsamhet, normalizeAvtal } from "@/lib/kalkyl";
 import { FOLLOW_UP_DAYS, canSee, daysSinceActivity, isStale } from "@/lib/uppfoljning";
 import { AlertTriangle } from "lucide-react";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
@@ -51,7 +51,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
     Object.values(store).filter((f) => f.versions.length && !f.uppsagd).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
-      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
+      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a), avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
     }), [store, me]);
 
   const stat = (s: Status) => { const l = rows.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
@@ -69,6 +69,11 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
   const toggle = (f: Filter) => setFilter((cur) => (cur === f ? "alla" : f));
 
   const nStale = rows.filter((r) => r.stale).length;
+  const act = rows.filter((r) => r.status === "signerat");
+  const sum = (f: (l: Row["lon"]) => number) => act.reduce((t, r) => t + f(r.lon), 0);
+  const kpi = { arr: sum((l) => l.intakt), tb: sum((l) => l.tb), h: sum((l) => l.hours), trips: sum((l) => l.trips), obj: sum((l) => l.objekt) };
+  const tg = kpi.arr > 0 ? (kpi.tb / kpi.arr) * 100 : 0;
+  const pct = (n: number) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(n) + " %";
   return (
     <div className="space-y-4">
       {nStale > 0 && (
@@ -79,6 +84,28 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
           <span className="text-xs font-medium underline">{filter === "forsenad" ? "Visa alla" : "Visa dessa"}</span>
         </button>
       )}
+      <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex min-w-0 flex-col gap-1 rounded-2xl bg-sidebar p-4 text-sidebar-foreground shadow-md">
+          <span className="text-xs font-semibold opacity-80">Årligt avtalsvärde (aktiva)</span>
+          <span className="truncate font-display text-3xl font-bold tabular-nums">{fmtKr(Math.round(kpi.arr))}</span>
+          <span className="text-xs opacity-80">{act.length} aktiva avtal · {fmtKr(Math.round(kpi.arr * 5))} på 5 år</span>
+        </div>
+        <div className="ds-panel flex min-w-0 flex-col gap-1">
+          <span className="text-xs font-semibold text-muted-foreground">Täckningsbidrag / år</span>
+          <span className="truncate font-display text-3xl font-bold tabular-nums text-success">{fmtKr(Math.round(kpi.tb))}</span>
+          <span className="text-xs text-muted-foreground">Täckningsgrad {pct(tg)}</span>
+        </div>
+        <div className="ds-panel flex min-w-0 flex-col gap-1">
+          <span className="text-xs font-semibold text-muted-foreground">Servicekapacitet / år</span>
+          <span className="truncate font-display text-3xl font-bold tabular-nums text-foreground">{new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(kpi.h)} h</span>
+          <span className="text-xs text-muted-foreground">{kpi.trips} framkörningar</span>
+        </div>
+        <div className="ds-panel flex min-w-0 flex-col gap-1">
+          <span className="text-xs font-semibold text-muted-foreground">Portbestånd</span>
+          <span className="truncate font-display text-3xl font-bold tabular-nums text-foreground">{kpi.obj} objekt</span>
+          <span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0))} / avtal</span>
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <Stat label="Aktiva avtal" icon={<CheckCircle2 size={14} className="text-success" />} value={String(signed.n)} sub={fmtKr(signed.sum) + " / år"} active={filter === "signerat"} onClick={() => toggle("signerat")} />
         <Stat label="Väntar på svar" icon={<Clock size={14} className="text-info" />} value={String(sent.n)} sub={fmtKr(sent.sum) + " / år"} active={filter === "skickat"} onClick={() => toggle("skickat")} />
