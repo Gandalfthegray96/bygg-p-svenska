@@ -12,7 +12,7 @@ import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
 import { supabase } from "@/integrations/supabase/client";
-import { Hem } from "@/components/Hem";
+import { Hem, type Filter as HemFilter } from "@/components/Hem";
 import { FOLLOW_UP_DAYS, staleFor } from "@/lib/uppfoljning";
 import { Pipeline } from "@/components/Pipeline";
 import { Kalender } from "@/components/Kalender";
@@ -79,10 +79,11 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "hem" | "pipeline" | "express" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
+type Tab = "hem" | "lista" | "pipeline" | "express" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
-  { id: "hem", label: "Hem", icon: House },
-  { id: "pipeline", label: "Pipeline", icon: KanbanSquare },
+  { id: "hem", label: "Översikt", icon: House },
+  { id: "lista", label: "Avtalsöversikt", icon: FolderOpen },
+  { id: "pipeline", label: "Säljpipeline", icon: KanbanSquare },
   { id: "kund", label: "Kund", icon: User },
   { id: "forsatt", label: "Försättsblad", icon: FileText },
   { id: "objekt", label: "Objekt", icon: Building2 },
@@ -99,8 +100,8 @@ const MAIN: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "hem", label: "Hem", icon: House },
   { id: "pipeline", label: "Pipeline", icon: KanbanSquare },
   { id: "express", label: "Express", icon: Zap },
-  { id: "kund", label: "Avtal", icon: FileText },
-  { id: "sparade", label: "Sparade", icon: Archive },
+  { id: "lista", label: "Avtal", icon: FolderOpen },
+  { id: "kund", label: "Nytt avtal", icon: FilePlus2 },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
@@ -201,6 +202,9 @@ function App() {
   const [a, setA] = useState<Avtal>(emptyAvtal);
   const [hydrated, setHydrated] = useState(false);
   const [tab, setTab] = useState<Tab>("hem");
+  const [listFilter, setListFilter] = useState<HemFilter>("alla");
+  const inAvtal = AVTAL_SUB.includes(tab);
+  const PAGE: Partial<Record<Tab, [string, string]>> = { hem: ["Översikt", "Nyckeltal och sammanställning"], lista: ["Avtalsöversikt", "Alla pågående, skickade och signerade avtal"], pipeline: ["Säljpipeline", "Förfrågningar och offerter"], express: ["Express", "Snabbkalkyl"], kalender: ["Kalender", "Planering"], sparade: ["Sparade avtal", "Versioner"], anvandare: ["Användare", "Konton och aktivitet"] };
   const fetchRole = getMyRole;
   const [isAdmin, setIsAdmin] = useState(false);
   const [me, setMe] = useState<{ role: string | null; name: string }>({ role: null, name: "" });
@@ -354,16 +358,23 @@ function App() {
             <div className="w-full px-3 py-2.5 sm:px-4 sm:py-4">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 sm:gap-y-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-destructive">{TABS.find((t) => t.id === tab)?.label}</span> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</p>
-                  <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold text-foreground sm:text-2xl">{c.bestallare || "Nytt avtal"}</h1>
+                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-destructive">{TABS.find((t) => t.id === tab)?.label}</span>{inAvtal ? <> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</> : <> · {PAGE[tab]?.[1]}</>}</p>
+                  <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold text-foreground sm:text-2xl">{inAvtal ? (c.bestallare || "Skapa nytt avtal") : PAGE[tab]?.[0]}</h1>
                 </div>
-                <dl aria-label="Avtalssammanfattning" className={`${tab === "express" ? "hidden" : "grid"} w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`}>
+                <dl aria-label="Avtalssammanfattning" className={`${!inAvtal ? "hidden" : "grid"} w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`}>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Objekt</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalQty)} st</dd></div>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Servicetid</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalMinutes / 60)} h</dd></div>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Pris/år</dt><dd className="mt-1 break-words font-display text-base font-semibold text-info sm:text-lg">{fmtKr(k.perYear)}</dd></div>
                 </dl>
               </div>
-              <div className="mt-2 flex items-center justify-end gap-3 sm:mt-4">
+              {!inAvtal && tab !== "anvandare" && (
+                <div className="mt-2 flex flex-wrap items-center justify-end gap-2 sm:mt-4">
+                  <Button variant="outline" onClick={() => setTab("pipeline")} className="h-9 gap-1.5"><UserPlus size={16} />Ny kund</Button>
+                  <Button variant="outline" onClick={() => { setListFilter("alla"); setTab("lista"); }} className="h-9 gap-1.5"><BarChart3 size={16} />Rapporter</Button>
+                  <Button onClick={() => setConfirmNew(true)} className="h-9 gap-1.5"><Plus size={16} />Nytt avtal</Button>
+                </div>
+              )}
+              <div className={`${inAvtal ? "flex" : "hidden"} mt-2 items-center justify-end gap-3 sm:mt-4`}>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button variant="ghost" onClick={() => setTab("avtal")} className="hidden h-9 gap-1.5 px-3 text-sm text-muted-foreground hover:text-foreground md:inline-flex"><Eye size={16} />Förhandsgranska</Button>
                   <Button variant="ghost" onClick={onSave} className="hidden h-9 gap-1.5 border border-border bg-card px-3 text-sm text-foreground hover:bg-muted sm:inline-flex"><Save size={16} />Spara</Button>
@@ -391,8 +402,8 @@ function App() {
           </header>
 
           <main className="w-full flex-1 space-y-4 px-3 py-4 pb-24 sm:px-4 sm:py-5 sm:pb-8">
-            {tab === "hem" && (
-              <Hem store={store} me={me} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
+            {(tab === "hem" || tab === "lista") && (
+              <Hem key={tab + listFilter} view={tab === "hem" ? "oversikt" : "lista"} initialFilter={tab === "lista" ? listFilter : "alla"} onGoList={(f) => { setListFilter(f); setTab("lista"); }} store={store} me={me} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
                 onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
             )}
             {tab === "pipeline" && (
