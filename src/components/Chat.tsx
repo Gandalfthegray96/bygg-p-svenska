@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPE } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { pushKey } from "@/lib/cloud-sync";
 import type { CustomerFolder } from "@/lib/avtal-store";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileText, MessageCircle, Send, Smile, Users, X } from "lucide-react";
@@ -105,13 +106,38 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
 
   const convMsgs = useMemo(() => (me && conv ? msgs.filter((m) => convOf(m, me) === conv) : []), [msgs, conv, me]);
 
+  const saveRead = (next: Record<string, string>) => {
+    setRead(next);
+    const raw = JSON.stringify(next);
+    localStorage.setItem(READ_KEY, raw); pushKey(READ_KEY, raw);
+  };
+  // Markera alla konversationer som lästa (vid öppning av chatten / första gången på kontot).
+  const markAllRead = () => {
+    if (!me) return;
+    const next = { ...read };
+    let changed = false;
+    for (const m of msgs) {
+      const c = convOf(m, me);
+      if (!next[c] || m.created_at > next[c]!) { next[c] = m.created_at; changed = true; }
+    }
+    if (changed) saveRead(next);
+  };
+  const initRef = useRef(false);
+  useEffect(() => {
+    if (initRef.current || !me || !msgs.length) return;
+    initRef.current = true;
+    if (!localStorage.getItem(READ_KEY)) markAllRead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, msgs]);
+  useEffect(() => {
+    if (open) markAllRead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, msgs]);
+
   useEffect(() => {
     if (!open || !conv || !convMsgs.length) return;
     const last = convMsgs[convMsgs.length - 1]!.created_at;
-    if (read[conv] !== last) {
-      const next = { ...read, [conv]: last };
-      setRead(next); localStorage.setItem(READ_KEY, JSON.stringify(next));
-    }
+    if (!read[conv] || read[conv]! < last) saveRead({ ...read, [conv]: last });
     requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight }));
   }, [open, conv, convMsgs, read]);
 
