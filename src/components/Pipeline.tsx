@@ -64,7 +64,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                 <span className="text-xs tabular-nums text-muted-foreground">{list.length}</span>
               </header>
               {col.id === "offert" && <Button variant="outline" size="sm" className="h-8" onClick={() => setNyOpen(true)}><Plus size={14} />Ny förfrågan</Button>}
-              <p className="px-1 text-xs tabular-nums text-muted-foreground">{fmtKr(list.reduce((t, c) => t + c.perYear, 0))} / år</p>
+              {col.id !== "offert" && <p className="px-1 text-xs tabular-nums text-muted-foreground">{fmtKr(list.reduce((t, c) => t + c.perYear, 0))} / år</p>}
               {list.map((c) => {
                 const flag = c.status === "skickat" && c.days >= FOLLOW_UP_DAYS;
                 return (
@@ -85,7 +85,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                     )}
                     {c.status === "offert" && <Button size="sm" className="h-7 w-full" onClick={() => onOpen(c.id, c.name, c.v)}>Skapa kalkyl</Button>}
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold tabular-nums text-foreground">{fmtKr(c.perYear)}/år</span>
+                      {c.status !== "offert" ? <span className="font-semibold tabular-nums text-foreground">{fmtKr(c.perYear)}/år</span> : <span />}
                       <span className={flag ? "flex items-center gap-1 font-semibold text-destructive" : "text-muted-foreground"}>{flag && <AlertTriangle size={12} />}{c.days} d</span>
                     </div>
                     <div className="flex justify-between">
