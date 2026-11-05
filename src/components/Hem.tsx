@@ -111,7 +111,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         <Stat label="Aktiva avtal" icon={<CheckCircle2 size={14} className="text-success" />} value={String(signed.n)} sub={fmtKr(signed.sum) + " / år"} active={filter === "signerat"} onClick={() => toggle("signerat")} />
         <Stat label="Väntar på svar" icon={<Clock size={14} className="text-info" />} value={String(sent.n)} sub={fmtKr(sent.sum) + " / år"} active={filter === "skickat"} onClick={() => toggle("skickat")} />
         <Stat label="Utkast" icon={<FilePen size={14} />} value={String(draft.n)} sub={fmtKr(draft.sum) + " / år"} active={filter === "utkast"} onClick={() => toggle("utkast")} />
-        <Stat label="Årligt avtalsvärde" icon={<Coins size={14} className="text-success" />} value={fmtKr(signed.sum)} sub={`${rows.length} avtal totalt`} active={filter === "alla"} onClick={() => (view === "oversikt" ? onGoList?.("alla") : setFilter("alla"))} />
+        <Stat label="Alla avtal" icon={<Coins size={14} className="text-success" />} value={String(rows.length)} sub={fmtKr(rows.reduce((t, x) => t + x.perYear, 0)) + " / år totalt"} active={filter === "alla"} onClick={() => (view === "oversikt" ? onGoList?.("alla") : setFilter("alla"))} />
       </div>
 
       </>}
