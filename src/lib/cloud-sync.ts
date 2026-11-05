@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Personliga nycklar som speglas till kontot i molnet.
-export const SYNC_KEYS = ["uc-avtal-draft", "uc-kalender", "uc-kalender-ics-url", "uc-kalender-feed", "uc-senaste-avtalsnr"] as const;
+export const SYNC_KEYS = ["uc-avtal-draft", "uc-kalender", "uc-kalender-ics-url", "uc-kalender-feed", "uc-senaste-avtalsnr", "chat-read"] as const;
 // Avtalsregistret är gemensamt för hela företaget (en rad per avtalspost; radens namnkolumn innehåller postens id).
 export const SHARED_STORE_KEY = "uc-avtal-store";
 const OWNER_KEY = "uc-sync-owner";
@@ -63,6 +63,25 @@ export async function pullAll(uid: string) {
     const { count } = await supabase.from("avtal_register").select("name", { count: "exact", head: true }).in("name", ids);
     if (count === ids.length) await supabase.from("user_data").delete().eq("key", SHARED_STORE_KEY).eq("user_id", uid);
   }
+}
+
+/** Hämtar om det gemensamma registret (vid realtidsändring från kollega). */
+export async function refreshShared(): Promise<boolean> {
+  if (!userId) return false;
+  const { data, error } = await supabase.from("avtal_register").select("name, folder");
+  if (error || !data) return false;
+  const store: Record<string, unknown> = {};
+  const next: Record<string, string> = {};
+  for (const r of data) {
+    const raw = (r.folder && typeof r.folder === "object" ? r.folder : {}) as Record<string, unknown>;
+    const rawId = raw["id"];
+    const id = typeof rawId === "string" && rawId.trim() ? rawId : r.name;
+    store[id] = { ...raw, id, name: raw["name"] ?? r.name };
+    next[id] = JSON.stringify(r.folder);
+  }
+  lastShared = next;
+  localStorage.setItem(SHARED_STORE_KEY, JSON.stringify(store));
+  return true;
 }
 
 export function stopSync() {

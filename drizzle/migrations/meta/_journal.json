@@ -64,6 +64,13 @@
       "when": 1793192618717,
       "tag": "0008_team_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793906556937,
+      "tag": "0009_realtime_avtal_register",
+      "breakpoints": true
     }
   ]
 }

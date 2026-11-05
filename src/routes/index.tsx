@@ -12,6 +12,7 @@ import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
 import { supabase } from "@/integrations/supabase/client";
+import { refreshShared } from "@/lib/cloud-sync";
 import { Hem, type Filter as HemFilter } from "@/components/Hem";
 import { FOLLOW_UP_DAYS, staleFor } from "@/lib/uppfoljning";
 import { Pipeline } from "@/components/Pipeline";
@@ -239,6 +240,17 @@ function App() {
     if (d) setA(d);
     setStore(loadStore());
     setHydrated(true);
+  }, []);
+  // Realtidssynk: kollegors ändringar i avtalsregistret slår igenom direkt.
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => { clearTimeout(t); t = setTimeout(async () => { if (await refreshShared()) setStore(loadStore()); }, 400); };
+    const ch = supabase.channel(`avtal-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "avtal_register" }, refresh)
+      .subscribe();
+    const onVis = () => { if (document.visibilityState === "visible") refresh(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { clearTimeout(t); supabase.removeChannel(ch); document.removeEventListener("visibilitychange", onVis); };
   }, []);
   useEffect(() => { if (hydrated) saveDraft(a); }, [a, hydrated]);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(""), 2500); return () => clearTimeout(t); }, [toast]);
