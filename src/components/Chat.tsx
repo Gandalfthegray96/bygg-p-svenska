@@ -1,3 +1,5 @@
+import { sendPush } from "@/lib/push.functions";
+import { enablePush } from "@/lib/push";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPE } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { pushKey } from "@/lib/cloud-sync";
@@ -40,6 +42,7 @@ function Avatar({ u, size = 32 }: { u?: ChatUser | undefined; size?: number }) {
 
 export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFolder>; onOpenAvtal: (id: string) => void }) {
   const [me, setMe] = useState<string | null>(null);
+  useEffect(() => { if (me) void enablePush(false).catch(() => {}); }, [me]);
   const [users, setUsers] = useState<ChatUser[]>([]);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [open, setOpen] = useState(false);
@@ -143,7 +146,7 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
 
   const openPanel = () => {
     setOpen((o) => !o);
-    if (typeof Notification !== "undefined" && Notification.permission === "default") Notification.requestPermission();
+    if (typeof Notification !== "undefined" && Notification.permission === "default") void enablePush(true).catch(() => {});
   };
 
   const send = async () => {
@@ -156,6 +159,9 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
     }).select().single();
     if (error) { setText(body); alert("Kunde inte skicka meddelandet."); return; }
     setMsgs((prev) => (prev.some((x) => x.id === data.id) ? prev : [...prev, data as Msg]));
+    const meU = users.find((x) => x.id === me);
+    const who = meU?.name || meU?.email || "Kollega";
+    void sendPush({ data: { userIds: conv === "team" ? "all" : [conv], title: conv === "team" ? `${who} i Teamchatt` : `${who} (privat)`, body, tag: `chat-${conv === "team" ? "team" : me}` } }).catch(() => {});
   };
 
   // Drag

@@ -1,3 +1,4 @@
+import { sendPush } from "@/lib/push.functions";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, ChevronLeft, ChevronRight, Plus, Mail, Phone } from "lucide-react";
@@ -37,7 +38,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
     const uname = u ? u.name || u.email : "";
     const id = createForfragan({ ...ny, tilldelad: uname });
     if (u) {
-      await supabase.from("chat_messages").insert({ body: `🔔 Ny förfrågan tilldelad dig: ${ny.kund.trim()}${ny.beskrivning.trim() ? ` – ${ny.beskrivning.trim().slice(0, 120)}` : ""}`, recipient_id: u.id, avtal_id: id, avtal_label: ny.kund.trim() });
+      await sendPush({ data: { userIds: [u.id], title: "🔔 Ny förfrågan tilldelad dig", body: `${ny.kund.trim()}${ny.beskrivning.trim() ? ` – ${ny.beskrivning.trim().slice(0, 120)}` : ""}`, tag: `ping-${id}` } }).catch(() => {});
     }
     setNy(empty); setSaljare(""); setNyOpen(false); onChanged();
   };
