@@ -38,7 +38,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
     const uname = u ? u.name || u.email : "";
     const id = createForfragan({ ...ny, tilldelad: uname });
     if (u) {
-      await sendPush({ data: { userIds: [u.id], title: "🔔 Ny förfrågan tilldelad dig", body: `${ny.kund.trim()}${ny.beskrivning.trim() ? `, tag: `ping-${id}` } }).catch(() => {});
+      await sendPush({ data: { userIds: [u.id], title: "🔔 Ny förfrågan tilldelad dig", body: `${ny.kund.trim()}${ny.beskrivning.trim() ? ` – ${ny.beskrivning.trim().slice(0, 120)}` : ""}`, tag: `ping-${id}` } }).catch(() => {});
     }
     setNy(empty); setSaljare(""); setNyOpen(false); onChanged();
   };
