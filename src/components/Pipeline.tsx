@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, ChevronLeft, ChevronRight, Plus, Mail, Phone } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,18 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
   const [nyOpen, setNyOpen] = useState(false);
   const empty = { kund: "", adress: "", beskrivning: "", kontakt: "", telefon: "", epost: "", kalla: "Mejl" };
   const [ny, setNy] = useState(empty);
-  const spara = () => { createForfragan(ny); setNy(empty); setNyOpen(false); onChanged(); };
+  const [users, setUsers] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [saljare, setSaljare] = useState("");
+  useEffect(() => { supabase.rpc("chat_users").then(({ data }) => setUsers((data as { id: string; name: string; email: string }[]) ?? [])); }, []);
+  const spara = async () => {
+    const u = users.find((x) => x.id === saljare);
+    const uname = u ? u.name || u.email : "";
+    const id = createForfragan({ ...ny, tilldelad: uname });
+    if (u) {
+      await supabase.from("chat_messages").insert({ body: `🔔 Ny förfrågan tilldelad dig: ${ny.kund.trim()}${ny.beskrivning.trim() ? ` – ${ny.beskrivning.trim().slice(0, 120)}` : ""}`, recipient_id: u.id, avtal_id: id, avtal_label: ny.kund.trim() });
+    }
+    setNy(empty); setSaljare(""); setNyOpen(false); onChanged();
+  };
   const fld = (k: keyof typeof empty, label: string, type = "text") => (
     <div className="space-y-1"><Label htmlFor={`ff-${k}`}>{label}</Label><Input id={`ff-${k}`} type={type} value={ny[k]} onChange={(e) => setNy({ ...ny, [k]: e.target.value })} /></div>
   );
@@ -81,6 +93,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                         {c.ff.telefon && <a href={`tel:${c.ff.telefon}`} className="flex items-center gap-1 text-info"><Phone size={12} />{c.ff.telefon}</a>}
                         {c.ff.epost && <a href={`mailto:${c.ff.epost}`} className="flex items-center gap-1 truncate text-info"><Mail size={12} />{c.ff.epost}</a>}
                         <p className="text-muted-foreground">{c.ff.kalla ? `${c.ff.kalla} · ` : ""}{new Date(c.ff.at).toLocaleDateString("sv-SE")}{c.ff.by ? ` · ${c.ff.by}` : ""}</p>
+                        {c.ff.tilldelad && <p className="font-semibold text-info">Tilldelad: {c.ff.tilldelad}</p>}
                       </div>
                     )}
                     {c.status === "offert" && <Button size="sm" className="h-7 w-full" onClick={() => onOpen(c.id, c.name, c.v)}>Skapa kalkyl</Button>}
@@ -110,6 +123,11 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
             {fld("telefon", "Telefon", "tel")}
             {fld("epost", "E-post", "email")}
             {fld("kalla", "Källa (t.ex. Mejl, Telefon)")}
+            <div className="space-y-1"><Label htmlFor="ff-saljare">Pinga säljare</Label>
+              <select id="ff-saljare" value={saljare} onChange={(e) => setSaljare(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground">
+                <option value="">Ingen</option>
+                {users.map((u) => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+              </select></div>
           </div>
           <div className="space-y-1"><Label htmlFor="ff-besk">Vad gäller förfrågan?</Label>
             <Textarea id="ff-besk" rows={6} placeholder="Klistra in mejlet eller skriv antal portar, typer, önskemål…" value={ny.beskrivning} onChange={(e) => setNy({ ...ny, beskrivning: e.target.value })} /></div>
