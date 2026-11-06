@@ -10,7 +10,7 @@ export type Contact = { id: string; name: string; roll: string; tel: string; epo
 export type Uppsagd = { datum: string; orsak: string; notering: string; by: string; at: string };
 export const UPPSAGD_ORSAKER = ["Pris", "Bytt leverantör", "Verksamheten flyttad/nedlagd", "Portar utbytta/borttagna", "Missnöjd med service", "Egen regi", "Annat"];
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
-export type Forfragan = { beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string; at: string; by: string };
+export type Forfragan = { beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string; at: string; by: string; tilldelad?: string };
 export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[]; uppsagd?: Uppsagd; forfragan?: Forfragan };
 
 const STORE_KEY = "uc-avtal-store";
@@ -236,7 +236,7 @@ export function importAvtal(items: { kund: string; avtalNr: string; datum: strin
 }
 
 /** Ny förfrågan (t.ex. från mejl): skapas som avtalspost v1 med status "offert" så den syns i Pipeline. */
-export function createForfragan(f: { kund: string; adress: string; beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string }): string {
+export function createForfragan(f: { kund: string; adress: string; beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string; tilldelad?: string }): string {
   const store = loadStore();
   const a = emptyAvtal();
   a.customer.bestallare = f.kund.trim();
@@ -247,7 +247,7 @@ export function createForfragan(f: { kund: string; adress: string; beskrivning: 
   a.customer.epost = f.epost.trim();
   const id = crypto.randomUUID();
   const folder: CustomerFolder = { id, name: f.kund.trim() || "Namnlös kund", versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: "offert" }],
-    forfragan: { beskrivning: f.beskrivning.trim(), kontakt: f.kontakt.trim(), telefon: f.telefon.trim(), epost: f.epost.trim(), kalla: f.kalla.trim(), at: new Date().toISOString(), by: actorName() } };
+    forfragan: { beskrivning: f.beskrivning.trim(), kontakt: f.kontakt.trim(), telefon: f.telefon.trim(), epost: f.epost.trim(), kalla: f.kalla.trim(), at: new Date().toISOString(), by: actorName(), ...(f.tilldelad ? { tilldelad: f.tilldelad } : {}) } };
   logTo(folder, "offert", `Förfrågan registrerad${f.kalla ? ` (${f.kalla})` : ""}: ${f.beskrivning.trim().slice(0, 120)}`);
   store[id] = folder;
   saveStore(store);
