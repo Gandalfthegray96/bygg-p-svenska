@@ -89,6 +89,33 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_data: {
         Row: {
           key: string
@@ -151,6 +178,15 @@ export type Database = {
       }
       kalender: { Args: { token: string }; Returns: unknown }
       kalender_ics: { Args: { token: string }; Returns: unknown }
+      push_drop: { Args: { _endpoint: string }; Returns: undefined }
+      push_targets: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          auth: string
+          endpoint: string
+          p256dh: string
+        }[]
+      }
       touch_last_seen: { Args: never; Returns: undefined }
     }
     Enums: {

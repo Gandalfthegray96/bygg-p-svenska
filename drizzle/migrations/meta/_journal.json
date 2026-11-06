@@ -71,6 +71,13 @@
       "when": 1793906556937,
       "tag": "0009_realtime_avtal_register",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793969861370,
+      "tag": "0010_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }
