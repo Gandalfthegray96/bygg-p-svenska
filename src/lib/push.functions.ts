@@ -30,7 +30,7 @@ export const sendPush = createServerFn({ method: "POST" })
         const req = await buildPushHTTPRequest({
           privateJWK,
           subscription: { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          message: { payload: { title: data.title, body: data.body, url: data.url, tag: data.tag }, adminContact: "mailto:info@ukportservice.se", options: { ttl: 86400 } },
+          message: { payload: { title: data.title, body: data.body, url: data.url, tag: data.tag ?? "" }, adminContact: "mailto:info@ukportservice.se", options: { ttl: 86400 } },
         });
         const r = await fetch(req.endpoint, { method: "POST", headers: req.headers, body: req.body });
         if (r.status === 404 || r.status === 410) await context.supabase.rpc("push_drop", { _endpoint: s.endpoint });
