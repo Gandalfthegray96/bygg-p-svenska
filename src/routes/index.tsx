@@ -336,7 +336,7 @@ function App() {
         {/* Sidomeny */}
         <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 hidden h-screen w-14 sm:flex shrink-0 flex-col items-center gap-2 py-5 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[84px] sm:rounded-2xl">
           <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
-          {MAIN.filter((t) => t.id !== "anvandare" || isAdmin).map((t) => {
+          {MAIN.map((t) => {
             const Icon = t.icon;
             const active = isMainActive(t.id, tab);
             return (
@@ -399,7 +399,7 @@ function App() {
               </div>
             </div>
             <nav aria-label="Meny" className="flex gap-1 overflow-x-auto border-t border-border px-2 py-1.5 sm:hidden">
-              {MAIN.filter((t) => t.id !== "anvandare" || isAdmin).map((t) => {
+              {MAIN.map((t) => {
                 const Icon = t.icon;
                 const active = isMainActive(t.id, tab);
                 return (
@@ -440,7 +440,7 @@ function App() {
             {tab === "express" && (
               <Express onOpenFull={(x) => { setA(x); setCurrentVersion(undefined); setCurrentId(undefined); setOpenId(""); setTab("kund"); setToast("Expresskalkylen öppnad som nytt avtal – fyll i kunduppgifterna"); }} />
             )}
-            {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} />}
+            {tab === "anvandare" && <Anvandare onToast={setToast} isAdmin={isAdmin} />}
             {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
 
             {tab === "kund" && (

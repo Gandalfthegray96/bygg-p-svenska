@@ -16,6 +16,7 @@ export function AppGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<"checking" | "locked" | "open" | "pending">("checking");
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [pw, setPw] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
@@ -60,7 +61,7 @@ export function AppGate({ children }: { children: ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
         if (error) throw error;
       } else if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: window.location.origin, data: { name: email.split("@")[0] } } });
+        const { data, error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: window.location.origin, data: { name: fullName.trim() || email.split("@")[0] } } });
         if (error) throw error;
         if (!data.session) { setInfo("Kontot är skapat. Öppna mejlet vi skickade och bekräfta adressen, logga sedan in."); setMode("login"); }
       } else {
