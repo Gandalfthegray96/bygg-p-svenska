@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
-import { createForfragan, setVersionStatus, type Forfragan, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
+import { addNote, createForfragan, forfraganText, setVersionStatus, type Forfragan, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
 const COLS: { id: Status; label: string; cls: string }[] = [
   { id: "offert", label: "Att skapa offert", cls: "bg-accent-foreground" },
@@ -53,7 +53,13 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
     return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((Date.now() - new Date(last).getTime()) / DAY), ff: f.forfragan };
   }), [store]);
 
-  const move = (c: Card, s: Status) => { setVersionStatus(c.id, c.v.version, s); onChanged(); };
+  const move = (c: Card, s: Status) => {
+    if (c.status === "offert" && s !== "offert" && c.ff) {
+      const full = forfraganText(c.ff);
+      if (!(store[c.id]?.log ?? []).some((l) => l.text === full)) addNote(c.id, full);
+    }
+    setVersionStatus(c.id, c.v.version, s); onChanged();
+  };
   const stale = cards.filter((c) => c.status === "skickat" && c.days >= FOLLOW_UP_DAYS).length;
 
   return (
