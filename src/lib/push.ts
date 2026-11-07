@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const VAPID_PUBLIC_KEY = "BJbodoxkNkB6IIw6zeTNdfwcVGLZ79Wx0ARHB_1A1er6vxkFD6aN043q1iKCRxvtcTjICcgjLlIjxTC8HlYFIt8";
+export const VAPID_PUBLIC_KEY = "BJ9AFQNYdcafOnXuZ1KxDJauomteiQS1yzGuWAn_TfT0E6zEtfZKk4SesMECqz_sXNWilfMZnffsA2KfKt10Ihw";
 
 export const pushSupported = () =>
   typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && typeof Notification !== "undefined";
