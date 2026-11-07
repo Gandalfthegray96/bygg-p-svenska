@@ -19,3 +19,4 @@
 - User roles (admin/saljare/tekniker) live in `public.user_roles`, checked via `has_role()`; account admin runs in the browser (src/lib/users.functions.ts) with RLS enforcing admin-only access — works on Vercel without server env vars or a service key.
 - Outlook calendar subscription is served by the database function `kalender_ics` (public RPC URL with publishable key) so it works regardless of where the app is hosted.
 - Customer card and activity log live inside each agreement post's folder json (log, contacts) in the shared register — no extra tables; status changes in setVersionStatus write the log automatically so every path that changes status is covered.
+- Bakgrundsnotiser (Web Push): prenumerationer i `push_subscriptions`, utskick via servern i src/lib/push.functions.ts (kräver VAPID_PRIVATE_JWK), mottas i public/sw.js — fungerar när appen är stängd.
