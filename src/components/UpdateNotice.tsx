@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+type Nyhet = { datum: string; rubrik: string; punkter: string[] };
 
 /** Hämtar startsidan och plockar ut appens skriptfiler – ändras vid varje ny publicering. */
 async function fetchSignature(): Promise<string | null> {
@@ -15,19 +18,35 @@ async function fetchSignature(): Promise<string | null> {
   }
 }
 
-/** Visar en notis när en ny version av appen har publicerats, istället för att appen byts ut mitt i arbetet. */
+/** Nyhetslistan ligger utanför appens kod så att en öppen gammal version kan läsa den nya listan. */
+async function fetchNyheter(): Promise<Nyhet[]> {
+  try {
+    const res = await fetch(`/changelog.json?_v=${Date.now()}`, { cache: "no-store" });
+    return res.ok ? ((await res.json()) as Nyhet[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Visar en popup när en ny version av appen har publicerats, med vad som är nytt. */
 export function UpdateNotice() {
-  const [nyVersion, setNyVersion] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [nyheter, setNyheter] = useState<Nyhet[]>([]);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return;
     let start: string | null = null;
     let stopped = false;
+    let shown = false;
     const check = async () => {
       const sig = await fetchSignature();
       if (stopped || !sig) return;
       if (start === null) start = sig;
-      else if (sig !== start) setNyVersion(true);
+      else if (sig !== start && !shown) {
+        shown = true;
+        setNyheter((await fetchNyheter()).slice(0, 2));
+        setOpen(true);
+      }
     };
     check();
     const t = window.setInterval(check, 5 * 60 * 1000);
@@ -36,16 +55,30 @@ export function UpdateNotice() {
     return () => { stopped = true; window.clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
   }, []);
 
-  if (!nyVersion) return null;
   return (
-    <div role="status" className="no-print fixed inset-x-3 top-3 z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-lg">
-      <RefreshCw size={18} className="shrink-0 text-info" />
-      <div className="flex-1">
-        <p className="font-semibold">Ny version av appen finns</p>
-        <p className="text-xs text-muted-foreground">Spara ditt arbete och uppdatera när det passar.</p>
-      </div>
-      <Button variant="ghost" onClick={() => setNyVersion(false)} className="h-9 px-2 text-xs text-muted-foreground">Senare</Button>
-      <Button onClick={() => window.location.reload()} className="h-9 px-3 text-xs">Uppdatera</Button>
-    </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Sparkles size={18} className="text-primary" /> Ny version av appen finns</DialogTitle>
+          <DialogDescription>Spara ditt arbete och uppdatera när det passar.</DialogDescription>
+        </DialogHeader>
+        {nyheter.length > 0 && (
+          <div className="max-h-72 space-y-4 overflow-y-auto">
+            {nyheter.map((n) => (
+              <div key={n.datum + n.rubrik}>
+                <p className="text-sm font-semibold text-foreground">{n.rubrik} <span className="font-normal text-muted-foreground">· {n.datum}</span></p>
+                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {n.punkter.map((p) => <li key={p}>{p}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Senare</Button>
+          <Button onClick={() => window.location.reload()}>Uppdatera nu</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
