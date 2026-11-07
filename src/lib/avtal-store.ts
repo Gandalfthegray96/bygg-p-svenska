@@ -235,6 +235,18 @@ export function importAvtal(items: { kund: string; avtalNr: string; datum: strin
   return n;
 }
 
+/** Hela förfrågan som loggtext, så inget försvinner när kortet blir kompakt. */
+export function forfraganText(ff: Forfragan): string {
+  return [
+    `Förfrågan registrerad${ff.kalla ? ` (${ff.kalla})` : ""}`,
+    ff.beskrivning,
+    ff.kontakt && `Kontakt: ${ff.kontakt}`,
+    ff.telefon && `Telefon: ${ff.telefon}`,
+    ff.epost && `E-post: ${ff.epost}`,
+    ff.tilldelad && `Tilldelad: ${ff.tilldelad}`,
+  ].filter(Boolean).join("\n");
+}
+
 /** Ny förfrågan (t.ex. från mejl): skapas som avtalspost v1 med status "offert" så den syns i Pipeline. */
 export function createForfragan(f: { kund: string; adress: string; beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string; tilldelad?: string }): string {
   const store = loadStore();
@@ -248,7 +260,7 @@ export function createForfragan(f: { kund: string; adress: string; beskrivning: 
   const id = crypto.randomUUID();
   const folder: CustomerFolder = { id, name: f.kund.trim() || "Namnlös kund", versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: "offert" }],
     forfragan: { beskrivning: f.beskrivning.trim(), kontakt: f.kontakt.trim(), telefon: f.telefon.trim(), epost: f.epost.trim(), kalla: f.kalla.trim(), at: new Date().toISOString(), by: actorName(), ...(f.tilldelad ? { tilldelad: f.tilldelad } : {}) } };
-  logTo(folder, "offert", `Förfrågan registrerad${f.kalla ? ` (${f.kalla})` : ""}: ${f.beskrivning.trim().slice(0, 120)}`);
+  logTo(folder, "offert", forfraganText(folder.forfragan!));
   store[id] = folder;
   saveStore(store);
   return id;

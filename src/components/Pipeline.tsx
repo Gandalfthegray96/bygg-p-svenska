@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
-import { createForfragan, setVersionStatus, type Forfragan, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
+import { addNote, createForfragan, forfraganText, setVersionStatus, type Forfragan, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
 const COLS: { id: Status; label: string; cls: string }[] = [
   { id: "offert", label: "Att skapa offert", cls: "bg-accent-foreground" },
@@ -53,7 +53,13 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
     return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((Date.now() - new Date(last).getTime()) / DAY), ff: f.forfragan };
   }), [store]);
 
-  const move = (c: Card, s: Status) => { setVersionStatus(c.id, c.v.version, s); onChanged(); };
+  const move = (c: Card, s: Status) => {
+    if (c.status === "offert" && s !== "offert" && c.ff) {
+      const full = forfraganText(c.ff);
+      if (!(store[c.id]?.log ?? []).some((l) => l.text === full)) addNote(c.id, full);
+    }
+    setVersionStatus(c.id, c.v.version, s); onChanged();
+  };
   const stale = cards.filter((c) => c.status === "skickat" && c.days >= FOLLOW_UP_DAYS).length;
 
   return (
@@ -87,7 +93,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                       <span className="block truncate text-sm font-semibold text-foreground">{c.name}</span>
                       <span className="block truncate text-xs text-muted-foreground">{c.avtalNr ? `Nr ${c.avtalNr}` : "Inget avtalsnr"}{c.ansvarig ? ` · ${c.ansvarig}` : ""}</span>
                     </button>
-                    {c.ff && (
+                    {c.ff && c.status === "offert" && (
                       <div className="space-y-1 rounded-md bg-muted/60 p-2 text-xs text-foreground">
                         {c.ff.beskrivning && <p className="line-clamp-4 whitespace-pre-wrap">{c.ff.beskrivning}</p>}
                         {c.ff.kontakt && <p className="font-medium">{c.ff.kontakt}</p>}
