@@ -87,7 +87,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                       <span className="block truncate text-sm font-semibold text-foreground">{c.name}</span>
                       <span className="block truncate text-xs text-muted-foreground">{c.avtalNr ? `Nr ${c.avtalNr}` : "Inget avtalsnr"}{c.ansvarig ? ` · ${c.ansvarig}` : ""}</span>
                     </button>
-                    {c.ff && (
+                    {c.ff && c.status === "offert" && (
                       <div className="space-y-1 rounded-md bg-muted/60 p-2 text-xs text-foreground">
                         {c.ff.beskrivning && <p className="line-clamp-4 whitespace-pre-wrap">{c.ff.beskrivning}</p>}
                         {c.ff.kontakt && <p className="font-medium">{c.ff.kontakt}</p>}
