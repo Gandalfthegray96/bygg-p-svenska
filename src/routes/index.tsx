@@ -5,7 +5,7 @@ import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, f
 import { Tidslinje } from "@/components/Aktivitet";
 import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Zap, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Settings, Zap, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lockApp } from "@/components/AppGate";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -22,6 +22,7 @@ import { Express } from "@/components/Express";
 import { Indexering } from "@/components/Indexering";
 import { getMyRole } from "@/lib/users.functions";
 import { Chat } from "@/components/Chat";
+import { Installningar } from "@/components/Installningar";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -208,6 +209,8 @@ function App() {
   const PAGE: Partial<Record<Tab, [string, string]>> = { hem: ["Översikt", "Nyckeltal och sammanställning"], lista: ["Avtalsöversikt", "Alla pågående, skickade och signerade avtal"], pipeline: ["Säljpipeline", "Förfrågningar och offerter"], express: ["Express", "Snabbkalkyl"], kalender: ["Kalender", "Planering"], sparade: ["Sparade avtal", "Versioner"], anvandare: ["Användare", "Konton och aktivitet"] };
   const fetchRole = getMyRole;
   const [isAdmin, setIsAdmin] = useState(false);
+  const [settings, setSettings] = useState(false);
+  const MENU = MAIN.filter((t) => t.id !== "anvandare" || isAdmin);
   const [me, setMe] = useState<{ role: string | null; name: string }>({ role: null, name: "" });
   useEffect(() => {
     fetchRole().then(async (r) => {
@@ -336,7 +339,7 @@ function App() {
         {/* Sidomeny */}
         <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 hidden h-screen w-14 sm:flex shrink-0 flex-col items-center gap-2 py-5 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[84px] sm:rounded-2xl">
           <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
-          {MAIN.map((t) => {
+          {MENU.map((t) => {
             const Icon = t.icon;
             const active = isMainActive(t.id, tab);
             return (
@@ -354,10 +357,19 @@ function App() {
             );
           })}
           <Button variant="glassNavigation"
+            onClick={() => setSettings(true)}
+            title="Inställningar"
+            aria-label="Inställningar"
+            className="mt-auto h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
+          >
+            <Settings size={19} />
+            <span className="text-[10.5px] font-medium leading-none">Inställn.</span>
+          </Button>
+          <Button variant="glassNavigation"
             onClick={() => lockApp()}
             title="Lås appen"
             aria-label="Lås appen"
-            className="mt-auto h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
+            className="h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
           >
             <Lock size={19} />
             <span className="text-[10.5px] font-medium leading-none">Lås</span>
@@ -399,7 +411,7 @@ function App() {
               </div>
             </div>
             <nav aria-label="Meny" className="flex gap-1 overflow-x-auto border-t border-border px-2 py-1.5 sm:hidden">
-              {MAIN.map((t) => {
+              {MENU.map((t) => {
                 const Icon = t.icon;
                 const active = isMainActive(t.id, tab);
                 return (
@@ -409,6 +421,7 @@ function App() {
                   </button>
                 );
               })}
+              <button onClick={() => setSettings(true)} aria-label="Inställningar" className="flex shrink-0 items-center rounded-lg px-2.5 py-1.5 text-muted-foreground hover:bg-muted"><Settings size={15} /></button>
               <button onClick={() => lockApp()} aria-label="Lås appen" className="flex shrink-0 items-center rounded-lg px-2.5 py-1.5 text-muted-foreground hover:bg-muted"><Lock size={15} /></button>
             </nav>
           </header>
@@ -440,7 +453,8 @@ function App() {
             {tab === "express" && (
               <Express onOpenFull={(x) => { setA(x); setCurrentVersion(undefined); setCurrentId(undefined); setOpenId(""); setTab("kund"); setToast("Expresskalkylen öppnad som nytt avtal – fyll i kunduppgifterna"); }} />
             )}
-            {tab === "anvandare" && <Anvandare onToast={setToast} isAdmin={isAdmin} />}
+            <Installningar open={settings} onClose={() => setSettings(false)} isAdmin={isAdmin} onToast={setToast} onOpenUsers={() => setTab("anvandare")} onNameChange={(n) => setMe((m) => ({ ...m, name: n }))} />
+            {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} isAdmin={isAdmin} />}
             {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
 
             {tab === "kund" && (
