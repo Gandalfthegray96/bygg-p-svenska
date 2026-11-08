@@ -123,13 +123,13 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
       {upp && store[upp] && <SagUppDialog folder={store[upp]} onClose={() => setUpp(null)} onDone={() => { setUpp(null); onChanged?.(); }} />}
 
       <section className="ds-panel space-y-3">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <h2 className="truncate font-display text-[15px] font-semibold text-foreground">Avtalsöversikt</h2>
+        <div className="flex items-center justify-end gap-2 sm:grid sm:grid-cols-[minmax(0,1fr)_auto]">
+          <h2 className="hidden sm:block truncate font-display text-[15px] font-semibold text-foreground">Avtalsöversikt</h2>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setImp((x) => !x)} className="gap-1.5" aria-label="Importera"><FolderUp size={16} /><span className="hidden sm:inline">Importera</span></Button>
             <Button variant={visaUpp ? "default" : "outline"} onClick={() => setVisaUpp((x) => !x)} className="gap-1.5" aria-label="Uppsagda avtal"><Ban size={16} /><span className="hidden sm:inline">Uppsagda ({nUpp})</span></Button>
             <Button variant="outline" onClick={() => setIndex((x) => !x)} className="gap-1.5" aria-label="Indexreglering"><TrendingUp size={16} /><span className="hidden sm:inline">Indexreglering</span></Button>
-            <Button onClick={onNew} className="gap-1.5"><Plus size={16} />Nytt avtal</Button>
+            <Button onClick={onNew} className="hidden gap-1.5 sm:inline-flex"><Plus size={16} />Nytt avtal</Button>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
@@ -137,7 +137,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Sök kund, avtalsnr, ansvarig, adress" className="ds-input pl-9" aria-label="Sök avtal" />
           </label>
-          <div className="grid grid-cols-3 gap-2 sm:contents">
+          <div className="grid grid-cols-2 gap-2 sm:contents">
             <select value={ansv} onChange={(e) => setAnsv(e.target.value)} className="ds-input sm:w-40" aria-label="Filtrera ansvarig">
               <option value="alla">Alla säljare</option>
               {ansvariga.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -146,7 +146,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
               <option value="alla">Alla statusar</option>
               {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
-            <label className="relative block">
+            <label className="relative col-span-2 block sm:col-span-1">
               <ArrowUpDown size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="ds-input pl-8 sm:w-40" aria-label="Sortera">
                 <option value="datum">Senast ändrad</option>

@@ -404,7 +404,7 @@ function App() {
                 const active = isMainActive(t.id, tab);
                 return (
                   <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
-                    className={`relative flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                    className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
                     {badge(t.id)}<Icon size={15} />{t.label}
                   </button>
                 );
