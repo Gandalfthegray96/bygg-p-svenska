@@ -100,7 +100,14 @@ export function AppGate({ children }: { children: ReactNode }) {
         <h1 className="mt-1 text-center text-2xl font-bold text-foreground">Avtal</h1>
         <p className="mt-1 text-center text-sm text-muted-foreground">{title}</p>
 
-        <label className="mt-6 block text-sm font-medium text-foreground" htmlFor="gate-email">E-post</label>
+        {mode === "signup" && (
+          <>
+            <label className="mt-6 block text-sm font-medium text-foreground" htmlFor="gate-name">För- och efternamn</label>
+            <input id="gate-name" type="text" autoComplete="name" required value={fullName}
+              onChange={(e) => setFullName(e.target.value)} className="ds-input mt-1.5 h-12" placeholder="t.ex. André Linder" />
+          </>
+        )}
+        <label className={`${mode === "signup" ? "mt-4" : "mt-6"} block text-sm font-medium text-foreground`} htmlFor="gate-email">E-post</label>
         <input id="gate-email" type="email" autoFocus autoComplete="email" required value={email}
           onChange={(e) => { setEmail(e.target.value); setError(""); }} className="ds-input mt-1.5 h-12" placeholder="namn@foretag.se" />
 
