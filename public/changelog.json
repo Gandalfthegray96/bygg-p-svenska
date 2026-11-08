@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-08",
+    "rubrik": "Inställningar och bättre mobilvy",
+    "punkter": [
+      "Nytt kugghjul nere till vänster med namn, lösenord, notiser och avtalsnummer.",
+      "Fliken Användare syns nu bara för admin.",
+      "Avtalsöversikten är lättare att läsa på telefon och surfplatta."
+    ]
+  },
+  {
     "datum": "2026-11-07",
     "rubrik": "Notiser och uppdateringsrutor",
     "punkter": [
