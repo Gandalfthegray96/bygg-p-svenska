@@ -17,7 +17,48 @@ function senast(t: string | null) {
 }
 type U = Awaited<ReturnType<typeof listUsers>>[number];
 
-export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
+function MittNamn({ onToast }: { onToast: (s: string) => void }) {
+  const [name, setName] = useState("");
+  const [uid, setUid] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      setUid(data.user.id);
+      const { data: p } = await supabase.from("profiles").select("name").eq("id", data.user.id).maybeSingle();
+      setName(p?.name ?? "");
+    });
+  }, []);
+  const save = async () => {
+    if (!uid || !name.trim()) return;
+    setBusy(true);
+    const { error } = await supabase.from("profiles").update({ name: name.trim() }).eq("id", uid);
+    setBusy(false);
+    onToast(error ? "Kunde inte spara namnet" : "Ditt namn är sparat");
+  };
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <label htmlFor="mitt-namn" className="mb-1 block font-semibold text-foreground">Mitt namn</label>
+      <p className="mb-2 text-sm text-muted-foreground">Visas i chatten, notiser och när någon pingar dig.</p>
+      <div className="flex gap-2">
+        <input id="mitt-namn" className="ds-input flex-1" value={name} placeholder="För- och efternamn" onChange={(e) => setName(e.target.value)} />
+        <Button disabled={busy || !name.trim()} onClick={save}>Spara</Button>
+      </div>
+    </div>
+  );
+}
+
+export function Anvandare({ onToast, isAdmin }: { onToast: (s: string) => void; isAdmin: boolean }) {
+  if (!isAdmin) return (
+    <div className="space-y-5">
+      <h2 className="text-xl font-bold text-foreground">Användare</h2>
+      <MittNamn onToast={onToast} />
+    </div>
+  );
+  return <AdminAnvandare onToast={onToast} />;
+}
+
+function AdminAnvandare({ onToast }: { onToast: (s: string) => void }) {
   const list = listUsers;
   const setRole = setUserRole;
   const [users, setUsers] = useState<U[]>([]);
@@ -39,6 +80,7 @@ export function Anvandare({ onToast }: { onToast: (s: string) => void }) {
   return (
     <div className="space-y-5">
       <h2 className="text-xl font-bold text-foreground">Användare</h2>
+      <MittNamn onToast={onToast} />
 
       <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
         <p className="mb-1 flex items-center gap-2 font-semibold text-foreground"><UserCheck size={18} />Så lägger du till en kollega</p>
