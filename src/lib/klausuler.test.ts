@@ -1,4 +1,4 @@
-import { test, expect } from "vitest";
+import { test, expect } from "bun:test";
 import { KLAUSULER, sidaAndrad, klausulText } from "./klausuler";
 test("ändring", () => {
   expect(sidaAndrad({}, 2)).toBe(false);
