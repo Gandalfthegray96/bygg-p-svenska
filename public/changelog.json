@@ -1,11 +1,19 @@
 [
   {
+    "datum": "2026-11-09-oversiktslyft",
+    "rubrik": "Tydligare översikt och mobilmeny",
+    "punkter": [
+      "Större avtalsvärde, kompaktare nyckeltal och tydligare statusöversikt.",
+      "Mörkgrön meny ligger kvar under Ny kund och Rapporter. Sparknapparna ligger kvar längst ner i avtalet."
+    ]
+  },
+  {
     "datum": "2026-11-09-design",
     "rubrik": "Ny, stramare design",
     "punkter": [
       "Mörkgrön profilfärg, gula knappar och ljusa, luftiga ytor.",
       "Skarpare hörn, tunnare linjer och tydligare tabeller i hela appen.",
-      "Ny meny i botten på mobilen, menyn går kant i kant på datorn och nyckeltalen visas i renare kort."
+      "Menyn går kant i kant på datorn och nyckeltalen visas i renare kort."
     ]
   },
   {
