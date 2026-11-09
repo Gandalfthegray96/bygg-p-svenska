@@ -1,5 +1,6 @@
 const cover = { url: "/pdf/avtal-cover.jpg" };
 const header = { url: "/pdf/avtal-header.jpg" };
+import { KLAUSULER, klausulText } from "@/lib/klausuler";
 import { type Avtal, calculate, fmtKr, rabattText } from "@/lib/kalkyl";
 
 // Bilaga 2 – Prislista 2026 Q2 (fasta listpriser, påverkar inte kalkylen)
@@ -48,6 +49,22 @@ function Footer() {
       <div><b>UK Portservice AB Borås</b><br />Vävlagargatan 15D<br />507 30 Brämhult<br />Tel 030-23 08 00</div>
       <div>F-skattsedel 556550-8339<br />Bolagets säte: Västra Götaland</div>
     </footer>
+  );
+}
+
+function KlausulBlock({ a, sida }: { a: Avtal; sida: 2 | 3 }) {
+  return (
+    <>
+      {KLAUSULER.filter((k) => k.sida === sida).map((k) => (
+        <div key={k.id}>
+          <h3>{k.rubrik}</h3>
+          {klausulText(a.klausuler, k).split(/\n\s*\n/).filter((x) => x.trim()).map((para, i) => {
+            const m = para.match(/^(Beskrivning[^:]{0,60}:)([\s\S]*)$/);
+            return <p key={i} style={{ whiteSpace: "pre-line" }}>{m ? <><b>{m[1]}</b>{m[2]}</> : para}</p>;
+          })}
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -119,24 +136,7 @@ export function Preview({ a }: { a: Avtal }) {
       {/* Sida 2 */}
       <section className="doc-page">
         <PageHead a={a} page="2 av 3" />
-        <h3>TIDSPLAN</h3>
-        <p>Förebyggande underhåll utförs avtalat antal gånger per år.<br />Planerade och bokade besök utförs på ordinarie arbetstid (vard. 07.00 - 16.00).</p>
-        <h3>TILLVÄGAGÅNGSSÄTT</h3>
-        <p><b>Beskrivning förebyggande underhåll (FU):</b> I det avtalade priset ingår funktionstester, säkerhetstester, balansering, justering och smörjning.</p>
-        <p>Skyddsanordningar och delar som inte har tillfredsställande skydd och funktion gällande säkerhet och hälsa vid servicetillfället bytes eller repareras direkt utan genomgång och debiteras löpande.</p>
-        <p>Övrigt noteras och presenteras innan byte eller reparation, t. ex. skador av kosmetisk karaktär eller delar som påverkar objektets livslängd.</p>
-        <p><b>Beskrivning löpande arbeten:</b> Löpande arbeten innefattar samtliga beställda åtgärder som inte omfattas av avtalet. Tid, material mm. redovisas i tidrapport efter utfört arbete. Genomgång av utfört arbete görs på kundens begäran. Pris för arbeten och/eller material som inte ingår i avtalet angivet pris debiteras på löpande räkning enligt Leverantörens vid var tid gällande prislista. Fakturerings- och/eller miljöavgifter kan debiteras tid efter annan.</p>
-        <p><b>Beskrivning entreprenad:</b> Kan innefatta arbeten som t.ex. automatikbyte, motorbyte, portbyte eller dylikt mot ett avtalat fast pris.</p>
-        <h3>TIMKOSTNADER</h3>
-        <p>Enligt bilaga 2.</p>
-        <h3>RESERVDELAR</h3>
-        <p>Enligt bilaga 2.</p>
-        <h3>EKONOMI</h3>
-        <p>Avtalet regleras med ett fast pris för entreprenörens åtagande/uppdrag gällande förebyggande underhåll. Övriga arbeten utförs på löpande räkning. Avtalet indexregleras varje år (kalenderår) enligt Arbetskostnadsindex (AKI) SNI 2007 N, basmånad oktober.</p>
-        <p>Avtalet kan revideras löpande vid både avgående och tillkommande objekt. Entreprenören äger rätten att utöver avtalat pris erfordra ersättning för eventuella prishöjningar som entreprenören ej kunnat förutse och som påverkar kalkylen för utförandet av åtagandet/uppdraget under avtalstiden.</p>
-        <p>För att förebyggande underhåll ska kunna utföras enligt avtal behöver objektens alla delar vara lättillgängliga för tekniker. Entreprenören äger rätt att revidera avtalat pris om objekten anses svårtillgängliga och därmed kräver mer tid än normalt.</p>
-        <p>Båda parter äger rätten att påkalla prisförhandling för entreprenörens åtagande/uppdrag om förutsättningarna för avtalets genomförande förändras och ingen av parterna kunnat förutse åberopad förändring.</p>
-        <p>I de fall utrustning, som t.ex. ställning, saxlift eller liknande erfordras som hjälp för att utföra åtagandet/uppdraget står beställaren för denna kostnad.</p>
+        <KlausulBlock a={a} sida={2} />
         <Footer />
       </section>
 
@@ -145,15 +145,6 @@ export function Preview({ a }: { a: Avtal }) {
           <h2>Egen PDF används</h2>
           <p>{[a.attachments?.cover && `Försättsblad: ${a.attachments.cover.name}`, a.attachments?.contract && `Huvudavtal: ${a.attachments.contract.name}`].filter(Boolean).join(" · ")}</p>
           <p className="doc-small">Den sparade PDF:en använder dessa filer i stället för standardsidorna som visas här.</p>
-        </section>
-      )}
-      {a.sarskildaVillkor?.trim() && (
-        <section className="doc-page">
-          <PageHead a={a} page="Särskilda villkor" />
-          <h3>SÄRSKILDA VILLKOR</h3>
-          <p className="doc-small">Gäller avtal {c.avtalNr} och har företräde framför standardvillkoren vid avvikelse.</p>
-          <p style={{ whiteSpace: "pre-wrap" }}>{a.sarskildaVillkor}</p>
-          <Footer />
         </section>
       )}
 
@@ -191,17 +182,7 @@ export function Preview({ a }: { a: Avtal }) {
       {/* Sida 3 – signatursida */}
       <section className="doc-page">
         <PageHead a={a} page="3 av 3" />
-        <h3>SEKRETESS</h3>
-        <p>Varje part förbinder sig att iakttaga absolut sekretess rörande den andra partens tekniska och affärsmässiga förhållanden, både under och efter avtalstiden. Det gäller priser, kalkyler, offerter och annan konfidentiell information som har delats under samarbetet. Ingen part får vidarebefordra eller avslöja denna information för tredje part, om inte den andra parten givit sitt godkännande.</p>
-        <h3>ÖVRIGT</h3>
-        <p>Entreprenören ansvarar inte för person- eller egendomsskador som uppstår till följd av användning eller felaktig hantering av portar, grindar, bommar, dockningssystem, entrédörrar eller liknande utrustning, utöver vad som uttryckligen följer av tvingande lag.</p>
-        <p>Om en part inte kan fullfölja avtalet på grund av exempelvis arbetskonflikt, maskinhaveri eller någon annan händelse som parten inte kan kontrollera, befrias den parten från sitt åtagande från den tidpunkt då hindret anmäls och en begäran om befrielse görs, tills hindret är åtgärdat.</p>
-        <p>Tvister rörande tolkning eller tillämpning av detta avtal skall avgöras av allmän domstol enligt gällande svensk lag.</p>
-        <p>Avtalet får inte överlåtas utan motpartens skriftliga godkännande.</p>
-        <h3>BILAGOR</h3>
-        <p>Bilaga 1. Kostnad<br />Bilaga 2. Prislista</p>
-        <h3>AVTALSTID/UPPSÄGNING/FÖRLÄNGNING</h3>
-        <p>Avtalet gäller tills vidare från och med datum för undertecknande. Avtalet gäller tills någon av parterna skriftligen säger upp det, då upphör avtalet utan uppsägningstid.</p>
+        <KlausulBlock a={a} sida={3} />
         <p><b>Detta avtal är upprättat i två exemplar varav parterna har tagit var sitt.</b></p>
         <table className="doc-sign">
           <thead><tr><th>Beställare</th><th>UK Portservice AB</th></tr></thead>

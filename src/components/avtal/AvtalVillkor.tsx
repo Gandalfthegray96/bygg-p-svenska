@@ -15,13 +15,6 @@ export function AvtalVillkor({ a, setA }: { a: Avtal; setA: (f: (p: Avtal) => Av
   const [msg, setMsg] = useState("");
   return (
     <div className="space-y-4">
-      <div>
-        <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="sarskilda-villkor">Särskilda villkor för detta avtal</label>
-        <textarea id="sarskilda-villkor" rows={6} className="ds-input min-h-32 w-full py-2"
-          placeholder="T.ex. Betalningsvillkor 60 dagar. Port 3 undantas från avtalet."
-          value={a.sarskildaVillkor ?? ""} onChange={(e) => { const v = e.target.value; setA((p) => ({ ...p, sarskildaVillkor: v })); }} />
-        <p className="mt-1 text-xs text-muted-foreground">Läggs som eget blad "Särskilda villkor" före Bilaga 1 och har företräde framför standardtexten.</p>
-      </div>
       <input ref={input} type="file" accept="application/pdf,.pdf" className="hidden" aria-label="Välj egen PDF" onChange={(e) => {
         const file = e.target.files?.[0]; e.target.value = "";
         if (!file) return;
