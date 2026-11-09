@@ -140,6 +140,23 @@ export function Preview({ a }: { a: Avtal }) {
         <Footer />
       </section>
 
+      {(a.attachments?.cover || a.attachments?.contract) && (
+        <section className="doc-page">
+          <h2>Egen PDF används</h2>
+          <p>{[a.attachments?.cover && `Försättsblad: ${a.attachments.cover.name}`, a.attachments?.contract && `Huvudavtal: ${a.attachments.contract.name}`].filter(Boolean).join(" · ")}</p>
+          <p className="doc-small">Den sparade PDF:en använder dessa filer i stället för standardsidorna som visas här.</p>
+        </section>
+      )}
+      {a.sarskildaVillkor?.trim() && (
+        <section className="doc-page">
+          <PageHead a={a} page="Särskilda villkor" />
+          <h3>SÄRSKILDA VILLKOR</h3>
+          <p className="doc-small">Gäller avtal {c.avtalNr} och har företräde framför standardvillkoren vid avvikelse.</p>
+          <p style={{ whiteSpace: "pre-wrap" }}>{a.sarskildaVillkor}</p>
+          <Footer />
+        </section>
+      )}
+
       {/* Bilaga 1 – placeras före signatursidan */}
       <section className="doc-page">
         <PageHead a={a} page="Bilaga 1" />
