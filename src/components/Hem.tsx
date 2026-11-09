@@ -8,13 +8,14 @@ import { SagUppDialog, UppsagdaLista } from "./Uppsagt";
 import { calculate, fmtKr, lonsamhet, normalizeAvtal } from "@/lib/kalkyl";
 import { FOLLOW_UP_DAYS, canSee, daysSinceActivity, isStale } from "@/lib/uppfoljning";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getSettings } from "@/lib/foretag-settings";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
 type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; signedAt: string; avtalNr: string; ansvarig: string; adress: string };
 export type Filter = "alla" | Status | "forsenad";
 type Sort = "datum" | "varde" | "kund";
+const METRIC = { v: "Värde", tb: "Täckningsbidrag", h: "Timmar" } as const;
 
 const STATUS_LABEL: Record<Status, string> = { offert: "Att skapa offert", utkast: "Utkast", skickat: "Väntar på svar", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
 const STATUS_CLS: Record<Status, string> = {
@@ -47,6 +48,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
   const [imp, setImp] = useState(false);
   const [upp, setUpp] = useState<string | null>(null);
   const [visaUpp, setVisaUpp] = useState(false);
+  const [metric, setMetric] = useState<"v" | "tb" | "h">("v");
   const nUpp = Object.values(store).filter((f) => f.uppsagd && f.versions.length).length;
 
   const rows = useMemo<Row[]>(() =>
@@ -80,14 +82,26 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
     .filter((x) => x.slut.getTime() - Date.now() < 180 * DAY).sort((a, b) => +a.slut - +b.slut);
   const forsenade = rows.filter((r) => r.stale).sort((a, b) => b.days - a.days);
   const graf = (() => {
-    const now = new Date(); const out: { m: string; v: number }[] = [];
+    const now = new Date(); const out: { m: string; v: number; tb: number; h: number }[] = [];
     for (let i = 11; i >= 0; i--) {
       const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1).toISOString();
-      const v = act.filter((r) => r.signedAt < end).reduce((t, r) => t + r.lon.intakt, 0);
-      out.push({ m: new Date(now.getFullYear(), now.getMonth() - i, 1).toLocaleDateString("sv-SE", { month: "short" }), v: Math.round(v) });
+      const l = act.filter((r) => r.signedAt < end);
+      const add = (f: (x: Row["lon"]) => number) => l.reduce((t, r) => t + f(r.lon), 0);
+      out.push({ m: new Date(now.getFullYear(), now.getMonth() - i, 1).toLocaleDateString("sv-SE", { month: "short" }), v: Math.round(add((x) => x.intakt)), tb: Math.round(add((x) => x.tb)), h: Math.round(add((x) => x.hours) * 10) / 10 });
     }
     return out;
   })();
+  const g0 = graf[0]?.[metric] ?? 0, g1 = graf.at(-1)?.[metric] ?? 0;
+  const trend = g0 > 0 ? ((g1 - g0) / g0) * 100 : null;
+  const offerter = rows.filter((r) => r.status === "offert" || r.status === "utkast").sort((a, b) => b.v.savedAt.localeCompare(a.v.savedAt));
+  const todo = forsenade.length + offerter.length + fornyelse.length;
+  const cnt = (f: (r: Row) => boolean) => rows.filter(f).length;
+  const donut: { key: Filter; label: string; n: number; fill: string }[] = [
+    { key: "signerat", label: "Aktiva", n: cnt((r) => r.status === "signerat"), fill: "var(--color-sidebar)" },
+    { key: "skickat", label: "Väntar på svar", n: cnt((r) => r.status === "skickat" || r.status === "forhandling"), fill: "var(--color-primary)" },
+    { key: "utkast", label: "Utkast / offert", n: cnt((r) => r.status === "utkast" || r.status === "offert"), fill: "var(--color-muted-foreground)" },
+    { key: "forlorat", label: "Förlorade", n: cnt((r) => r.status === "forlorat"), fill: "var(--color-destructive)" },
+  ];
   const pct = (n: number) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(n) + " %";
   return (
     <div className="space-y-4">
@@ -112,45 +126,71 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
           <div className="ds-overview-metric ds-overview-objects"><span className="ds-overview-metric-label"><Building2 size={16} />Objekt i aktiva avtal</span><span className="ds-overview-metric-value">{kpi.obj} st</span><span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0))} / avtal</span></div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        <Stat label="Aktiva avtal" icon={<CheckCircle2 size={14} className="text-success" />} value={String(signed.n)} sub={fmtKr(signed.sum) + " / år"} active={filter === "signerat"} onClick={() => toggle("signerat")} />
-        <Stat label="Väntar på svar" icon={<Clock size={14} className="text-info" />} value={String(sent.n)} sub={fmtKr(sent.sum) + " / år"} active={filter === "skickat"} onClick={() => toggle("skickat")} />
-        <Stat label="Utkast" icon={<FilePen size={14} />} value={String(draft.n)} sub={fmtKr(draft.sum) + " / år"} active={filter === "utkast"} onClick={() => toggle("utkast")} />
-        <Stat label="Alla avtal" icon={<Coins size={14} className="text-success" />} value={String(rows.length)} sub={fmtKr(rows.reduce((t, x) => t + x.perYear, 0)) + " / år totalt"} active={filter === "alla"} onClick={() => (view === "oversikt" ? onGoList?.("alla") : setFilter("alla"))} />
-      </div>
-
       <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section className="min-w-0 border-t border-border pt-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="font-display text-base font-semibold text-foreground">Avtalsstockens årsvärde</h3><span className="text-xs text-muted-foreground">Senaste 12 månaderna</span></div>
-          <div className="h-52">
+        <section className="ds-panel min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div><h3 className="font-display text-base font-semibold text-foreground">Avtalsutveckling</h3><p className="text-xs text-muted-foreground">Aktiva avtal, senaste 12 månaderna{trend !== null && <span className={trend >= 0 ? " text-success" : " text-destructive"}> · {trend >= 0 ? "+" : ""}{pct(trend)} på 12 mån</span>}</p></div>
+            <div className="flex rounded-lg border border-border p-0.5" role="tablist">
+              {(["v", "tb", "h"] as const).map((k) => (
+                <Button key={k} size="sm" variant={metric === k ? "default" : "ghost"} className="h-7 px-2.5 text-xs" onClick={() => setMetric(k)} aria-pressed={metric === k}>{METRIC[k]}</Button>
+              ))}
+            </div>
+          </div>
+          <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={graf} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-                <defs><linearGradient id="arrFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-sidebar)" stopOpacity={0.5} /><stop offset="100%" stopColor="var(--color-sidebar)" stopOpacity={0.03} /></linearGradient></defs>
+                <defs><linearGradient id="arrFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-sidebar)" stopOpacity={0.45} /><stop offset="100%" stopColor="var(--color-sidebar)" stopOpacity={0.02} /></linearGradient></defs>
                 <XAxis dataKey="m" tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} />
                 <YAxis width={44} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(n: number) => n >= 1000 ? Math.round(n / 1000) + "k" : String(n)} />
-                <Tooltip formatter={(n: number) => [fmtKr(n), "Årsvärde"]} contentStyle={{ borderRadius: 12, border: "1px solid var(--color-border)", background: "var(--color-card)", fontSize: 12 }} />
-                <Area type="monotone" dataKey="v" stroke="var(--color-sidebar)" strokeWidth={2} fill="url(#arrFill)" />
+                <Tooltip formatter={(n: number) => [metric === "h" ? n + " h" : fmtKr(n), METRIC[metric]]} contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-card)", fontSize: 12 }} />
+                <Area type="monotone" dataKey={metric} stroke="var(--color-sidebar)" strokeWidth={2} fill="url(#arrFill)" dot={{ r: 2.5, fill: "var(--color-sidebar)" }} activeDot={{ r: 5, fill: "var(--color-primary)", stroke: "var(--color-sidebar)" }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </section>
-        <section className="min-w-0 border-t border-border pt-5">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><AlertTriangle size={15} className="text-destructive" />Behöver uppmärksamhet</h3>
-          {forsenade.length === 0 && fornyelse.length === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
-          <ul className="max-h-52 space-y-1.5 overflow-y-auto">
-            {forsenade.map((r) => (
-              <li key={"f" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted">
-                <Clock size={14} className="shrink-0 text-destructive" /><span className="min-w-0 flex-1 truncate">{r.name}</span><span className="shrink-0 text-xs text-destructive">{r.days} dagar utan svar</span>
-              </button></li>
-            ))}
-            {fornyelse.map(({ r, slut }) => (
-              <li key={"r" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted">
-                <RefreshCw size={14} className="shrink-0 text-info" /><span className="min-w-0 flex-1 truncate">{r.name}</span><span className="shrink-0 text-xs text-muted-foreground">{slut.getTime() < Date.now() ? "5 år passerat" : "Förnyas " + slut.toLocaleDateString("sv-SE")}</span>
-              </button></li>
-            ))}
-          </ul>
+        <section className="ds-panel min-w-0">
+          <h3 className="mb-3 font-display text-base font-semibold text-foreground">Avtalsstatus</h3>
+          <div className="flex items-center gap-4">
+            <div className="relative h-36 w-36 shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart><Pie data={donut.filter((d) => d.n > 0).length ? donut.filter((d) => d.n > 0) : [{ key: "tom", label: "", n: 1, fill: "var(--color-muted)" }]} dataKey="n" innerRadius={48} outerRadius={66} paddingAngle={2} stroke="none">
+                  {(donut.filter((d) => d.n > 0).length ? donut.filter((d) => d.n > 0) : [{ key: "tom", fill: "var(--color-muted)" }]).map((d) => <Cell key={d.key} fill={d.fill} />)}
+                </Pie></PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"><span className="font-display text-2xl font-semibold tabular-nums">{rows.length}</span><span className="text-[11px] text-muted-foreground">avtal</span></div>
+            </div>
+            <ul className="min-w-0 flex-1 space-y-1">
+              {donut.map((d) => (
+                <li key={d.key}><button onClick={() => toggle(d.key)} className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-muted">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: d.fill }} /><span className="min-w-0 flex-1 truncate">{d.label}</span><span className="tabular-nums font-medium">{d.n}</span>
+                </button></li>
+              ))}
+            </ul>
+          </div>
         </section>
       </div>
+
+      <section className="ds-panel min-w-0">
+        <h3 className="mb-2 flex items-center gap-2 font-display text-base font-semibold text-foreground">Att göra{todo > 0 && <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">{todo}</span>}</h3>
+        {todo === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
+        <ul className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2">
+          {forsenade.map((r) => (
+            <li key={"f" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+              <Clock size={15} className="shrink-0 text-destructive" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Uppföljning · {r.days} dagar utan svar</span></span>
+            </button></li>
+          ))}
+          {offerter.map((r) => (
+            <li key={"o" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+              <FilePen size={15} className="shrink-0 text-foreground" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{r.status === "offert" ? "Offert att skapa" : "Utkast att slutföra"}</span></span>
+            </button></li>
+          ))}
+          {fornyelse.map(({ r, slut }) => (
+            <li key={"r" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+              <RefreshCw size={15} className="shrink-0 text-info" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{slut.getTime() < Date.now() ? "Förnyelse · 5 år passerat" : "Förnyelse · " + slut.toLocaleDateString("sv-SE")}</span></span>
+            </button></li>
+          ))}
+        </ul>
+      </section>
 
       </>}
       {view === "lista" && <>
