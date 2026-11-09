@@ -34,6 +34,7 @@ export function AppGate({ children }: { children: ReactNode }) {
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
       if (!roles?.length) { setState("pending"); return; }
       try { await pullAll(uid); } catch (e) { console.error(e); }
+      try { const { pullSettings } = await import("@/lib/foretag-settings"); await pullSettings(); } catch (e) { console.error(e); }
       setState("open");
     };
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {

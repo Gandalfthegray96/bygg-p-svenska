@@ -7,10 +7,12 @@ import { ImportPdf } from "./ImportPdf";
 import { SagUppDialog, UppsagdaLista } from "./Uppsagt";
 import { calculate, fmtKr, lonsamhet, normalizeAvtal } from "@/lib/kalkyl";
 import { FOLLOW_UP_DAYS, canSee, daysSinceActivity, isStale } from "@/lib/uppfoljning";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { getSettings } from "@/lib/foretag-settings";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
-type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; avtalNr: string; ansvarig: string; adress: string };
+type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; signedAt: string; avtalNr: string; ansvarig: string; adress: string };
 export type Filter = "alla" | Status | "forsenad";
 type Sort = "datum" | "varde" | "kund";
 
@@ -51,7 +53,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
     Object.values(store).filter((f) => f.versions.length && !f.uppsagd).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
-      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a), avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
+      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a, getSettings()), signedAt: [...(f.log ?? [])].reverse().find((l) => l.kind === "signerat")?.at ?? v.savedAt, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
     }), [store, me]);
 
   const stat = (s: Status) => { const l = rows.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
@@ -73,6 +75,19 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
   const sum = (f: (l: Row["lon"]) => number) => act.reduce((t, r) => t + f(r.lon), 0);
   const kpi = { arr: sum((l) => l.intakt), tb: sum((l) => l.tb), h: sum((l) => l.hours), trips: sum((l) => l.trips), obj: sum((l) => l.objekt) };
   const tg = kpi.arr > 0 ? (kpi.tb / kpi.arr) * 100 : 0;
+  const DAY = 86_400_000;
+  const fornyelse = act.map((r) => ({ r, slut: new Date(new Date(r.signedAt).getTime() + 5 * 365 * DAY) }))
+    .filter((x) => x.slut.getTime() - Date.now() < 180 * DAY).sort((a, b) => +a.slut - +b.slut);
+  const forsenade = rows.filter((r) => r.stale).sort((a, b) => b.days - a.days);
+  const graf = (() => {
+    const now = new Date(); const out: { m: string; v: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1).toISOString();
+      const v = act.filter((r) => r.signedAt < end).reduce((t, r) => t + r.lon.intakt, 0);
+      out.push({ m: new Date(now.getFullYear(), now.getMonth() - i, 1).toLocaleDateString("sv-SE", { month: "short" }), v: Math.round(v) });
+    }
+    return out;
+  })();
   const pct = (n: number) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(n) + " %";
   return (
     <div className="space-y-4">
@@ -112,6 +127,39 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         <Stat label="Väntar på svar" icon={<Clock size={14} className="text-info" />} value={String(sent.n)} sub={fmtKr(sent.sum) + " / år"} active={filter === "skickat"} onClick={() => toggle("skickat")} />
         <Stat label="Utkast" icon={<FilePen size={14} />} value={String(draft.n)} sub={fmtKr(draft.sum) + " / år"} active={filter === "utkast"} onClick={() => toggle("utkast")} />
         <Stat label="Alla avtal" icon={<Coins size={14} className="text-success" />} value={String(rows.length)} sub={fmtKr(rows.reduce((t, x) => t + x.perYear, 0)) + " / år totalt"} active={filter === "alla"} onClick={() => (view === "oversikt" ? onGoList?.("alla") : setFilter("alla"))} />
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <section className="ds-panel min-w-0">
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Avtalsstockens årsvärde, senaste 12 månaderna</h3>
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={graf} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                <defs><linearGradient id="arrFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-sidebar)" stopOpacity={0.5} /><stop offset="100%" stopColor="var(--color-sidebar)" stopOpacity={0.03} /></linearGradient></defs>
+                <XAxis dataKey="m" tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} />
+                <YAxis width={44} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(n: number) => n >= 1000 ? Math.round(n / 1000) + "k" : String(n)} />
+                <Tooltip formatter={(n: number) => [fmtKr(n), "Årsvärde"]} contentStyle={{ borderRadius: 12, border: "1px solid var(--color-border)", background: "var(--color-card)", fontSize: 12 }} />
+                <Area type="monotone" dataKey="v" stroke="var(--color-sidebar)" strokeWidth={2} fill="url(#arrFill)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+        <section className="ds-panel min-w-0">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><AlertTriangle size={15} className="text-destructive" />Behöver uppmärksamhet</h3>
+          {forsenade.length === 0 && fornyelse.length === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
+          <ul className="max-h-52 space-y-1.5 overflow-y-auto">
+            {forsenade.map((r) => (
+              <li key={"f" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted">
+                <Clock size={14} className="shrink-0 text-destructive" /><span className="min-w-0 flex-1 truncate">{r.name}</span><span className="shrink-0 text-xs text-destructive">{r.days} dagar utan svar</span>
+              </button></li>
+            ))}
+            {fornyelse.map(({ r, slut }) => (
+              <li key={"r" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted">
+                <RefreshCw size={14} className="shrink-0 text-info" /><span className="min-w-0 flex-1 truncate">{r.name}</span><span className="shrink-0 text-xs text-muted-foreground">{slut.getTime() < Date.now() ? "5 år passerat" : "Förnyas " + slut.toLocaleDateString("sv-SE")}</span>
+              </button></li>
+            ))}
+          </ul>
+        </section>
       </div>
 
       </>}
@@ -162,7 +210,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
 
         <ul className="divide-y divide-border rounded-lg border border-border">
           {shown.map((x) => (
-            <li key={x.id} className="flex flex-col gap-2 p-3 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto] sm:items-center sm:gap-x-3">
+            <li key={x.id} className="flex flex-col gap-2 p-3 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto_auto] sm:items-center sm:gap-x-3">
               <div className="flex min-w-0 items-start justify-between gap-3 sm:contents">
                 <div className="min-w-0 flex-1 text-left">
                   <p className="break-words font-medium text-foreground sm:truncate">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
@@ -170,9 +218,10 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
                     {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
                   </p>
                 </div>
+                <span className="hidden shrink-0 text-right text-xs tabular-nums sm:order-3 sm:block" title="Täckningsbidrag per år (internt)"><span className="font-semibold text-success">{fmtKr(Math.round(x.lon.tb))}</span><span className="block text-muted-foreground">TG {pct(x.lon.tg)}</span></span>
                 <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground sm:order-3">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
               </div>
-              <span className="text-xs text-muted-foreground sm:order-2 sm:truncate">{x.stale && <span className="mr-2 inline-flex items-center gap-1 font-semibold text-destructive"><AlertTriangle size={12} />{x.days} dagar sedan skickat</span>}{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span>
+              <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground sm:order-2">{x.ansvarig && <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sidebar text-[10px] font-bold text-sidebar-foreground">{x.ansvarig.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}</span>}<span className="min-w-0 truncate">{x.stale && <span className="mr-2 inline-flex items-center gap-1 font-semibold text-destructive"><AlertTriangle size={12} />{x.days} dagar sedan skickat</span>}{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span></span>
               <div className="flex flex-wrap items-center justify-between gap-2 sm:contents">
                 <select value={x.status} aria-label="Status"
                   onChange={(e) => { setVersionStatus(x.id, x.v.version, e.target.value as Status); onChanged?.(); }}

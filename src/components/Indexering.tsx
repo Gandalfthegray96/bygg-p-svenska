@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { fmtPct, getSettings } from "@/lib/foretag-settings";
 import { TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type Avtal, calculate, fmtKr, indexera } from "@/lib/kalkyl";
 
 /** Årlig indexreglering per avtal: fast procent på hela avtalspriset. */
 export function Indexering({ a, onApply }: { a: Avtal; onApply: (next: Avtal, pct: number) => void }) {
-  const [pct, setPct] = useState("2,5");
+  const [pct, setPct] = useState(() => fmtPct(getSettings().indexPct));
   const p = Number(pct.replace(",", ".")) || 0;
   const now = calculate(a).perYear;
   const after = calculate(indexera(a, p)).perYear;
