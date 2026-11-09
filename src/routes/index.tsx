@@ -298,7 +298,7 @@ function App() {
     if (!downloadOk(id, v)) return;
     try {
       const saved = loadStore()[id]?.versions.find((x) => x.version === v)?.data;
-      const bytes = await buildAvtalPdf({ ...a, attachments: a.attachments ?? saved?.attachments });
+      const bytes = await buildAvtalPdf({ ...a, attachments: a.attachments ?? saved?.attachments ?? {} });
       await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, v)}.pdf`, "application/pdf", ".pdf");
       markDownloaded(id, v, "PDF");
       setStore(loadStore());

@@ -68,9 +68,9 @@ export async function updateOldPriceLists(ids: string[], price: AttachmentFile):
     const last = folder.versions.at(-1);
     if (!last || folder.uppsagd || last.data.attachments?.price?.path === price.path) continue;
     const version = last.version + 1;
-    folder.versions.push({ version, savedAt: at, status: last.status, data: withUpdatedPriceList(normalizeAvtal(last.data), price) });
+    folder.versions.push({ version, savedAt: at, status: last.status ?? "utkast", data: withUpdatedPriceList(normalizeAvtal(last.data), price) });
     (folder.log ??= []).push({ id: crypto.randomUUID(), at, by: profile?.name || "Admin", kind: "version", text: `Prislista uppdaterad: ${price.name} (v${version}). Övriga bilagor och avtalsuppgifter oförändrade.` });
-    updates.push({ name: row.name, folder: folder as unknown as Json, updated_at: at, updated_by: user.user?.id });
+    updates.push({ name: row.name, folder: folder as unknown as Json, updated_at: at, updated_by: user.user?.id ?? null });
   }
   if (!updates.length) return 0;
   const { error: writeError } = await supabase.from("avtal_register").upsert(updates);
