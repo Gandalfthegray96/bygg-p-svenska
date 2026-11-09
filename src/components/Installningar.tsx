@@ -36,7 +36,7 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
     if (!open) return;
     setNr(loadLastNr());
     { const k = loadKontakt(); setTel(k.telefon); setKEpost(k.epost); }
-    fetch("/changelog.json", { cache: "no-store" }).then((r) => r.json()).then((j) => { const e = Array.isArray(j) ? j[0] : j?.entries?.[0] ?? j; setVersion(e?.version ?? e?.date ?? ""); }).catch(() => {});
+    fetch("/changelog.json", { cache: "no-store" }).then((r) => r.json()).then((j) => { const e = Array.isArray(j) ? j[0] : j?.entries?.[0] ?? j; setVersion(e?.datum ?? ""); }).catch(() => {});
     setPerm(pushSupported() ? Notification.permission : "unsupported");
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
