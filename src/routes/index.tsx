@@ -24,6 +24,7 @@ import { getMyRole } from "@/lib/users.functions";
 import { Chat } from "@/components/Chat";
 import { Installningar } from "@/components/Installningar";
 import { fetchAttachments } from "@/lib/bilagor";
+import { Klausuler } from "@/components/avtal/Klausuler";
 import { AvtalVillkor } from "@/components/avtal/AvtalVillkor";
 
 function PdfPreview({ a }: { a: Avtal }) {
@@ -83,7 +84,7 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "hem" | "lista" | "pipeline" | "express" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "avtal" | "sparade" | "anvandare";
+type Tab = "hem" | "lista" | "pipeline" | "express" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "villkor" | "avtal" | "sparade" | "anvandare";
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "hem", label: "Översikt", icon: House },
   { id: "lista", label: "Avtalsöversikt", icon: FolderOpen },
@@ -92,6 +93,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "forsatt", label: "Försättsblad", icon: FileText },
   { id: "objekt", label: "Objekt", icon: Building2 },
   { id: "pris", label: "Pris", icon: Coins },
+  { id: "villkor", label: "Villkor", icon: ScrollText },
   { id: "avtal", label: "Granskning", icon: FileCheck2 },
   { id: "express", label: "Express", icon: Zap },
   { id: "sparade", label: "Sparade", icon: Archive },
@@ -99,7 +101,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "anvandare", label: "Användare", icon: Users },
 ];
 
-const AVTAL_SUB: Tab[] = ["kund", "forsatt", "objekt", "pris", "avtal"];
+const AVTAL_SUB: Tab[] = ["kund", "forsatt", "objekt", "pris", "villkor", "avtal"];
 const MAIN: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "hem", label: "Hem", icon: House },
   { id: "pipeline", label: "Pipeline", icon: KanbanSquare },
@@ -605,6 +607,12 @@ function App() {
               </section>
             )}
 
+            {tab === "villkor" && (
+              <Card title="Avtalets villkor">
+                <Klausuler a={a} setA={setA} />
+              </Card>
+            )}
+
             {tab === "pris" && (
               <>
                 <Card title="Rabatt & utjämning">
@@ -619,7 +627,7 @@ function App() {
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">Visas i avtalets prislista (Bilaga 2) för löpande arbeten och material.</p>
                 </Card>
-                <Card title="Avtalstext för detta avtal">
+                <Card title="Egen PDF för detta avtal">
                   <AvtalVillkor a={a} setA={setA} />
                 </Card>
                 <Card title="Sammanställning per servicebesök">
