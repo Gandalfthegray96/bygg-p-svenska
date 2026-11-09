@@ -7,6 +7,8 @@ import { enablePush, pushSupported } from "@/lib/push";
 import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { lockApp } from "./AppGate";
 import { loadKontakt, saveKontakt } from "@/lib/kontakt";
+import { Bilagor } from "./Bilagor";
+import type { CustomerFolder } from "@/lib/avtal-store";
 
 function Sektion({ icon: Icon, title, children }: { icon: typeof User; title: string; children: React.ReactNode }) {
   return (
@@ -17,7 +19,8 @@ function Sektion({ icon: Icon, title, children }: { icon: typeof User; title: st
   );
 }
 
-export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, onNameChange }: {
+export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, onNameChange, store, onAttachmentsChanged }: {
+  store: Record<string, CustomerFolder>; onAttachmentsChanged: () => void;
   open: boolean; onClose: () => void; isAdmin: boolean; onToast: (s: string) => void; onOpenUsers: () => void; onNameChange?: (n: string) => void;
 }) {
   const [uid, setUid] = useState<string | null>(null);
@@ -134,6 +137,7 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
           {isAdmin && (
             <Button variant="outline" className="w-full gap-2" onClick={() => { onClose(); onOpenUsers(); }}><Users size={16} />Hantera användare och roller</Button>
           )}
+          {isAdmin && open && <Bilagor store={store} onChanged={onAttachmentsChanged} />}
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><Info size={14} />UK Portservice Avtal{version ? ` · version ${version}` : ""}</p>
           <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive" onClick={() => lockApp()}><LogOut size={16} />Logga ut</Button>
         </div>

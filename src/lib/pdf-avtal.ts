@@ -3,6 +3,7 @@
 import { PDFDocument, PDFName, PDFString, StandardFonts, rgb, type PDFForm, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { type Avtal, calculate, rabattText } from "@/lib/kalkyl";
+import { attachmentBytes } from "./bilagor";
 
 // Arial-kompatibelt typsnitt (Liberation Sans, samma mått som Arial) för ifyllda fält
 let arialBytes: ArrayBuffer | undefined;
@@ -91,7 +92,11 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
 export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {}): Promise<Uint8Array> {
   const c = a.customer;
   const k = calculate(a);
-  const [fsb, fu, pris, b1] = await Promise.all([load("/pdf/forsattsblad.pdf"), load("/pdf/avtal.pdf"), load("/pdf/prislista.pdf"), bilaga1(a)]);
+  const [fsb, fu, pris, b1] = await Promise.all([
+    load("/pdf/forsattsblad.pdf"), load("/pdf/avtal.pdf"),
+    a.attachments?.price ? PDFDocument.load(await attachmentBytes(a.attachments.price)) : load("/pdf/prislista.pdf"),
+    a.attachments?.cost ? PDFDocument.load(await attachmentBytes(a.attachments.cost)) : bilaga1(a),
+  ]);
 
   const ff = fsb.getForm();
   fill(ff, { Kund: c.bestallare, "Kund 2": c.anlAdress, Projekt: c.coverTitle, Objekt: c.anlObjekt, "Dokument beteckning": c.avtalNr });
@@ -116,7 +121,7 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   fa.updateFieldAppearances(await arial(fu));
   fa.flatten();
   // Prislistan: ersätt rabattraden (originalet säger 10 %/10 %) med avtalets egna procentsatser.
-  if (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10) {
+  if (!a.attachments?.price && (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10)) {
     const pp = pris.getPage(0);
     const pb = await pris.embedFont(StandardFonts.HelveticaBold);
     pp.drawRectangle({ x: 74, y: 435, width: 450, height: 15, color: rgb(1, 1, 1) });

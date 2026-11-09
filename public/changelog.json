@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-09-bilagor",
+    "rubrik": "PDF-bilagor för admin",
+    "punkter": [
+      "Admin kan bifoga PDF för kostnadsbilagan och prislistan under Inställningar.",
+      "Välj vilka befintliga avtal som ska få ny prislista. Övriga bilagor ändras inte.",
+      "Uppdateringen sparas som en ny version och tidigare versioner behålls."
+    ]
+  },
+  {
     "datum": "2026-11-09",
     "rubrik": "Inställningar kompletterade",
     "punkter": [
