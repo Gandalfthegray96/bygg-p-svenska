@@ -31,9 +31,15 @@ function Linkify({ text }: { text: string }) {
     : <span key={i}>{p}</span>))}</>;
 }
 
+/** Fast färg per person, uträknad från id – inga bilder sparas. */
+export function avatarColor(id = "") {
+  let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `var(--avatar-${(h % 6) + 1})`;
+}
+
 function Avatar({ u, size = 32 }: { u?: ChatUser | undefined; size?: number }) {
   return (
-    <span style={{ width: size, height: size, fontSize: size * 0.38 }}
+    <span style={{ width: size, height: size, fontSize: size * 0.38, ...(u ? { background: avatarColor(u.id), color: "var(--avatar-foreground)" } : {}) }}
       className="inline-flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
       {u ? initials(u.name, u.email) : <Users size={size * 0.5} />}
     </span>
@@ -228,7 +234,7 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
                   const mine = m.sender_id === me; const u = userById[m.sender_id];
                   return (
                     <div key={m.id} className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                      {!mine && <Avatar u={u} size={28} />}
+                      <Avatar u={u} size={28} />
                       <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm ${mine ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>
                         {!mine && conv === "team" && <p className="mb-0.5 text-[11px] font-semibold opacity-70">{u?.name || u?.email || "Okänd"}</p>}
                         <p className="whitespace-pre-wrap break-words"><Linkify text={m.body} /></p>

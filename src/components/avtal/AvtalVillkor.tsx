@@ -16,7 +16,7 @@ export function AvtalVillkor({ a, setA }: { a: Avtal; setA: (f: (p: Avtal) => Av
   return (
     <div className="space-y-4">
       <div>
-        <label className="ds-label" htmlFor="sarskilda-villkor">Särskilda villkor för detta avtal</label>
+        <label className="mb-1 block text-sm font-medium text-foreground" htmlFor="sarskilda-villkor">Särskilda villkor för detta avtal</label>
         <textarea id="sarskilda-villkor" rows={6} className="ds-input min-h-32 w-full py-2"
           placeholder="T.ex. Betalningsvillkor 60 dagar. Port 3 undantas från avtalet."
           value={a.sarskildaVillkor ?? ""} onChange={(e) => { const v = e.target.value; setA((p) => ({ ...p, sarskildaVillkor: v })); }} />
