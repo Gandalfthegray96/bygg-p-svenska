@@ -8,6 +8,8 @@ import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { lockApp } from "./AppGate";
 import { loadKontakt, saveKontakt } from "@/lib/kontakt";
 import { Bilagor } from "./Bilagor";
+import { Calculator } from "lucide-react";
+import { getSettings, saveSettings, fmtPct } from "@/lib/foretag-settings";
 import type { CustomerFolder } from "@/lib/avtal-store";
 
 function Sektion({ icon: Icon, title, children }: { icon: typeof User; title: string; children: React.ReactNode }) {
@@ -34,10 +36,12 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
   const [tel, setTel] = useState("");
   const [kEpost, setKEpost] = useState("");
   const [version, setVersion] = useState("");
+  const [sk, setSk] = useState({ timme: "", fk: "", idx: "" });
 
   useEffect(() => {
     if (!open) return;
     setNr(loadLastNr());
+    { const g = getSettings(); setSk({ timme: String(g.kostnadTimme), fk: String(g.kostnadFramkorning), idx: fmtPct(g.indexPct) }); }
     { const k = loadKontakt(); setTel(k.telefon); setKEpost(k.epost); }
     fetch("/changelog.json", { cache: "no-store" }).then((r) => r.json()).then((j) => { const e = Array.isArray(j) ? j[0] : j?.entries?.[0] ?? j; setVersion(e?.datum ?? ""); }).catch(() => {});
     setPerm(pushSupported() ? Notification.permission : "unsupported");
@@ -81,6 +85,13 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
     const reg = await navigator.serviceWorker?.getRegistration();
     if (reg) await reg.showNotification("Testnotis", { body: "Notiserna fungerar på den här enheten 🎉", icon: "/icon-192.png" });
     else new Notification("Testnotis", { body: "Notiserna fungerar på den här enheten 🎉", icon: "/icon-192.png" });
+  };
+  const saveSk = async () => {
+    const n = (x: string) => Number(x.replace(",", ".").replace(/\s/g, ""));
+    const v = { kostnadTimme: n(sk.timme), kostnadFramkorning: n(sk.fk), indexPct: n(sk.idx) };
+    if (![v.kostnadTimme, v.kostnadFramkorning, v.indexPct].every((x) => Number.isFinite(x) && x >= 0)) return onToast("Fyll i giltiga siffror");
+    setBusy(true); const err = await saveSettings(v); setBusy(false);
+    onToast(err ? "Kunde inte spara: " + err.message : "Sparat – gäller för alla användare");
   };
   const saveNr = () => {
     if (!nr.trim()) return;
@@ -136,6 +147,17 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
           </Sektion>
           {isAdmin && (
             <Button variant="outline" className="w-full gap-2" onClick={() => { onClose(); onOpenUsers(); }}><Users size={16} />Hantera användare och roller</Button>
+          )}
+          {isAdmin && (
+            <Sektion icon={Calculator} title="Självkostnad och indexreglering (admin)">
+              <p className="mb-2 text-sm text-muted-foreground">Interna siffror för täckningsbidrag. Syns aldrig för kund.</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                <label className="text-xs text-muted-foreground">Kr per timme<input inputMode="decimal" className="ds-input mt-1" value={sk.timme} onChange={(e) => setSk({ ...sk, timme: e.target.value })} /></label>
+                <label className="text-xs text-muted-foreground">Kr per framkörning<input inputMode="decimal" className="ds-input mt-1" value={sk.fk} onChange={(e) => setSk({ ...sk, fk: e.target.value })} /></label>
+                <label className="text-xs text-muted-foreground">Standardindex %<input inputMode="decimal" className="ds-input mt-1" value={sk.idx} onChange={(e) => setSk({ ...sk, idx: e.target.value })} /></label>
+              </div>
+              <Button disabled={busy} onClick={saveSk} className="mt-2 w-full sm:w-auto">Spara</Button>
+            </Sektion>
           )}
           {isAdmin && open && <Bilagor store={store} onChanged={onAttachmentsChanged} />}
           <p className="flex items-center gap-2 text-xs text-muted-foreground"><Info size={14} />UK Portservice Avtal{version ? ` · version ${version}` : ""}</p>
