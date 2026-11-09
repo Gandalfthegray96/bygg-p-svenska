@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-09-mallar",
+    "rubrik": "Avtalsmallar och egna avtalstexter",
+    "punkter": [
+      "Admin kan ladda upp företagets standard för försättsblad och huvudavtal under Inställningar.",
+      "Under Pris kan säljaren skriva särskilda villkor eller ersätta avtalet med en egen PDF för just det avtalet.",
+      "Chatten visar färgade initialer per person."
+    ]
+  },
+  {
     "datum": "2026-11-09-oversikt",
     "rubrik": "Översikt och påminnelser",
     "punkter": [

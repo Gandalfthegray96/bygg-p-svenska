@@ -1,0 +1,3 @@
+ALTER TABLE public.agreement_attachment_templates DROP CONSTRAINT IF EXISTS agreement_attachment_templates_slot_check;
+ALTER TABLE public.agreement_attachment_templates ADD CONSTRAINT agreement_attachment_templates_slot_check CHECK (slot IN ('cost', 'price', 'cover', 'contract'));
+CREATE POLICY "sales upload agreement-specific PDFs" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'avtal-bilagor' AND (storage.foldername(name))[1] = 'avtal' AND (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'saljare')));

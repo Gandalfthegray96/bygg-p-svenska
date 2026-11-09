@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, RotateCcw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type CustomerFolder } from "@/lib/avtal-store";
-import { ATTACHMENT_LABELS, type Attachments, type AttachmentSlot } from "@/lib/bilagor-model";
+import { ATTACHMENT_DEFAULTS, ATTACHMENT_LABELS, ATTACHMENT_SLOTS, type Attachments, type AttachmentSlot } from "@/lib/bilagor-model";
 import { attachmentBytes, fetchAttachments, resetAttachment, updateOldPriceLists, uploadAttachment } from "@/lib/bilagor";
 
 export function Bilagor({ store, onChanged }: { store: Record<string, CustomerFolder>; onChanged: () => void }) {
@@ -25,9 +25,10 @@ export function Bilagor({ store, onChanged }: { store: Record<string, CustomerFo
       const file = e.target.files?.[0]; e.target.value = "";
       if (file) void run(async () => { setFiles(await uploadAttachment(slot, file)); setMessage("Bilagan är sparad för nya avtal."); });
     }} />
-    {(["cost", "price"] as const).map((key) => <div key={key} className="space-y-2 border-b border-border pb-3">
+    <p className="text-xs text-muted-foreground">Företagets standardmallar gäller nya avtal. Säljare kan göra avtalsspecifika ändringar på varje avtal.</p>
+    {ATTACHMENT_SLOTS.map((key) => <div key={key} className="space-y-2 border-b border-border pb-3">
       <div className="text-sm font-medium">{ATTACHMENT_LABELS[key]}</div>
-      <div className="break-words text-sm text-muted-foreground">{files[key]?.name ?? (key === "cost" ? "Automatisk kostnadsbilaga" : "Originalprislista")}</div>
+      <div className="break-words text-sm text-muted-foreground">{files[key]?.name ?? ATTACHMENT_DEFAULTS[key]}</div>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="sm" disabled={busy} onClick={() => { setSlot(key); input.current?.click(); }}><Upload size={15} />Bifoga PDF</Button>
         {files[key] && <>

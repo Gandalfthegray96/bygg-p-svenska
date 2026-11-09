@@ -92,6 +92,13 @@
       "when": 1794241768014,
       "tag": "0012_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794252884431,
+      "tag": "0013_mallar_cover_contract",
+      "breakpoints": true
     }
   ]
 }
