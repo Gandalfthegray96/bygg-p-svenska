@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 type Nyhet = { datum: string; rubrik: string; punkter: string[] };
 
+const SEEN_KEY = "uc-sedda-nyheter";
+
 /** Hämtar startsidan och plockar ut appens skriptfiler – ändras vid varje ny publicering. */
 async function fetchSignature(): Promise<string | null> {
   try {
@@ -28,25 +30,44 @@ async function fetchNyheter(): Promise<Nyhet[]> {
   }
 }
 
-/** Visar en popup när en ny version av appen har publicerats, med vad som är nytt. */
+/**
+ * Visar "Appen har uppdaterats" med nyheterna sedan sist, första gången man öppnar en ny version.
+ * Om en ny version publiceras medan appen är öppen visas bara en diskret rad.
+ */
 export function UpdateNotice() {
   const [open, setOpen] = useState(false);
   const [nyheter, setNyheter] = useState<Nyhet[]>([]);
+  const [nyFinns, setNyFinns] = useState(false);
 
+  // Välkomstruta: nyheter man inte sett ännu.
+  useEffect(() => {
+    fetchNyheter().then((lista) => {
+      if (!lista.length) return;
+      const senaste = lista[0].datum;
+      const sett = localStorage.getItem(SEEN_KEY);
+      if (!sett) { localStorage.setItem(SEEN_KEY, senaste); return; }
+      if (sett === senaste) return;
+      const idx = lista.findIndex((n) => n.datum === sett);
+      setNyheter(lista.slice(0, idx === -1 ? 3 : Math.min(idx, 5)));
+      setOpen(true);
+    });
+  }, []);
+
+  const stang = () => {
+    if (nyheter[0]) localStorage.setItem(SEEN_KEY, nyheter[0].datum);
+    setOpen(false);
+  };
+
+  // Diskret rad om en ny version publiceras medan appen är öppen.
   useEffect(() => {
     if (!import.meta.env.PROD) return;
     let start: string | null = null;
     let stopped = false;
-    let shown = false;
     const check = async () => {
       const sig = await fetchSignature();
       if (stopped || !sig) return;
       if (start === null) start = sig;
-      else if (sig !== start && !shown) {
-        shown = true;
-        setNyheter((await fetchNyheter()).slice(0, 2));
-        setOpen(true);
-      }
+      else if (sig !== start) setNyFinns(true);
     };
     check();
     const t = window.setInterval(check, 5 * 60 * 1000);
@@ -56,29 +77,34 @@ export function UpdateNotice() {
   }, []);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Sparkles size={18} className="text-primary" /> Ny version av appen finns</DialogTitle>
-          <DialogDescription>Spara ditt arbete och uppdatera när det passar.</DialogDescription>
-        </DialogHeader>
-        {nyheter.length > 0 && (
+    <>
+      {nyFinns && (
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-primary px-3 py-1.5 text-xs text-primary-foreground">
+          <Sparkles size={14} /> En ny version finns – den laddas nästa gång du laddar om appen.
+          <button className="underline" onClick={() => setNyFinns(false)}>Stäng</button>
+        </div>
+      )}
+      <Dialog open={open} onOpenChange={(o) => { if (!o) stang(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Sparkles size={18} className="text-primary" /> Appen har uppdaterats!</DialogTitle>
+            <DialogDescription>Här är vad som är nytt sedan sist.</DialogDescription>
+          </DialogHeader>
           <div className="max-h-72 space-y-4 overflow-y-auto">
             {nyheter.map((n) => (
               <div key={n.datum + n.rubrik}>
-                <p className="text-sm font-semibold text-foreground">{n.rubrik} <span className="font-normal text-muted-foreground">· {n.datum}</span></p>
+                <p className="text-sm font-semibold text-foreground">{n.rubrik}</p>
                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                   {n.punkter.map((p) => <li key={p}>{p}</li>)}
                 </ul>
               </div>
             ))}
           </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Senare</Button>
-          <Button onClick={() => window.location.reload()}>Uppdatera nu</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button onClick={stang}>Uppfattat</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

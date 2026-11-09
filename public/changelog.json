@@ -1,5 +1,12 @@
 [
   {
+    "datum": "2026-11-09-nyhetsruta",
+    "rubrik": "Ny nyhetsruta",
+    "punkter": [
+      "När appen har uppdaterats visas vad som är nytt första gången du öppnar den."
+    ]
+  },
+  {
     "datum": "2026-11-09-mallar",
     "rubrik": "Avtalsmallar och egna avtalstexter",
     "punkter": [
