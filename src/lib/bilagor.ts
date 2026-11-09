@@ -17,9 +17,9 @@ export async function fetchAttachments(): Promise<Attachments> {
   if (error) throw new Error("Kunde inte hämta bilagorna. Försök igen.");
   const files: Attachments = {};
   for (const row of data ?? []) {
-    if (row.slot !== "cost" && row.slot !== "price") continue;
+    if (!["cost", "price", "cover", "contract"].includes(row.slot)) continue;
     const f = row.file as unknown as AttachmentFile;
-    if (f?.path && f?.name) files[row.slot] = f;
+    if (f?.path && f?.name) files[row.slot as AttachmentSlot] = f;
   }
   localStorage.setItem(CACHE_KEY, JSON.stringify(files));
   return files;
@@ -38,6 +38,16 @@ export async function uploadAttachment(slot: AttachmentSlot, file: File): Promis
   const { error } = await supabase.from("agreement_attachment_templates").upsert({ slot, file: value as unknown as Json, updated_at: value.uploadedAt });
   if (error) throw new Error("Filen laddades upp men kunde inte väljas som bilaga. Försök igen.");
   return fetchAttachments();
+}
+
+/** Säljarens avtalsspecifika PDF – sparas bara på detta avtal, mallen ändras inte. */
+export async function uploadAgreementPdf(file: File): Promise<AttachmentFile> {
+  if (!file.name.toLowerCase().endsWith(".pdf")) throw new Error("Välj en PDF-fil.");
+  try { const d = await PDFDocument.load(await file.arrayBuffer()); if (!d.getPageCount()) throw new Error(); } catch { throw new Error("PDF-filen kan inte läsas. Välj en PDF utan lösenord."); }
+  const path = `avtal/${crypto.randomUUID()}.pdf`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: "application/pdf", upsert: false });
+  if (error) throw new Error("Kunde inte ladda upp PDF-filen. Kontrollera anslutningen och försök igen.");
+  return { path, name: file.name, uploadedAt: new Date().toISOString() };
 }
 
 export async function resetAttachment(slot: AttachmentSlot): Promise<Attachments> {

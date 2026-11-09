@@ -54,6 +54,8 @@ export type Avtal = {
   rabattMaterial: number;
   adjust: string;
   show: ShowPrices;
+  /** Avtalsspecifika tillägg/avvikelser från standardvillkoren (säljaren skriver). */
+  sarskildaVillkor?: string;
 };
 
 export const YEARS = 5;
