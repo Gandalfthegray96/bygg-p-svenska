@@ -345,9 +345,9 @@ function App() {
 
   return (
     <div className="min-h-screen">
-      <div className="no-print flex min-h-screen bg-background sm:p-3 sm:gap-3">
+      <div className="no-print flex min-h-screen bg-background">
         {/* Sidomeny */}
-        <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 hidden h-screen w-14 sm:flex shrink-0 flex-col items-center gap-2 py-5 sm:top-3 sm:h-[calc(100vh-1.5rem)] sm:w-[84px] sm:rounded-2xl">
+        <nav aria-label="Avtalssteg" className="ds-glass-nav sticky top-0 z-20 hidden h-screen w-14 sm:flex shrink-0 flex-col items-center gap-2 py-5 sm:top-0 sm:h-screen sm:w-[84px]">
           <img src="/icon-512.png" alt="UK Portservice" className="mb-4 h-10 w-10 shrink-0 object-contain" />
           {MENU.map((t) => {
             const Icon = t.icon;
@@ -378,13 +378,13 @@ function App() {
         </nav>
 
         {/* Innehåll */}
-        <div className="flex min-w-0 flex-1 flex-col bg-card sm:rounded-2xl sm:border sm:border-border sm:shadow-[var(--shadow-panel)]">
-          <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur sm:rounded-t-2xl">
-            <div className="w-full px-3 py-2.5 sm:px-4 sm:py-4">
+        <div className="flex min-w-0 flex-1 flex-col bg-background">
+          <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl">
+            <div className="w-full mx-auto max-w-7xl px-4 py-3 sm:px-8 sm:py-6">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 sm:gap-y-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-destructive">{TABS.find((t) => t.id === tab)?.label}</span>{inAvtal ? <> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</> : <> · {PAGE[tab]?.[1]}</>}</p>
-                  <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold text-foreground sm:text-2xl">{inAvtal ? (c.bestallare || "Skapa nytt avtal") : PAGE[tab]?.[0]}</h1>
+                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-success">{TABS.find((t) => t.id === tab)?.label}</span>{inAvtal ? <> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</> : <> · {PAGE[tab]?.[1]}</>}</p>
+                  <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold tracking-tight text-foreground text-xl sm:text-3xl">{inAvtal ? (c.bestallare || "Skapa nytt avtal") : PAGE[tab]?.[0]}</h1>
                 </div>
                 <dl aria-label="Avtalssammanfattning" className={`${!inAvtal ? "hidden" : "grid"} w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`}>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Objekt</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalQty)} st</dd></div>
@@ -411,22 +411,22 @@ function App() {
                 </div>
               </div>
             </div>
-            <nav aria-label="Meny" className="flex gap-1 overflow-x-auto border-t border-border px-2 py-1.5 sm:hidden">
+            <nav aria-label="Meny" className="ds-tabbar fixed inset-x-0 bottom-0 z-30 flex justify-around px-1 pt-1 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:hidden">
               {MENU.map((t) => {
                 const Icon = t.icon;
                 const active = isMainActive(t.id, tab);
                 return (
                   <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
-                    className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
-                    {badge(t.id)}<Icon size={15} />{t.label}
+                    className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium ${active ? "text-sidebar-accent-foreground" : "text-sidebar-foreground/70"}`}>
+                    {badge(t.id)}<span className={`flex h-7 w-11 items-center justify-center rounded-full ${active ? "bg-primary text-primary-foreground" : ""}`}><Icon size={18} /></span><span className="truncate">{t.label}</span>
                   </button>
                 );
               })}
-              <button onClick={() => setSettings(true)} aria-label="Inställningar" className="flex shrink-0 items-center rounded-lg px-2.5 py-1.5 text-muted-foreground hover:bg-muted"><Settings size={15} /></button>
+              <button onClick={() => setSettings(true)} aria-label="Inställningar" className="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] font-medium text-sidebar-foreground/70"><span className="flex h-7 w-11 items-center justify-center"><Settings size={18} /></span>Inställn.</button>
             </nav>
           </header>
 
-          <main className="w-full flex-1 space-y-4 px-3 py-4 pb-24 sm:px-4 sm:py-5 sm:pb-8">
+          <main className="mx-auto w-full max-w-7xl flex-1 space-y-5 px-4 py-5 pb-40 sm:px-8 sm:py-8 sm:pb-10">
             {(tab === "hem" || tab === "lista") && (
               <Hem key={tab + listFilter} view={tab === "hem" ? "oversikt" : "lista"} initialFilter={tab === "lista" ? listFilter : "alla"} onGoList={(f) => { setListFilter(f); setTab("lista"); }} store={store} me={me} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
                 onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
@@ -734,7 +734,7 @@ function App() {
           </main>
 
           {/* Fast åtgärdsrad */}
-          <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-card px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:hidden">
+          <div className="fixed bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 z-20 border-t border-border bg-card/90 px-2 py-1.5 backdrop-blur-xl sm:hidden">
             <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2">
               <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Save size={18} />Spara</Button>
               <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileText size={18} />PDF</Button>
