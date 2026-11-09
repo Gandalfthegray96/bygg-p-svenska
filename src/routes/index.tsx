@@ -24,6 +24,7 @@ import { getMyRole } from "@/lib/users.functions";
 import { Chat } from "@/components/Chat";
 import { Installningar } from "@/components/Installningar";
 import { fetchAttachments } from "@/lib/bilagor";
+import { AvtalVillkor } from "@/components/avtal/AvtalVillkor";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -617,6 +618,9 @@ function App() {
                     <NumField label="Prislista: rabatt material (%)" value={a.rabattMaterial} onChange={(n) => setA((p) => ({ ...p, rabattMaterial: Math.min(100, n) }))} />
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">Visas i avtalets prislista (Bilaga 2) för löpande arbeten och material.</p>
+                </Card>
+                <Card title="Avtalstext för detta avtal">
+                  <AvtalVillkor a={a} setA={setA} />
                 </Card>
                 <Card title="Sammanställning per servicebesök">
                   {k.visits.length === 0 && <p className="text-sm text-muted-foreground">Ange servicetid för objekten för att se priset.</p>}
