@@ -23,6 +23,7 @@ import { Indexering } from "@/components/Indexering";
 import { getMyRole } from "@/lib/users.functions";
 import { Chat } from "@/components/Chat";
 import { Installningar } from "@/components/Installningar";
+import { fetchAttachments } from "@/lib/bilagor";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -236,13 +237,14 @@ function App() {
   }, [stale.length]);
   const badge = (id: Tab) => (id === "hem" || id === "pipeline") && stale.length > 0
     ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">{stale.length}</span> : null;
-  const startNew = () => { const n = emptyAvtal(); n.customer.avtalNr = nextAvtalNr(loadLastNr()); { const k = loadKontakt(); if (k.namn) n.customer.varRef = k.namn; } setA(n); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
+  const startNew = async () => { try { const n = emptyAvtal(); n.attachments = await fetchAttachments(); n.customer.avtalNr = nextAvtalNr(loadLastNr()); { const k = loadKontakt(); if (k.namn) n.customer.varRef = k.namn; } setA(n); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); } catch { setToast("Kunde inte hämta bilagor. Försök igen."); } };
 
   useEffect(() => {
     const d = loadDraft();
     if (d) setA(d);
     setStore(loadStore());
     setHydrated(true);
+    void fetchAttachments().catch(() => {});
   }, []);
   // Realtidssynk: kollegors ändringar i avtalsregistret slår igenom direkt.
   useEffect(() => {
@@ -267,6 +269,8 @@ function App() {
     const owner = avtalNrOwner(store, c.avtalNr, currentId);
     if (owner) { setToast(`Avtalsnumret används redan av ${owner}, välj ett annat`); return; }
     const r = saveVersion(a, currentId);
+    const saved = loadStore()[r.id]?.versions.at(-1)?.data;
+    if (saved) setA(normalizeAvtal(saved));
     setCurrentId(r.id);
     setCurrentVersion(r.version);
     saveLastNr(c.avtalNr);
@@ -278,6 +282,8 @@ function App() {
   const ensureSaved = () => {
     if (currentId && currentVersion) return { id: currentId, v: currentVersion };
     const r = saveVersion(a, currentId); setCurrentId(r.id); setCurrentVersion(r.version);
+    const saved = loadStore()[r.id]?.versions.at(-1)?.data;
+    if (saved) setA(normalizeAvtal(saved));
     return { id: r.id, v: r.version };
   };
   const downloadOk = (id: string, v: number) => {
@@ -291,7 +297,8 @@ function App() {
     const { id, v } = ensureSaved();
     if (!downloadOk(id, v)) return;
     try {
-      const bytes = await buildAvtalPdf(a);
+      const saved = loadStore()[id]?.versions.find((x) => x.version === v)?.data;
+      const bytes = await buildAvtalPdf({ ...a, attachments: a.attachments ?? saved?.attachments ?? {} });
       await saveFile(new Blob([bytes as BlobPart], { type: "application/pdf" }), `Avtal_${fileBase(a, v)}.pdf`, "application/pdf", ".pdf");
       markDownloaded(id, v, "PDF");
       setStore(loadStore());
@@ -443,7 +450,7 @@ function App() {
             {tab === "express" && (
               <Express onOpenFull={(x) => { setA(x); setCurrentVersion(undefined); setCurrentId(undefined); setOpenId(""); setTab("kund"); setToast("Expresskalkylen öppnad som nytt avtal – fyll i kunduppgifterna"); }} />
             )}
-            <Installningar open={settings} onClose={() => setSettings(false)} isAdmin={isAdmin} onToast={setToast} onOpenUsers={() => setTab("anvandare")} onNameChange={(n) => setMe((m) => ({ ...m, name: n }))} />
+            <Installningar open={settings} onClose={() => setSettings(false)} isAdmin={isAdmin} onToast={setToast} onOpenUsers={() => setTab("anvandare")} onNameChange={(n) => setMe((m) => ({ ...m, name: n }))} store={store} onAttachmentsChanged={() => { void refreshShared().then(() => { const s = loadStore(); setStore(s); const v = currentId ? s[currentId]?.versions.at(-1) : undefined; if (v) { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); } }); }} />
             {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} isAdmin={isAdmin} />}
             {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
 

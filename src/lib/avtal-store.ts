@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
+import { cachedAttachments } from "./bilagor";
 import { type Avtal, calculate, clampVisits, emptyAvtal, fmtKr, newRow, normalizeAvtal } from "./kalkyl";
 
 export type Status = "offert" | "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
@@ -71,7 +72,8 @@ export function saveVersion(a: Avtal, existingId?: string): { id: string; versio
   const shared = Object.values(store).find((f) => f.contacts?.length && customerKey(f.name) === customerKey(name))?.contacts;
   if (!folder.contacts && shared) folder.contacts = shared;
   folder.name = name;
-  folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(a) });
+  const data = { ...a, attachments: a.attachments ?? (version === 1 ? cachedAttachments() : {}) };
+  folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(data) });
   logTo(folder, version === 1 ? "skapat" : "version", version === 1 ? "Avtal skapat (v1)" : `Ny version sparad (v${version})`);
   store[folder.id] = folder;
   saveStore(store);

@@ -42,6 +42,8 @@ export type Customer = {
 };
 
 export type Avtal = {
+  /** Pinned PDF attachments: missing keys retain the original/generated appendix. */
+  attachments?: import("./bilagor-model").Attachments;
   customer: Customer;
   rows: ObjRow[];
   hourRate: number;

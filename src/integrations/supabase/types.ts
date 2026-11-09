@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      agreement_attachment_templates: {
+        Row: {
+          file: Json
+          slot: string
+          updated_at: string
+        }
+        Insert: {
+          file: Json
+          slot: string
+          updated_at?: string
+        }
+        Update: {
+          file?: Json
+          slot?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       avtal_register: {
         Row: {
           folder: Json
