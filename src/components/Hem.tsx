@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound } from "lucide-react";
+import { ArrowUpDown, ArrowUpRight, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound, Wrench, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
@@ -28,12 +28,12 @@ const STATUS_CLS: Record<Status, string> = {
 
 function Stat({ label, value, sub, icon, active, onClick }: { label: string; value: string; sub: string; icon: ReactNode; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} aria-pressed={active}
-      className={`flex min-w-0 flex-col gap-1 rounded-lg border p-4 text-left shadow-[var(--shadow-panel)] transition-colors sm:p-5 ${active ? "border-primary bg-primary/10" : "border-border bg-card hover:border-ring/40"}`}>
-      <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">{icon}<span className="truncate">{label}</span></span>
-      <span className="truncate font-display text-2xl font-bold tabular-nums text-foreground sm:text-3xl">{value}</span>
-      <span className="truncate text-xs text-muted-foreground">{sub}</span>
-    </button>
+    <Button variant="ghost" onClick={onClick} aria-pressed={active}
+      className={`ds-overview-stat relative h-auto min-w-0 flex-col items-start gap-2 whitespace-normal rounded-lg border p-4 text-left sm:p-5 ${active ? "border-ring/30 bg-accent" : "border-border bg-card"}`}>
+      <span className="flex w-full items-center gap-1.5 text-xs font-medium text-muted-foreground">{icon}<span className="min-w-0 flex-1">{label}</span><ArrowUpRight size={14} /></span>
+      <span className="font-display text-2xl font-semibold tabular-nums text-foreground sm:text-3xl">{value}</span>
+      <span className="text-xs font-normal text-muted-foreground">{sub}</span>
+    </Button>
   );
 }
 
@@ -100,26 +100,16 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         </button>
       )}
       {view === "oversikt" && <>
-      <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-sidebar p-5 text-sidebar-accent-foreground shadow-[var(--shadow-panel)]">
-          <span className="text-xs font-semibold opacity-80">Årligt avtalsvärde (aktiva)</span>
-          <span className="truncate font-display text-3xl font-bold tabular-nums">{fmtKr(Math.round(kpi.arr))}</span>
-          <span className="text-xs opacity-80">{act.length} aktiva avtal · {fmtKr(Math.round(kpi.arr * 5))} på 5 år</span>
+      <div className="ds-overview-finance">
+        <div className="ds-overview-value">
+          <div className="flex items-center justify-between gap-3"><span className="text-sm font-medium text-sidebar-foreground">Årligt avtalsvärde (aktiva)</span><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"><TrendingUp size={19} /></span></div>
+          <p className="ds-overview-amount mt-3 font-display font-semibold tabular-nums">{fmtKr(Math.round(kpi.arr))}</p>
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-sidebar-border pt-3 text-xs text-sidebar-foreground"><span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-primary" />{act.length} aktiva avtal</span><span>{fmtKr(Math.round(kpi.arr * 5))} på 5 år</span></div>
         </div>
-        <div className="ds-panel flex min-w-0 flex-col gap-1">
-          <span className="text-xs font-semibold text-muted-foreground">Täckningsbidrag / år</span>
-          <span className="truncate font-display text-3xl font-bold tabular-nums text-success">{fmtKr(Math.round(kpi.tb))}</span>
-          <span className="text-xs text-muted-foreground">Täckningsgrad {pct(tg)}</span>
-        </div>
-        <div className="ds-panel flex min-w-0 flex-col gap-1">
-          <span className="text-xs font-semibold text-muted-foreground">Årlig servicevolym</span>
-          <span className="truncate font-display text-3xl font-bold tabular-nums text-foreground">{new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(kpi.h)} h</span>
-          <span className="text-xs text-muted-foreground">planerad servicetid · {kpi.trips} framkörningar</span>
-        </div>
-        <div className="ds-panel flex min-w-0 flex-col gap-1">
-          <span className="text-xs font-semibold text-muted-foreground">Objekt i aktiva avtal</span>
-          <span className="truncate font-display text-3xl font-bold tabular-nums text-foreground">{kpi.obj} st</span>
-          <span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0))} / avtal</span>
+        <div className="ds-overview-metrics">
+          <div className="ds-overview-metric"><span className="ds-overview-metric-label"><Coins size={16} />Täckningsbidrag / år</span><span className="ds-overview-metric-value text-success">{fmtKr(Math.round(kpi.tb))}</span><span className="text-xs text-muted-foreground">Täckningsgrad {pct(tg)}</span></div>
+          <div className="ds-overview-metric"><span className="ds-overview-metric-label"><Wrench size={16} />Årlig servicevolym</span><span className="ds-overview-metric-value">{new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(kpi.h)} h</span><span className="text-xs text-muted-foreground">{kpi.trips} framkörningar</span></div>
+          <div className="ds-overview-metric ds-overview-objects"><span className="ds-overview-metric-label"><Building2 size={16} />Objekt i aktiva avtal</span><span className="ds-overview-metric-value">{kpi.obj} st</span><span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0)))} / avtal</span></div>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
@@ -130,8 +120,8 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section className="ds-panel min-w-0">
-          <h3 className="mb-2 text-sm font-semibold text-foreground">Avtalsstockens årsvärde, senaste 12 månaderna</h3>
+        <section className="min-w-0 border-t border-border pt-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="font-display text-base font-semibold text-foreground">Avtalsstockens årsvärde</h3><span className="text-xs text-muted-foreground">Senaste 12 månaderna</span></div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={graf} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
@@ -144,7 +134,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
             </ResponsiveContainer>
           </div>
         </section>
-        <section className="ds-panel min-w-0">
+        <section className="min-w-0 border-t border-border pt-5">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground"><AlertTriangle size={15} className="text-destructive" />Behöver uppmärksamhet</h3>
           {forsenade.length === 0 && fornyelse.length === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
           <ul className="max-h-52 space-y-1.5 overflow-y-auto">

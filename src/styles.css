@@ -169,6 +169,31 @@
   box-shadow: var(--shadow-glass);
 }
 
+/* Overview hierarchy; document styles below remain independent. */
+.ds-overview-finance { display: grid; gap: 0; }
+.ds-overview-value { background: var(--sidebar); color: var(--sidebar-accent-foreground); padding: 22px; border-radius: var(--radius); }
+.ds-overview-amount { font-size: 34px; line-height: 1.15; overflow-wrap: anywhere; }
+.ds-overview-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 20px; gap: 18px 16px; }
+.ds-overview-metric { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ds-overview-metric-label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-foreground); }
+.ds-overview-metric-label svg { flex-shrink: 0; }
+.ds-overview-metric-value { font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.ds-overview-objects { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; align-items: center; border-top: 1px solid var(--border); padding-top: 14px; }
+.ds-overview-objects > :last-child { grid-column: 1 / -1; }
+.ds-overview-stat:hover { transform: translateY(-2px); }
+.ds-mobile-menu { background: var(--nav-glass); border-color: var(--nav-glass-edge); scrollbar-width: none; }
+.ds-mobile-menu::-webkit-scrollbar { display: none; }
+@media (min-width: 640px) {
+  .ds-overview-amount { font-size: 42px; }
+  .ds-overview-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 24px 0; }
+  .ds-overview-objects { grid-column: auto; display: flex; border-top: none; padding-top: 0; }
+  .ds-overview-metric-value { font-size: 26px; }
+}
+@media (min-width: 1024px) {
+  .ds-overview-finance { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 32px; align-items: center; }
+  .ds-overview-metric + .ds-overview-metric { border-left: 1px solid var(--border); padding-left: 20px; }
+}
+
 /* Shared UI vocabulary: 4px spacing grid, 6px controls, 8px framed items. */
 @layer components {
   .ds-glass-nav { background: var(--nav-glass); backdrop-filter: blur(24px) saturate(140%); border: 1px solid var(--nav-glass-edge); box-shadow: var(--shadow-nav); }

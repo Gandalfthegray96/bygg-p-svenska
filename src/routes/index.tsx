@@ -383,8 +383,8 @@ function App() {
             <div className="w-full mx-auto max-w-7xl px-4 py-3 sm:px-8 sm:py-6">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 sm:gap-y-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground"><span className="font-semibold text-success">{TABS.find((t) => t.id === tab)?.label}</span>{inAvtal ? <> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</> : <> · {PAGE[tab]?.[1]}</>}</p>
-                  <h1 className="mt-0.5 truncate font-display text-lg sm:mt-1 sm:break-words sm:whitespace-normal font-semibold tracking-tight text-foreground text-xl sm:text-3xl">{inAvtal ? (c.bestallare || "Skapa nytt avtal") : PAGE[tab]?.[0]}</h1>
+                  <p className="flex items-center gap-2 text-xs text-muted-foreground"><img src="/icon-512.png" alt="" className="h-6 w-6 object-contain sm:hidden" /><span>UK Portservice{inAvtal ? <> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</> : " · Avtal"}</span></p>
+                  <h1 className="mt-2 break-words font-display text-2xl font-semibold text-foreground sm:text-3xl">{inAvtal ? (c.bestallare || "Skapa nytt avtal") : PAGE[tab]?.[0]}</h1>
                 </div>
                 <dl aria-label="Avtalssammanfattning" className={`${!inAvtal ? "hidden" : "grid"} w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] gap-3 border-t border-border pt-2 tabular-nums sm:w-auto sm:grid-cols-[auto_auto_auto] sm:gap-8 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0`}>
                   <div><dt className="text-xs font-semibold text-muted-foreground">Objekt</dt><dd className="mt-1 font-display text-base font-semibold text-foreground sm:text-lg">{fmtNum(k.totalQty)} st</dd></div>
@@ -393,10 +393,10 @@ function App() {
                 </dl>
               </div>
               {!inAvtal && tab !== "anvandare" && (
-                <div className="mt-2 flex flex-wrap items-center justify-end gap-2 sm:mt-4">
-                  <Button variant="outline" onClick={() => setTab("pipeline")} className="h-9 gap-1.5"><UserPlus size={16} />Ny kund</Button>
-                  <Button variant="outline" onClick={() => { setListFilter("alla"); setTab("lista"); }} className="h-9 gap-1.5"><BarChart3 size={16} />Rapporter</Button>
-                  <Button onClick={() => setConfirmNew(true)} className="h-9 gap-1.5"><Plus size={16} />Nytt avtal</Button>
+                <div className="mt-3 grid grid-cols-[1fr_1fr_auto] items-center gap-2 sm:mt-4 sm:flex sm:justify-end">
+                  <Button variant="ghost" onClick={() => setTab("pipeline")} className="h-9 gap-1.5 px-2 text-xs sm:text-sm"><UserPlus size={16} />Ny kund</Button>
+                  <Button variant="ghost" onClick={() => { setListFilter("alla"); setTab("lista"); }} className="h-9 gap-1.5 px-2 text-xs sm:text-sm"><BarChart3 size={16} />Rapporter</Button>
+                  <Button onClick={() => setConfirmNew(true)} className="h-9 gap-1.5 px-3 text-xs sm:text-sm"><Plus size={16} />Nytt avtal</Button>
                 </div>
               )}
               <div className={`${inAvtal ? "flex" : "hidden"} mt-2 items-center justify-end gap-3 sm:mt-4`}>
@@ -411,18 +411,18 @@ function App() {
                 </div>
               </div>
             </div>
-            <nav aria-label="Meny" className="flex gap-1 overflow-x-auto border-t border-border px-2 py-1.5 sm:hidden">
+            <nav aria-label="Meny" className="ds-mobile-menu flex gap-1 overflow-x-auto border-t px-2 py-2 sm:hidden">
               {MENU.map((t) => {
                 const Icon = t.icon;
                 const active = isMainActive(t.id, tab);
                 return (
-                  <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
-                    className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                  <Button variant="ghost" key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
+                    className={`relative h-9 shrink-0 gap-1.5 px-3 text-xs font-medium ${active ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}>
                     {badge(t.id)}<Icon size={15} />{t.label}
-                  </button>
+                  </Button>
                 );
               })}
-              <button onClick={() => setSettings(true)} aria-label="Inställningar" className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"><Settings size={15} />Inställn.</button>
+              <Button variant="ghost" onClick={() => setSettings(true)} aria-label="Inställningar" className="h-9 shrink-0 gap-1.5 px-3 text-xs text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"><Settings size={15} />Inställn.</Button>
             </nav>
           </header>
 

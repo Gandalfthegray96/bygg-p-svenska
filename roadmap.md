@@ -25,6 +25,7 @@
 - [x] Mapp-import av PDF-avtal med sållning (klara / granska / ej avtal)
 
 ## Klart
+- [x] Tydligare visuellt lyft av översikten, kompaktare mobilnyckeltal och mörkgrön toppmeny utan att flytta sparknappar eller ändra kalkyl.
 - [x] Objekt-fält: Tillverkningsnummer, Fabrikat, Besiktningsnummer
 - [x] Manuellt slutpris-fält (justeringsfält enligt kalkylmallen väntar på bygget ovan)
 - [x] Ifyllda fält i avtals-PDF:en med Arial
