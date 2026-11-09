@@ -96,7 +96,28 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
 async function skrivKlausuler(doc: PDFDocument, idx: number, sida: 2 | 3, a: Avtal): Promise<number> {
   const font = await arial(doc);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const W = 595.28, x0 = 36, maxW = W - 72, fs = 8.5, lh = 10.3, top = 612, bottom = sida === 2 ? 115 : 290;
+  const W = 595.28, x0 = 36, maxW = W - 72, top = 612, bottom = sida === 2 ? 115 : 290;
+  // Sida 3 bär signaturtabellen och kan inte få fortsättningsblad – texten krymps i stället vid behov.
+  const hojd = (fs: number) => {
+    let h = 0;
+    for (const k of KLAUSULER.filter((x) => x.sida === sida)) {
+      h += fs * 1.21;
+      for (const para of klausulText(a.klausuler, k).split(/\n\s*\n/)) {
+        if (!para.trim()) continue;
+        for (const rad of para.split(/\r?\n/)) {
+          let cur = "", n = 0;
+          for (const w of rad.split(/\s+/).filter(Boolean)) { const t = cur ? `${cur} ${w}` : w; if (font.widthOfTextAtSize(t, fs) > maxW && cur) { n++; cur = w; } else cur = t; }
+          h += (n + (cur ? 1 : 0)) * fs * 1.21;
+        }
+        h += fs * 0.97;
+      }
+      h += fs * 1.45;
+    }
+    return h;
+  };
+  let fs = 8.5;
+  if (sida === 3) while (fs > 5.5 && hojd(fs) > top - bottom) fs -= 0.25;
+  const lh = fs * 1.21;
   const orig = doc.getPage(idx);
   orig.drawRectangle({ x: 30, y: bottom - 5, width: W - 60, height: top - bottom + 10, color: rgb(1, 1, 1) });
   const banner = await doc.embedPage(orig, { left: 0, right: W, bottom: 687, top: 841.89 });
