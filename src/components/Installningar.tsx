@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Bell, Hash, KeyRound, LogOut, Settings, User, Users } from "lucide-react";
+import { Bell, Hash, Info, Phone, KeyRound, LogOut, Settings, User, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { enablePush, pushSupported } from "@/lib/push";
 import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { lockApp } from "./AppGate";
+import { loadKontakt, saveKontakt } from "@/lib/kontakt";
 
 function Sektion({ icon: Icon, title, children }: { icon: typeof User; title: string; children: React.ReactNode }) {
   return (
@@ -27,10 +28,15 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
   const [nr, setNr] = useState("");
   const [perm, setPerm] = useState<string>("default");
   const [busy, setBusy] = useState(false);
+  const [tel, setTel] = useState("");
+  const [kEpost, setKEpost] = useState("");
+  const [version, setVersion] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setNr(loadLastNr());
+    { const k = loadKontakt(); setTel(k.telefon); setKEpost(k.epost); }
+    fetch("/changelog.json", { cache: "no-store" }).then((r) => r.json()).then((j) => { const e = Array.isArray(j) ? j[0] : j?.entries?.[0] ?? j; setVersion(e?.datum ?? ""); }).catch(() => {});
     setPerm(pushSupported() ? Notification.permission : "unsupported");
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
@@ -45,8 +51,12 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
     setBusy(true);
     const { error } = await supabase.from("profiles").update({ name: name.trim() }).eq("id", uid);
     setBusy(false);
-    if (!error) onNameChange?.(name.trim());
+    if (!error) { onNameChange?.(name.trim()); saveKontakt({ ...loadKontakt(), namn: name.trim() }); }
     onToast(error ? "Kunde inte spara namnet" : "Ditt namn är sparat");
+  };
+  const saveKontaktInfo = () => {
+    saveKontakt({ namn: name.trim(), telefon: tel.trim(), epost: kEpost.trim() });
+    onToast("Dina kontaktuppgifter är sparade");
   };
   const savePw = async () => {
     if (pw.length < 6) return onToast("Lösenordet måste ha minst 6 tecken");
@@ -92,6 +102,14 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
               <Button disabled={busy || !name.trim()} onClick={saveName}>Spara</Button>
             </div>
           </Sektion>
+          <Sektion icon={Phone} title="Mina kontaktuppgifter">
+            <p className="mb-2 text-sm text-muted-foreground">Ditt namn fylls i automatiskt under "Vår referens" när du skapar ett nytt avtal.</p>
+            <div className="grid gap-2">
+              <input className="ds-input" type="tel" placeholder="Direkttelefon" value={tel} onChange={(e) => setTel(e.target.value)} />
+              <input className="ds-input" type="email" placeholder="E-post" value={kEpost} onChange={(e) => setKEpost(e.target.value)} />
+              <Button variant="outline" onClick={saveKontaktInfo} className="justify-self-end">Spara</Button>
+            </div>
+          </Sektion>
           <Sektion icon={KeyRound} title="Byt lösenord">
             <div className="grid gap-2">
               <input type="password" className="ds-input" placeholder="Nytt lösenord" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
@@ -116,6 +134,7 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
           {isAdmin && (
             <Button variant="outline" className="w-full gap-2" onClick={() => { onClose(); onOpenUsers(); }}><Users size={16} />Hantera användare och roller</Button>
           )}
+          <p className="flex items-center gap-2 text-xs text-muted-foreground"><Info size={14} />UK Portservice Avtal{version ? ` · version ${version}` : ""}</p>
           <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive" onClick={() => lockApp()}><LogOut size={16} />Logga ut</Button>
         </div>
       </DialogContent>

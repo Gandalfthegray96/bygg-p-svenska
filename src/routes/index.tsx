@@ -5,9 +5,9 @@ import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, f
 import { Tidslinje } from "@/components/Aktivitet";
 import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Lock, Settings, Zap, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { lockApp } from "@/components/AppGate";
+import { loadKontakt } from "@/lib/kontakt";
 import { downloadExcel, fileBase } from "@/lib/excel";
 import { buildAvtalPdf } from "@/lib/pdf-avtal";
 import { saveFile } from "@/lib/save-file";
@@ -236,7 +236,7 @@ function App() {
   }, [stale.length]);
   const badge = (id: Tab) => (id === "hem" || id === "pipeline") && stale.length > 0
     ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">{stale.length}</span> : null;
-  const startNew = () => { const n = emptyAvtal(); n.customer.avtalNr = nextAvtalNr(loadLastNr()); setA(n); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
+  const startNew = () => { const n = emptyAvtal(); n.customer.avtalNr = nextAvtalNr(loadLastNr()); { const k = loadKontakt(); if (k.namn) n.customer.varRef = k.namn; } setA(n); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); };
 
   useEffect(() => {
     const d = loadDraft();
@@ -365,15 +365,6 @@ function App() {
             <Settings size={19} />
             <span className="text-[10.5px] font-medium leading-none">Inställn.</span>
           </Button>
-          <Button variant="glassNavigation"
-            onClick={() => lockApp()}
-            title="Lås appen"
-            aria-label="Lås appen"
-            className="h-auto w-16 shrink-0 flex-col gap-1 px-1 py-1.5 [&_svg]:size-5"
-          >
-            <Lock size={19} />
-            <span className="text-[10.5px] font-medium leading-none">Lås</span>
-          </Button>
         </nav>
 
         {/* Innehåll */}
@@ -422,7 +413,6 @@ function App() {
                 );
               })}
               <button onClick={() => setSettings(true)} aria-label="Inställningar" className="flex shrink-0 items-center rounded-lg px-2.5 py-1.5 text-muted-foreground hover:bg-muted"><Settings size={15} /></button>
-              <button onClick={() => lockApp()} aria-label="Lås appen" className="flex shrink-0 items-center rounded-lg px-2.5 py-1.5 text-muted-foreground hover:bg-muted"><Lock size={15} /></button>
             </nav>
           </header>
 

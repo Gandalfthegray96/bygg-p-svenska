@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-09",
+    "rubrik": "Inställningar kompletterade",
+    "punkter": [
+      "Lås-knappen är borttagen – logga ut sker under kugghjulet.",
+      "Nytt fält för dina kontaktuppgifter; ditt namn fylls i under \"Vår referens\" på nya avtal.",
+      "Appens version visas i inställningarna."
+    ]
+  },
+  {
     "datum": "2026-11-08",
     "rubrik": "Inställningar och bättre mobilvy",
     "punkter": [
