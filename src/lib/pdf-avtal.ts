@@ -96,7 +96,7 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
 async function skrivKlausuler(doc: PDFDocument, idx: number, sida: 2 | 3, a: Avtal): Promise<number> {
   const font = await arial(doc);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const W = 595.28, x0 = 36, maxW = W - 72, top = 612, bottom = sida === 2 ? 115 : 290;
+  const W = 595.28, x0 = 36, maxW = W - 72, top = 612, bottom = sida === 2 ? 128 : 290;
   // Sida 3 bär signaturtabellen och kan inte få fortsättningsblad – texten krymps i stället vid behov.
   const hojd = (fs: number) => {
     let h = 0;
@@ -127,7 +127,7 @@ async function skrivKlausuler(doc: PDFDocument, idx: number, sida: 2 | 3, a: Avt
     extra++;
     page = doc.insertPage(idx + extra, [W, 841.89]);
     page.drawPage(banner, { x: 0, y: 687 }); page.drawPage(footer, { x: 0, y: 50 });
-    y = top - 7; lim = 115;
+    y = top - 7; lim = 128;
   };
   const line = (t: string, f = font) => { if (y < lim) ny(); page.drawText(t, { x: x0, y, size: fs, font: f }); y -= lh; };
   for (const k of KLAUSULER.filter((x) => x.sida === sida)) {
