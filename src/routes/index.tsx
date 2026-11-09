@@ -5,7 +5,7 @@ import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, f
 import { Tidslinje } from "@/components/Aktivitet";
 import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, ScrollText, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loadKontakt } from "@/lib/kontakt";
 import { downloadExcel, fileBase } from "@/lib/excel";
