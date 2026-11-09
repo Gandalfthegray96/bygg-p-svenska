@@ -3,6 +3,7 @@
 import { PDFDocument, PDFName, PDFString, StandardFonts, rgb, type PDFForm, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { type Avtal, calculate, rabattText } from "@/lib/kalkyl";
+import { KLAUSULER, klausulText, sidaAndrad } from "./klausuler";
 import { attachmentBytes } from "./bilagor";
 
 // Arial-kompatibelt typsnitt (Liberation Sans, samma mått som Arial) för ifyllda fält
@@ -89,42 +90,75 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
   return doc;
 }
 
-// Avtalsspecifika "Särskilda villkor" – eget blad med originalets sidhuvud/sidfot, före Bilaga 1.
-async function villkorPdf(a: Avtal): Promise<PDFDocument | null> {
-  const text = (a.sarskildaVillkor ?? "").trim();
-  if (!text) return null;
-  const doc = await PDFDocument.create();
+// Avtalsspecifika ändringar under originalets rubriker: endast om något ändrats ritas sidans
+// textyta om (sidhuvud, sidfot och signaturtabell behålls från originalet). Rinner texten över
+// läggs ett fortsättningsblad med samma sidhuvud/sidfot direkt efter sidan.
+async function skrivKlausuler(doc: PDFDocument, idx: number, sida: 2 | 3, a: Avtal): Promise<number> {
   const font = await arial(doc);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const mall = await load("/pdf/avtal.pdf");
-  const W = 595.28, H = 841.89, x0 = 70, maxW = W - 140, fs = 10.5, lh = 15;
-  const banner = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 687, top: H });
-  const footer = await doc.embedPage(mall.getPage(2), { left: 0, right: W, bottom: 50, top: 101 });
-  let page!: PDFPage, y = 0;
-  const newPage = () => { page = doc.addPage([W, H]); page.drawPage(banner, { x: 0, y: 687 }); page.drawPage(footer, { x: 0, y: 50 }); y = 660; };
-  newPage();
-  page.drawText("SÄRSKILDA VILLKOR", { x: x0, y, size: 12, font: bold }); y -= 22;
-  page.drawText(`Gäller avtal ${a.customer.avtalNr} och har företräde framför standardvillkoren vid avvikelse.`, { x: x0, y, size: 9, font }); y -= 22;
-  for (const para of text.split(/\r?\n/)) {
-    const words = para.split(/\s+/); let line = "";
-    const flush = () => { if (y < 120) newPage(); page.drawText(line, { x: x0, y, size: fs, font }); y -= lh; line = ""; };
-    if (!para.trim()) { y -= lh / 2; continue; }
-    for (const w of words) { const t = line ? `${line} ${w}` : w; if (font.widthOfTextAtSize(t, fs) > maxW && line) { flush(); line = w; } else line = t; }
-    if (line) flush();
+  const W = 595.28, x0 = 36, maxW = W - 72, top = 612, bottom = sida === 2 ? 128 : 290;
+  // Sida 3 bär signaturtabellen och kan inte få fortsättningsblad – texten krymps i stället vid behov.
+  const hojd = (fs: number) => {
+    let h = 0;
+    for (const k of KLAUSULER.filter((x) => x.sida === sida)) {
+      h += fs * 1.21;
+      for (const para of klausulText(a.klausuler, k).split(/\n\s*\n/)) {
+        if (!para.trim()) continue;
+        for (const rad of para.split(/\r?\n/)) {
+          let cur = "", n = 0;
+          for (const w of rad.split(/\s+/).filter(Boolean)) { const t = cur ? `${cur} ${w}` : w; if (font.widthOfTextAtSize(t, fs) > maxW && cur) { n++; cur = w; } else cur = t; }
+          h += (n + (cur ? 1 : 0)) * fs * 1.21;
+        }
+        h += fs * 0.97;
+      }
+      h += fs * 1.45;
+    }
+    return h;
+  };
+  let fs = 8.5;
+  if (sida === 3) while (fs > 5.5 && hojd(fs) > top - bottom) fs -= 0.25;
+  const lh = fs * 1.21;
+  const orig = doc.getPage(idx);
+  orig.drawRectangle({ x: 30, y: bottom - 5, width: W - 60, height: top - bottom + 10, color: rgb(1, 1, 1) });
+  const banner = await doc.embedPage(orig, { left: 0, right: W, bottom: 687, top: 841.89 });
+  const footer = await doc.embedPage(orig, { left: 0, right: W, bottom: 50, top: 110 });
+  let page = orig, y = top - 7, extra = 0, lim = bottom;
+  const ny = () => {
+    extra++;
+    page = doc.insertPage(idx + extra, [W, 841.89]);
+    page.drawPage(banner, { x: 0, y: 687 }); page.drawPage(footer, { x: 0, y: 50 });
+    y = top - 7; lim = 128;
+  };
+  const line = (t: string, f = font) => { if (y < lim) ny(); page.drawText(t, { x: x0, y, size: fs, font: f }); y -= lh; };
+  for (const k of KLAUSULER.filter((x) => x.sida === sida)) {
+    if (y - lh * 2 < lim) ny();
+    line(k.rubrik, bold);
+    for (const para of klausulText(a.klausuler, k).split(/\n\s*\n/)) {
+      if (!para.trim()) continue;
+      for (const rad of para.split(/\r?\n/)) {
+        let cur = "";
+        for (const w of rad.split(/\s+/).filter(Boolean)) {
+          const t = cur ? `${cur} ${w}` : w;
+          if (font.widthOfTextAtSize(t, fs) > maxW && cur) { line(cur); cur = w; } else cur = t;
+        }
+        if (cur) line(cur);
+      }
+      y -= lh * 0.8;
+    }
+    y -= lh * 1.2;
   }
-  return doc;
+  return extra;
 }
 
 export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {}): Promise<Uint8Array> {
   const c = a.customer;
   const k = calculate(a);
   const att = a.attachments ?? {};
-  const [fsb, fu, pris, b1, sv] = await Promise.all([
+  const [fsb, fu, pris, b1] = await Promise.all([
     att.cover ? PDFDocument.load(await attachmentBytes(att.cover)) : load("/pdf/forsattsblad.pdf"),
     att.contract ? PDFDocument.load(await attachmentBytes(att.contract)) : load("/pdf/avtal.pdf"),
     a.attachments?.price ? PDFDocument.load(await attachmentBytes(a.attachments.price)) : load("/pdf/prislista.pdf"),
     a.attachments?.cost ? PDFDocument.load(await attachmentBytes(a.attachments.cost)) : bilaga1(a),
-    villkorPdf(a),
   ]);
 
   const ff = fsb.getForm();
@@ -149,6 +183,11 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   });
   fa.updateFieldAppearances(await arial(fu));
   fa.flatten();
+  // Ändrade rubriker i standardavtalet (inte i egen uppladdad PDF)
+  if (!att.contract && fu.getPageCount() === 3) {
+    if (sidaAndrad(a.klausuler, 3)) await skrivKlausuler(fu, 2, 3, a);
+    if (sidaAndrad(a.klausuler, 2)) await skrivKlausuler(fu, 1, 2, a);
+  }
   // Prislistan: ersätt rabattraden (originalet säger 10 %/10 %) med avtalets egna procentsatser.
   if (!a.attachments?.price && (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10)) {
     const pp = pris.getPage(0);
@@ -163,11 +202,10 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   // Huvudavtal: alla sidor utom sista (signatursidan), sedan särskilda villkor + Bilaga 1, sist signatursidan.
   const fuN = fu.getPageCount();
   await add(fu, fu.getPageIndices().slice(0, Math.max(0, fuN - 1)));
-  if (sv) await add(sv, sv.getPageIndices());
   await add(b1, b1.getPageIndices());     // Bilaga 1 – före signering
   await add(fu, [fuN - 1]);               // Signatursida
   await add(pris, pris.getPageIndices()); // Bilaga 2 – Prislista, sist
-  if (opts.signTags && !att.contract) await signFields(out, out.getPage(fsb.getPageCount() + fuN - 1 + (sv?.getPageCount() ?? 0) + b1.getPageCount()), c.postort);
+  if (opts.signTags && !att.contract) await signFields(out, out.getPage(fsb.getPageCount() + fuN - 1 + b1.getPageCount()), c.postort);
   else {
     // Vanlig PDF: inga formulär/signaturfält kvar, så Acrobat Pro öppnar den direkt i "Redigera PDF"
     // utan formulär- eller signaturläge. Ingen kryptering/behörighetsspärr sätts.

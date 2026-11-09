@@ -56,6 +56,8 @@ export type Avtal = {
   show: ShowPrices;
   /** Avtalsspecifika tillägg/avvikelser från standardvillkoren (säljaren skriver). */
   sarskildaVillkor?: string;
+  /** Avtalsspecifik text per rubrik i originalavtalet (id → text). Saknas = standardtext. */
+  klausuler?: Record<string, string>;
 };
 
 export const YEARS = 5;

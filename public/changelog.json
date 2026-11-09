@@ -1,5 +1,13 @@
 [
   {
+    "datum": "2026-11-09-villkor",
+    "rubrik": "Ny flik: Villkor",
+    "punkter": [
+      "Ändra texten under avtalets egna rubriker (Tidsplan, Ekonomi, Sekretess m.fl.) för ett enskilt avtal.",
+      "Det separata bladet \"Särskilda villkor\" är borttaget."
+    ]
+  },
+  {
     "datum": "2026-11-09-nyhetsruta",
     "rubrik": "Ny nyhetsruta",
     "punkter": [
