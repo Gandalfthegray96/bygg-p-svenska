@@ -42,8 +42,8 @@ export function UpdateNotice() {
   // Välkomstruta: nyheter man inte sett ännu.
   useEffect(() => {
     fetchNyheter().then((lista) => {
-      if (!lista.length) return;
-      const senaste = lista[0].datum;
+      const senaste = lista[0]?.datum;
+      if (!senaste) return;
       const sett = localStorage.getItem(SEEN_KEY);
       if (!sett) { localStorage.setItem(SEEN_KEY, senaste); return; }
       if (sett === senaste) return;
