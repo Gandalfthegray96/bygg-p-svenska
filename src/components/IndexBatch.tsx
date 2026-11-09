@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { fmtPct, getSettings } from "@/lib/foretag-settings";
 import { TrendingUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, indexera, normalizeAvtal } from "@/lib/kalkyl";
@@ -6,7 +7,7 @@ import { indexeraBatch, type CustomerFolder } from "@/lib/avtal-store";
 
 /** Årlig indexreglering för alla signerade avtal på en gång, direkt från Hem. */
 export function IndexBatch({ store, onClose, onDone }: { store: Record<string, CustomerFolder>; onClose: () => void; onDone: () => void }) {
-  const [pct, setPct] = useState("2,5");
+  const [pct, setPct] = useState(() => fmtPct(getSettings().indexPct));
   const p = Number(pct.replace(",", ".")) || 0;
   const rows = useMemo(() => Object.values(store).flatMap((f) => {
     const v = f.versions.at(-1);
