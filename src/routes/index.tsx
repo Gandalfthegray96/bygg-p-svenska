@@ -411,9 +411,22 @@ function App() {
                 </div>
               </div>
             </div>
+            <nav aria-label="Meny" className="flex gap-1 overflow-x-auto border-t border-border px-2 py-1.5 sm:hidden">
+              {MENU.map((t) => {
+                const Icon = t.icon;
+                const active = isMainActive(t.id, tab);
+                return (
+                  <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
+                    className={`relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+                    {badge(t.id)}<Icon size={15} />{t.label}
+                  </button>
+                );
+              })}
+              <button onClick={() => setSettings(true)} aria-label="Inställningar" className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"><Settings size={15} />Inställn.</button>
+            </nav>
           </header>
 
-          <main className={`mx-auto w-full max-w-7xl flex-1 space-y-5 px-4 py-5 ${inAvtal ? "pb-40" : "pb-24"} sm:px-8 sm:py-8 sm:pb-10`}>
+          <main className={`mx-auto w-full max-w-7xl flex-1 space-y-5 px-4 py-5 ${inAvtal ? "pb-24" : "pb-8"} sm:px-8 sm:py-8 sm:pb-10`}>
             {(tab === "hem" || tab === "lista") && (
               <Hem key={tab + listFilter} view={tab === "hem" ? "oversikt" : "lista"} initialFilter={tab === "lista" ? listFilter : "alla"} onGoList={(f) => { setListFilter(f); setTab("lista"); }} store={store} me={me} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
                 onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />
@@ -720,21 +733,8 @@ function App() {
             )}
           </main>
 
-                    <nav aria-label="Meny" className="ds-tabbar fixed inset-x-0 bottom-0 z-30 flex justify-around px-1 pt-1 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:hidden">
-              {MENU.map((t) => {
-                const Icon = t.icon;
-                const active = isMainActive(t.id, tab);
-                return (
-                  <button key={t.id} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
-                    className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-md px-1 py-1.5 text-[10px] font-medium ${active ? "text-sidebar-accent-foreground" : "text-sidebar-foreground/70"}`}>
-                    {badge(t.id)}<span className={`flex h-7 w-11 items-center justify-center rounded-full ${active ? "bg-primary text-primary-foreground" : ""}`}><Icon size={18} /></span><span className="truncate">{t.label}</span>
-                  </button>
-                );
-              })}
-              <button onClick={() => setSettings(true)} aria-label="Inställningar" className="flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] font-medium text-sidebar-foreground/70"><span className="flex h-7 w-11 items-center justify-center"><Settings size={18} /></span>Inställn.</button>
-            </nav>
           {/* Fast åtgärdsrad */}
-          {inAvtal && <div className="fixed bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 z-20 border-t border-border bg-card/90 px-2 py-1.5 backdrop-blur-xl sm:hidden">
+          {inAvtal && <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-card px-2 py-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:hidden">
             <div className="mx-auto grid max-w-2xl grid-cols-4 gap-2">
               <Button variant="ghost" onClick={onSave} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><Save size={18} />Spara</Button>
               <Button variant="ghost" onClick={onPdf} className={`${btnOutline} h-auto min-h-11 flex-col gap-0.5 px-1 py-1.5 text-xs`}><FileText size={18} />PDF</Button>
