@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/jobs/uppfoljning")({
         for (const u of users) {
           const mine = stale.filter((f) => canSee(f.versions.at(-1)!.data.customer?.varRef ?? "", u));
           if (!mine.length) continue;
-          const body = mine.length === 1 ? `${mine[0].name} har väntat på svar i över 14 dagar.` : `${mine.length} avtal har väntat på svar i över 14 dagar: ${mine.slice(0, 3).map((f) => f.name).join(", ")}${mine.length > 3 ? " …" : ""}`;
+          const body = mine.length === 1 ? `${mine[0]?.name ?? ""} har väntat på svar i över 14 dagar.` : `${mine.length} avtal har väntat på svar i över 14 dagar: ${mine.slice(0, 3).map((f) => f.name).join(", ")}${mine.length > 3 ? " …" : ""}`;
           const { data: subs } = await db.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", u.id);
           for (const s of subs ?? []) {
             try {
