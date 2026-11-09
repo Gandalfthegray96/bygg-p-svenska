@@ -70,27 +70,27 @@
 }
 
 :root {
-  --radius: 0.875rem;
-  --background: oklch(0.975 0.004 100);
-  --foreground: oklch(0.22 0.015 200);
+  --radius: 0.5rem;
+  --background: oklch(0.982 0.003 150);
+  --foreground: oklch(0.2 0.02 160);
   --card: oklch(1 0 0);
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.87 0.17 95);
-  --primary-foreground: oklch(0.22 0.02 200);
-  --secondary: oklch(0.955 0.005 100);
-  --secondary-foreground: oklch(0.45 0.08 200);
-  --muted: oklch(0.955 0.005 100);
-  --muted-foreground: oklch(0.52 0.012 200);
-  --accent: oklch(0.94 0.03 200);
-  --accent-foreground: oklch(0.4 0.08 200);
+  --primary: oklch(0.86 0.16 92);
+  --primary-foreground: oklch(0.22 0.04 160);
+  --secondary: oklch(0.962 0.004 150);
+  --secondary-foreground: oklch(0.34 0.07 160);
+  --muted: oklch(0.962 0.004 150);
+  --muted-foreground: oklch(0.5 0.012 160);
+  --accent: oklch(0.95 0.02 160);
+  --accent-foreground: oklch(0.32 0.07 160);
   --destructive: oklch(0.57 0.2 27);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.91 0.005 100);
-  --input: oklch(0.87 0.006 100);
-  --ring: oklch(0.55 0.09 200);
-  --info: oklch(0.45 0.08 200);
+  --border: oklch(0.925 0.004 150);
+  --input: oklch(0.89 0.005 150);
+  --ring: oklch(0.42 0.08 160);
+  --info: oklch(0.36 0.07 160);
   --success: oklch(0.5 0.12 155);
   --avatar-1: oklch(0.45 0.08 200);
   --avatar-2: oklch(0.55 0.14 60);
@@ -104,30 +104,30 @@
   --chart-3: var(--foreground);
   --chart-4: var(--muted-foreground);
   --chart-5: var(--border);
-  --sidebar: oklch(0.25 0.03 205);
-  --sidebar-foreground: oklch(0.82 0.02 200);
+  --sidebar: oklch(0.22 0.04 160);
+  --sidebar-foreground: oklch(0.84 0.02 160);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: oklch(0.32 0.035 205);
+  --sidebar-accent: oklch(0.29 0.045 160);
   --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(0.33 0.03 205);
+  --sidebar-border: oklch(0.3 0.04 160);
   --sidebar-ring: var(--ring);
-  --nav-glass: oklch(0.271 0.046 194 / 0.85);
+  --nav-glass: oklch(0.22 0.042 160 / 0.96);
   --nav-glass-edge: oklch(1 0 0 / 0.10);
   --nav-icon-glass: oklch(1 0 0 / 0.10);
   --nav-icon-edge: oklch(1 0 0 / 0.20);
   --nav-icon-hover: oklch(1 0 0 / 0.20);
-  --nav-icon-ink: oklch(0.953 0.051 181 / 0.80);
+  --nav-icon-ink: oklch(0.95 0.03 160 / 0.82);
   --nav-selected: oklch(0.852 0.199 91.94);
-  --nav-selected-ink: oklch(0.271 0.046 194);
-  --shadow-nav: 0 12px 28px -12px oklch(0.271 0.046 194 / 0.45), inset 0 1px 0 var(--nav-icon-edge);
+  --nav-selected-ink: oklch(0.22 0.042 160);
+  --shadow-nav: 0 8px 24px -14px oklch(0.2 0.04 160 / 0.4);
   --shadow-nav-icon: inset 0 1px 0 var(--nav-icon-edge), 0 3px 8px oklch(0.271 0.046 194 / 0.12);
-  --shadow-nav-selected: 0 0 15px oklch(0.852 0.199 91.94 / 0.30), inset 0 1px 0 var(--nav-icon-edge);
+  --shadow-nav-selected: 0 1px 2px oklch(0 0 0 / 0.15);
   --glass: oklch(1 0 0 / 0.96);
   --glass-strong: var(--card);
   --glass-border: var(--border);
-  --shadow-glass: 0 1px 2px oklch(0.2 0.02 200 / 0.05);
-  --shadow-panel: 0 1px 3px oklch(0.2 0.02 200 / 0.06), 0 8px 24px -12px oklch(0.2 0.02 200 / 0.12);
+  --shadow-glass: 0 1px 2px oklch(0.2 0.02 160 / 0.04);
+  --shadow-panel: 0 1px 2px oklch(0.2 0.02 160 / 0.04), 0 6px 20px -14px oklch(0.2 0.02 160 / 0.14);
   --shadow-dialog: 0 12px 32px oklch(0 0 0 / 0.12);
   --font-sans: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-display: "Sora", "Manrope", "Segoe UI", sans-serif;
@@ -152,7 +152,10 @@
 
 @layer base {
   * { border-color: var(--border); }
-  body { background: var(--background); min-height: 100vh; color: var(--foreground); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; letter-spacing: 0; }
+  body { background: var(--background); min-height: 100vh; color: var(--foreground); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; letter-spacing: -0.003em; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, .font-display { letter-spacing: -0.02em; }
+  .tabular-nums, td, th { font-variant-numeric: tabular-nums; }
+  html { overflow-x: hidden; }
   button, input, textarea, select { font: inherit; }
   button, a, input, textarea, select { transition-duration: 150ms; }
   input, textarea, select { accent-color: var(--primary); }
@@ -169,22 +172,24 @@
 /* Shared UI vocabulary: 4px spacing grid, 6px controls, 8px framed items. */
 @layer components {
   .ds-glass-nav { background: var(--nav-glass); backdrop-filter: blur(24px) saturate(140%); border: 1px solid var(--nav-glass-edge); box-shadow: var(--shadow-nav); }
-  .ds-glass-icon { background: var(--nav-icon-glass); color: var(--nav-icon-ink); border: 1px solid var(--nav-icon-edge); border-radius: 12px; backdrop-filter: blur(4px); box-shadow: var(--shadow-nav-icon); }
+  .ds-glass-icon { background: var(--nav-icon-glass); color: var(--nav-icon-ink); border: 1px solid var(--nav-icon-edge); border-radius: 8px; box-shadow: var(--shadow-nav-icon); }
   .ds-glass-icon:hover { background: var(--nav-icon-hover); color: var(--sidebar-accent-foreground); }
   .ds-glass-icon[aria-current="page"], .ds-glass-icon[aria-current="page"]:hover { background: var(--nav-selected); color: var(--nav-selected-ink); border-color: var(--nav-selected); box-shadow: var(--shadow-nav-selected); }
-  .ds-section { padding: calc(var(--space-unit) * 5); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--card); box-shadow: var(--shadow-glass); }
-  .ds-section-title { margin-bottom: calc(var(--space-unit) * 1); font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--foreground); }
+  .ds-section { padding: calc(var(--space-unit) * 6); border: 1px solid var(--border); border-radius: calc(var(--radius) + 2px); background: var(--card); box-shadow: var(--shadow-glass); }
+  .ds-section-title { margin-bottom: calc(var(--space-unit) * 1); font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--foreground); }
   .ds-section-title + * { margin-top: calc(var(--space-unit) * 4); }
-  .ds-panel { border-radius: calc(var(--radius) + 8px); background: var(--muted); padding: calc(var(--space-unit) * 4); }
+  .ds-panel { border-radius: calc(var(--radius) + 2px); background: var(--muted); padding: calc(var(--space-unit) * 4); }
   .ds-input { width: 100%; min-height: 40px; border-radius: var(--radius); border: 1px solid var(--input); background: var(--card); padding: 8px 12px; font-size: 14px; color: var(--foreground); outline: none; }
   .ds-input:focus { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 15%, transparent); }
   .ds-input::placeholder { color: var(--muted-foreground); }
   .ds-tab { height: 42px; border-radius: var(--radius); color: var(--info); background: transparent; border-bottom: 2px solid transparent; }
-  .ds-tab:hover { background: var(--accent); color: var(--info); }
-  .ds-tab[aria-current="page"], .ds-tab[aria-current="page"]:hover { color: var(--primary); border-bottom-color: var(--primary); background: color-mix(in oklab, var(--primary) 5%, var(--card)); }
+  .ds-tab:hover { background: var(--muted); color: var(--foreground); }
+  .ds-tab[aria-current="page"], .ds-tab[aria-current="page"]:hover { color: var(--foreground); font-weight: 600; border-bottom-color: var(--primary); background: color-mix(in oklab, var(--primary) 12%, var(--card)); }
   .ds-badge { border-radius: var(--radius); font-size: 12px; font-weight: 600; padding: 4px 8px; border: 1px solid var(--border); }
   .ds-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-  .ds-table th { background: var(--muted); color: var(--muted-foreground); text-align: left; font-size: 12px; font-weight: 600; }
+  .ds-table th { background: var(--muted); color: var(--muted-foreground); text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .ds-table tbody tr { transition: background-color 120ms; }
+  .ds-table tbody tr:hover { background: color-mix(in oklab, var(--muted) 60%, transparent); }
   .ds-table th, .ds-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
   .ds-dialog { box-shadow: var(--shadow-dialog); }
 }
