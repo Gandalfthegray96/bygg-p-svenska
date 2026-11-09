@@ -29,7 +29,7 @@ const STATUS_CLS: Record<Status, string> = {
 function Stat({ label, value, sub, icon, active, onClick }: { label: string; value: string; sub: string; icon: ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick} aria-pressed={active}
-      className={`flex min-w-0 flex-col gap-1 rounded-xl border p-3 text-left transition-colors sm:p-4 ${active ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-muted"}`}>
+      className={`flex min-w-0 flex-col gap-1 rounded-lg border p-4 text-left shadow-[var(--shadow-panel)] transition-colors sm:p-5 ${active ? "border-primary bg-primary/10" : "border-border bg-card hover:border-ring/40"}`}>
       <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">{icon}<span className="truncate">{label}</span></span>
       <span className="truncate font-display text-2xl font-bold tabular-nums text-foreground sm:text-3xl">{value}</span>
       <span className="truncate text-xs text-muted-foreground">{sub}</span>
@@ -101,7 +101,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
       )}
       {view === "oversikt" && <>
       <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex min-w-0 flex-col gap-1 rounded-2xl bg-sidebar p-4 text-sidebar-foreground shadow-md">
+        <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-sidebar p-5 text-sidebar-accent-foreground shadow-[var(--shadow-panel)]">
           <span className="text-xs font-semibold opacity-80">Årligt avtalsvärde (aktiva)</span>
           <span className="truncate font-display text-3xl font-bold tabular-nums">{fmtKr(Math.round(kpi.arr))}</span>
           <span className="text-xs opacity-80">{act.length} aktiva avtal · {fmtKr(Math.round(kpi.arr * 5))} på 5 år</span>
