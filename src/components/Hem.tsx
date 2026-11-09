@@ -109,7 +109,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         <div className="ds-overview-metrics">
           <div className="ds-overview-metric"><span className="ds-overview-metric-label"><Coins size={16} />Täckningsbidrag / år</span><span className="ds-overview-metric-value text-success">{fmtKr(Math.round(kpi.tb))}</span><span className="text-xs text-muted-foreground">Täckningsgrad {pct(tg)}</span></div>
           <div className="ds-overview-metric"><span className="ds-overview-metric-label"><Wrench size={16} />Årlig servicevolym</span><span className="ds-overview-metric-value">{new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(kpi.h)} h</span><span className="text-xs text-muted-foreground">{kpi.trips} framkörningar</span></div>
-          <div className="ds-overview-metric ds-overview-objects"><span className="ds-overview-metric-label"><Building2 size={16} />Objekt i aktiva avtal</span><span className="ds-overview-metric-value">{kpi.obj} st</span><span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0)))} / avtal</span></div>
+          <div className="ds-overview-metric ds-overview-objects"><span className="ds-overview-metric-label"><Building2 size={16} />Objekt i aktiva avtal</span><span className="ds-overview-metric-value">{kpi.obj} st</span><span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0))} / avtal</span></div>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
