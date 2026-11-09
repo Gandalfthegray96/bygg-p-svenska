@@ -1,5 +1,15 @@
 [
   {
+    "datum": "2026-11-09-oversikt",
+    "rubrik": "Översikt och påminnelser",
+    "punkter": [
+      "Ny graf över avtalsstockens årsvärde och rutan \"Behöver uppmärksamhet\" på Översikt.",
+      "Avtalsöversikten visar säljarens initialer och täckningsbidrag per avtal.",
+      "Admin kan ändra självkostnad och standardprocent för index under Inställningar.",
+      "Varje vardagsmorgon kl. 07 får säljare och admin en notis om avtal som väntat på svar i över 14 dagar."
+    ]
+  },
+  {
     "datum": "2026-11-09-bilagor",
     "rubrik": "PDF-bilagor för admin",
     "punkter": [
