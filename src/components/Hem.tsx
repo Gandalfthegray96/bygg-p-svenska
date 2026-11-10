@@ -136,7 +136,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
               ))}
             </div>
           </div>
-          <div className="h-56">
+          <div className="h-56 lg:h-72 2xl:h-96">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={graf} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <defs><linearGradient id="arrFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-sidebar)" stopOpacity={0.45} /><stop offset="100%" stopColor="var(--color-sidebar)" stopOpacity={0.02} /></linearGradient></defs>
@@ -151,9 +151,9 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         <section className="ds-panel min-w-0">
           <h3 className="mb-3 font-display text-base font-semibold text-foreground">Avtalsstatus</h3>
           <div className="flex items-center gap-4">
-            <div className="relative h-36 w-36 shrink-0">
+            <div className="relative h-36 w-36 shrink-0 2xl:h-52 2xl:w-52">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart><Pie data={donut.filter((d) => d.n > 0).length ? donut.filter((d) => d.n > 0) : [{ key: "tom", label: "", n: 1, fill: "var(--color-muted)" }]} dataKey="n" innerRadius={48} outerRadius={66} paddingAngle={2} stroke="none">
+                <PieChart><Pie data={donut.filter((d) => d.n > 0).length ? donut.filter((d) => d.n > 0) : [{ key: "tom", label: "", n: 1, fill: "var(--color-muted)" }]} dataKey="n" innerRadius="70%" outerRadius="95%" paddingAngle={2} stroke="none">
                   {(donut.filter((d) => d.n > 0).length ? donut.filter((d) => d.n > 0) : [{ key: "tom", fill: "var(--color-muted)" }]).map((d) => <Cell key={d.key} fill={d.fill} />)}
                 </Pie></PieChart>
               </ResponsiveContainer>
@@ -173,7 +173,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
       <section className="ds-panel min-w-0">
         <h3 className="mb-2 flex items-center gap-2 font-display text-base font-semibold text-foreground">Att göra{todo > 0 && <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">{todo}</span>}</h3>
         {todo === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
-        <ul className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2">
+        <ul className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2 2xl:max-h-96 2xl:grid-cols-3">
           {forsenade.map((r) => (
             <li key={"f" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
               <Clock size={15} className="shrink-0 text-destructive" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Uppföljning · {r.days} dagar utan svar</span></span>
