@@ -380,7 +380,7 @@ function App() {
         {/* Innehåll */}
         <div className="flex min-w-0 flex-1 flex-col bg-background">
           <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-xl">
-            <div className="w-full mx-auto max-w-7xl px-4 py-3 sm:px-8 sm:py-6">
+            <div className="w-full mx-auto max-w-7xl 2xl:max-w-[1760px] px-4 py-3 sm:px-8 sm:py-6">
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 sm:gap-y-4">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 text-xs text-muted-foreground"><img src="/icon-512.png" alt="" className="h-6 w-6 object-contain sm:hidden" /><span>UK Portservice{inAvtal ? <> · Avtal{c.avtalNr ? ` / ${c.avtalNr}` : ""}{currentVersion ? ` · v${currentVersion}` : ""}</> : " · Avtal"}</span></p>
@@ -426,7 +426,7 @@ function App() {
             </nav>
           </header>
 
-          <main className={`mx-auto w-full max-w-7xl flex-1 space-y-5 px-4 py-5 ${inAvtal ? "pb-24" : "pb-8"} sm:px-8 sm:py-8 sm:pb-10`}>
+          <main className={`mx-auto w-full max-w-7xl 2xl:max-w-[1760px] flex-1 space-y-5 px-4 py-5 ${inAvtal ? "pb-24" : "pb-8"} sm:px-8 sm:py-8 sm:pb-10`}>
             {(tab === "hem" || tab === "lista") && (
               <Hem key={tab + listFilter} view={tab === "hem" ? "oversikt" : "lista"} initialFilter={tab === "lista" ? listFilter : "alla"} onGoList={(f) => { setListFilter(f); setTab("lista"); }} store={store} me={me} onNew={() => setConfirmNew(true)} onChanged={() => setStore(loadStore())}
                 onOpen={(id, name, v) => { setA(normalizeAvtal(v.data)); setCurrentId(id); setCurrentVersion(v.version); setTab("kund"); setToast(`Öppnade ${name} v${v.version}`); }} />

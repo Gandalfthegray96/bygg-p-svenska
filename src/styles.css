@@ -289,3 +289,9 @@
 .objekt-open { animation: objekt-open-card 0.25s ease-out; }
 .objekt-body { overflow: hidden; animation: objekt-open-body 0.3s cubic-bezier(0.2, 0.7, 0.2, 1); }
 @keyframes objekt-open-body { from { max-height: 0; opacity: 0; } to { max-height: 60rem; opacity: 1; } }
+@media (min-width: 1536px) {
+  .ds-overview-value { padding: 32px; }
+  .ds-overview-amount { font-size: 54px; }
+  .ds-overview-metric-value { font-size: 32px; }
+  .ds-overview-metric-label { font-size: 13px; }
+}
