@@ -199,7 +199,7 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
       <button type="button" aria-label={`Chatt${totalUnread ? `, ${totalUnread} olästa` : ""}`}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
         style={fabStyle}
-        className={`fixed z-40 flex h-14 w-14 touch-none select-none items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground shadow-lg ring-4 ring-background transition-shadow hover:shadow-xl ${pos ? "" : "bottom-20 right-4 sm:bottom-6 sm:right-6"}`}>
+        className={`fixed z-40 flex h-11 w-11 touch-none select-none items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground opacity-80 shadow-md ring-2 hover:opacity-100 ring-background transition-shadow hover:shadow-xl ${pos ? "" : "bottom-20 right-4 sm:bottom-6 sm:right-6"}`}>
         {meUser ? initials(meUser.name, meUser.email) : <MessageCircle size={22} />}
         {totalUnread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground ring-2 ring-background">

@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowUpDown, ArrowUpRight, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound, Wrench, Building2 } from "lucide-react";
+import { ArrowUpDown, ArrowUpRight, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound, Wrench, Building2, Handshake, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
@@ -133,17 +133,18 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
           <div className="ds-overview-metric ds-overview-objects"><span className="ds-overview-metric-label"><Building2 size={16} />Objekt i aktiva avtal</span><span className="ds-overview-metric-value">{kpi.obj} st</span><span className="text-xs text-muted-foreground">Snitt {fmtKr(Math.round(act.length ? kpi.arr / act.length : 0))} / avtal</span></div>
         </div>
       </div>
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="min-w-0 space-y-3">
         <section className="ds-panel min-w-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <div><h3 className="font-display text-base font-semibold text-foreground">Avtalsutveckling</h3><p className="text-xs text-muted-foreground">Aktiva avtal, senaste 12 månaderna{trend !== null && <span className={trend >= 0 ? " text-success" : " text-destructive"}> · {trend >= 0 ? "+" : ""}{pct(trend)} på 12 mån</span>}</p></div>
-            <div className="flex rounded-lg border border-border p-0.5" role="tablist">
+            <div><h3 className="font-display text-base font-semibold text-foreground">Avtalsutveckling</h3><p className="text-xs text-muted-foreground">Aktiva avtal, {period === 0 ? "hela perioden" : `senaste ${period} månaderna`}{trend !== null && <span className={trend >= 0 ? " text-success" : " text-destructive"}> · {trend >= 0 ? "+" : ""}{pct(trend)} under perioden</span>}</p></div>
+            <div className="flex flex-wrap gap-2"><div className="flex rounded-lg border border-border p-0.5" aria-label="Tidsperiod">{([6, 12, 24, 0] as const).map((p) => <Button key={p} size="sm" variant={period === p ? "secondary" : "ghost"} className="h-7 px-2.5 text-xs" onClick={() => setPeriod(p)} aria-pressed={period === p}>{p === 0 ? "Allt" : p + " mån"}</Button>)}</div><div className="flex rounded-lg border border-border p-0.5" role="tablist">
               {(["v", "tb", "h"] as const).map((k) => (
                 <Button key={k} size="sm" variant={metric === k ? "default" : "ghost"} className="h-7 px-2.5 text-xs" onClick={() => setMetric(k)} aria-pressed={metric === k}>{METRIC[k]}</Button>
               ))}
-            </div>
+            </div></div>
           </div>
-          <div className="h-56 lg:h-72 2xl:h-96">
+          <div className="h-56 lg:h-80 2xl:h-[26rem]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={graf} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                 <defs><linearGradient id="arrFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--color-sidebar)" stopOpacity={0.45} /><stop offset="100%" stopColor="var(--color-sidebar)" stopOpacity={0.02} /></linearGradient></defs>
@@ -155,10 +156,12 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
             </ResponsiveContainer>
           </div>
         </section>
+        </div>
+        <div className="min-w-0 space-y-3">
         <section className="ds-panel min-w-0">
           <h3 className="mb-3 font-display text-base font-semibold text-foreground">Avtalsstatus</h3>
           <div className="flex items-center gap-4">
-            <div className="relative h-36 w-36 shrink-0 2xl:h-52 2xl:w-52">
+            <div className="relative h-36 w-36 shrink-0 2xl:h-44 2xl:w-44">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart><Pie data={donut.filter((d) => d.n > 0).length ? donut.filter((d) => d.n > 0) : [{ key: "tom", label: "", n: 1, fill: "var(--color-muted)" }]} dataKey="n" innerRadius="70%" outerRadius="95%" paddingAngle={2} stroke="none">
                   {(donut.filter((d) => d.n > 0).length ? donut.filter((d) => d.n > 0) : [{ key: "tom", fill: "var(--color-muted)" }]).map((d) => <Cell key={d.key} fill={d.fill} />)}
@@ -175,29 +178,44 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
             </ul>
           </div>
         </section>
+      <section className="ds-panel min-w-0">
+          <h3 className="mb-2 flex items-center gap-2 font-display text-base font-semibold text-foreground">Att göra{todo > 0 && <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">{todo}</span>}</h3>
+          {todo === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
+          <ul className="grid max-h-80 gap-0.5 overflow-y-auto lg:max-h-none lg:overflow-visible">
+            {forsenade.map((r) => (
+              <li key={"f" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+                <Clock size={15} className="shrink-0 text-destructive" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Uppföljning · {r.days} dagar utan svar</span></span>
+              </button></li>
+            ))}
+            {snart.map((r) => (
+              <li key={"s" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+                <Clock size={15} className="shrink-0 text-primary" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Följ upp snart · skickat för {r.days} dagar sedan</span></span>
+              </button></li>
+            ))}
+            {forhandling.map((r) => (
+              <li key={"h" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+                <Handshake size={15} className="shrink-0 text-info" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Förhandling pågår · {r.days} dagar sedan senaste aktivitet</span></span>
+              </button></li>
+            ))}
+            {offerter.map((r) => (
+              <li key={"o" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+                <FilePen size={15} className="shrink-0 text-foreground" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{r.status === "offert" ? "Offert att skapa" : "Utkast att slutföra"}</span></span>
+              </button></li>
+            ))}
+            {fornyelse.map(({ r, slut }) => (
+              <li key={"r" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+                <RefreshCw size={15} className="shrink-0 text-info" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{slut.getTime() < Date.now() ? "Förnyelse · 5 år passerat" : "Förnyelse · " + slut.toLocaleDateString("sv-SE")}</span></span>
+              </button></li>
+            ))}
+            {utanNr.map((r) => (
+              <li key={"n" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
+                <Hash size={15} className="shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Signerat avtal saknar avtalsnummer</span></span>
+              </button></li>
+            ))}
+          </ul>
+        </section>
+        </div>
       </div>
-
-      <section className="ds-panel min-w-0 max-w-xl">
-        <h3 className="mb-2 flex items-center gap-2 font-display text-base font-semibold text-foreground">Att göra{todo > 0 && <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">{todo}</span>}</h3>
-        {todo === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
-        <ul className="grid max-h-72 gap-1 overflow-y-auto max-w-4xl">
-          {forsenade.map((r) => (
-            <li key={"f" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
-              <Clock size={15} className="shrink-0 text-destructive" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Uppföljning · {r.days} dagar utan svar</span></span>
-            </button></li>
-          ))}
-          {offerter.map((r) => (
-            <li key={"o" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
-              <FilePen size={15} className="shrink-0 text-foreground" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{r.status === "offert" ? "Offert att skapa" : "Utkast att slutföra"}</span></span>
-            </button></li>
-          ))}
-          {fornyelse.map(({ r, slut }) => (
-            <li key={"r" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
-              <RefreshCw size={15} className="shrink-0 text-info" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{slut.getTime() < Date.now() ? "Förnyelse · 5 år passerat" : "Förnyelse · " + slut.toLocaleDateString("sv-SE")}</span></span>
-            </button></li>
-          ))}
-        </ul>
-      </section>
 
       </>}
       {view === "lista" && <>
