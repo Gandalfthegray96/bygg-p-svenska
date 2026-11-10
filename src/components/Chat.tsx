@@ -5,8 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { pushKey } from "@/lib/cloud-sync";
 import type { CustomerFolder } from "@/lib/avtal-store";
 import { Button } from "@/components/ui/button";
-import { AiPanel } from "@/components/AiPanel";
-import { registerContext } from "@/lib/ai-context";
 import { ArrowLeft, Bot, FileText, MessageCircle, Send, Smile, Users, X } from "lucide-react";
 
 type Msg = { id: string; sender_id: string; recipient_id: string | null; body: string; avtal_id: string | null; avtal_label: string | null; created_at: string };
@@ -194,7 +192,7 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
   const meUser = userById[me];
   const fabStyle = pos ? { left: pos.x, top: pos.y } : undefined;
   const avtalList = Object.values(store).filter((f) => !f.uppsagd).sort((a, b) => a.name.localeCompare(b.name, "sv"));
-  const convTitle = conv === "ai" ? "UK-assistenten (AI)" : conv === "team" ? "Teamchatt" : conv ? (userById[conv]?.name || userById[conv]?.email || "Privat") : "Chatt";
+  const convTitle = conv === "team" ? "Teamchatt" : conv ? (userById[conv]?.name || userById[conv]?.email || "Privat") : "Chatt";
 
   return (
     <>
@@ -220,7 +218,6 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
 
           {!conv ? (
             <div className="flex-1 overflow-y-auto p-2">
-              <ConvRow label="UK-assistenten (AI)" sub="Fråga om avtal, priser och kalkyler" ai onClick={() => setConv("ai")} />
               <ConvRow label="Teamchatt" sub="Alla i teamet" unread={unreadBy["team"]} onClick={() => setConv("team")} />
               <p className="px-2 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Privat</p>
               {users.filter((u) => u.id !== me).map((u) => (
@@ -229,12 +226,6 @@ export function Chat({ store, onOpenAvtal }: { store: Record<string, CustomerFol
               {users.length <= 1 && <p className="px-2 text-sm text-muted-foreground">Inga andra användare ännu.</p>}
               <p className="px-2 pt-4 text-[11px] text-muted-foreground">Endast text, emojis och länkar. Meddelanden äldre än 12 månader raderas automatiskt.</p>
             </div>
-          ) : conv === "ai" ? (
-            <AiPanel className="flex-1 bg-muted/40" getContext={() => registerContext(store)} quick={[
-              { label: "Väntar på svar", prompt: "Vilka avtal har status skickat och hur länge har de väntat?" },
-              { label: "Lägst TB", prompt: "Vilka aktiva avtal har lägst täckningsgrad?" },
-              { label: "Sammanfatta registret", prompt: "Ge en kort sammanfattning av avtalsregistret: antal, värde och status." },
-            ]} />
           ) : (
             <>
               <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto bg-muted/40 p-3">
