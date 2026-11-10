@@ -170,7 +170,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         </section>
       </div>
 
-      <section className="ds-panel min-w-0 max-w-4xl">
+      <section className="ds-panel min-w-0 max-w-xl">
         <h3 className="mb-2 flex items-center gap-2 font-display text-base font-semibold text-foreground">Att göra{todo > 0 && <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">{todo}</span>}</h3>
         {todo === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
         <ul className="grid max-h-72 gap-1 overflow-y-auto max-w-4xl">
