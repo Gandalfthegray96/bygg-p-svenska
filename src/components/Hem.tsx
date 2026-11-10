@@ -49,6 +49,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
   const [upp, setUpp] = useState<string | null>(null);
   const [visaUpp, setVisaUpp] = useState(false);
   const [metric, setMetric] = useState<"v" | "tb" | "h">("v");
+  const [period, setPeriod] = useState<number>(12);
   const nUpp = Object.values(store).filter((f) => f.uppsagd && f.versions.length).length;
 
   const rows = useMemo<Row[]>(() =>
@@ -81,20 +82,26 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
   const fornyelse = act.map((r) => ({ r, slut: new Date(new Date(r.signedAt).getTime() + 5 * 365 * DAY) }))
     .filter((x) => x.slut.getTime() - Date.now() < 180 * DAY).sort((a, b) => +a.slut - +b.slut);
   const forsenade = rows.filter((r) => r.stale).sort((a, b) => b.days - a.days);
+  const first = act.reduce((m, r) => (r.signedAt < m ? r.signedAt : m), new Date().toISOString());
+  const allMonths = (() => { const d = new Date(first), n = new Date(); return Math.max(6, (n.getFullYear() - d.getFullYear()) * 12 + n.getMonth() - d.getMonth() + 1); })();
+  const nMonths = period === 0 ? Math.min(allMonths, 120) : period;
   const graf = (() => {
     const now = new Date(); const out: { m: string; v: number; tb: number; h: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
+    for (let i = nMonths - 1; i >= 0; i--) {
       const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1).toISOString();
       const l = act.filter((r) => r.signedAt < end);
       const add = (f: (x: Row["lon"]) => number) => l.reduce((t, r) => t + f(r.lon), 0);
-      out.push({ m: new Date(now.getFullYear(), now.getMonth() - i, 1).toLocaleDateString("sv-SE", { month: "short" }), v: Math.round(add((x) => x.intakt)), tb: Math.round(add((x) => x.tb)), h: Math.round(add((x) => x.hours) * 10) / 10 });
+      out.push({ m: new Date(now.getFullYear(), now.getMonth() - i, 1).toLocaleDateString("sv-SE", { month: "short", ...(nMonths > 12 ? { year: "2-digit" } : {}) }), v: Math.round(add((x) => x.intakt)), tb: Math.round(add((x) => x.tb)), h: Math.round(add((x) => x.hours) * 10) / 10 });
     }
     return out;
   })();
   const g0 = graf[0]?.[metric] ?? 0, g1 = graf.at(-1)?.[metric] ?? 0;
   const trend = g0 > 0 ? ((g1 - g0) / g0) * 100 : null;
   const offerter = rows.filter((r) => r.status === "offert" || r.status === "utkast").sort((a, b) => b.v.savedAt.localeCompare(a.v.savedAt));
-  const todo = forsenade.length + offerter.length + fornyelse.length;
+  const snart = rows.filter((r) => r.status === "skickat" && !r.stale && r.days >= 7 && canSee(r.ansvarig, me)).sort((a, b) => b.days - a.days);
+  const forhandling = rows.filter((r) => r.status === "forhandling").sort((a, b) => b.days - a.days);
+  const utanNr = act.filter((r) => !r.avtalNr.trim());
+  const todo = forsenade.length + snart.length + forhandling.length + offerter.length + fornyelse.length + utanNr.length;
   const cnt = (f: (r: Row) => boolean) => rows.filter(f).length;
   const donut: { key: Filter; label: string; n: number; fill: string }[] = [
     { key: "signerat", label: "Aktiva", n: cnt((r) => r.status === "signerat"), fill: "var(--color-sidebar)" },
