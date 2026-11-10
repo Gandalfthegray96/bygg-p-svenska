@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AiPanel } from "@/components/AiPanel";
+import { avtalContext } from "@/lib/ai-context";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
