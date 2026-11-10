@@ -627,6 +627,13 @@ function App() {
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">Visas i avtalets prislista (Bilaga 2) för löpande arbeten och material.</p>
                 </Card>
+                <Card title="AI-kalkylassistent">
+                  <AiPanel className="h-[420px] rounded-lg border border-border" placeholder="Fråga om kalkylen…" getContext={() => avtalContext(a)} quick={[
+                    { label: "Lönsamhetskoll", prompt: "Granska kalkylen: är täckningsbidraget rimligt, och finns det något som ser fel ut (tider, besök, rabatt, framkörning)? Ge konkreta förslag." },
+                    { label: "Kundmejl / följebrev", prompt: "Skriv ett kort, säljande följebrev till kunden som sammanfattar vad underhållsavtalet omfattar och priset per år. Nämn inga interna noteringar, självkostnader eller täckningsbidrag." },
+                    { label: "Tidsåtgång", prompt: "Är servicetiderna per objekt rimliga för de här port-/grindtyperna? Föreslå justeringar med motivering." },
+                  ]} />
+                </Card>
                 <Card title="Egen PDF för detta avtal">
                   <AvtalVillkor a={a} setA={setA} />
                 </Card>
