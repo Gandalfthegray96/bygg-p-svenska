@@ -57,7 +57,7 @@ function PdfPreview({ a }: { a: Avtal }) {
   if (err) return <p className="text-sm text-destructive">Kunde inte visa avtalet.</p>;
   if (!pages.length) return <p className="text-sm text-muted-foreground">Skapar avtalet …</p>;
   return (
-    <div className="space-y-3">
+    <div className="mx-auto max-w-2xl space-y-3">
       {pages.map((src, i) => (
         <img key={i} src={src} alt={`Avtal sida ${i + 1}`} className="w-full rounded-md border border-border shadow-sm" />
       ))}

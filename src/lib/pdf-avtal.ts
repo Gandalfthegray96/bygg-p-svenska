@@ -189,7 +189,8 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
     if (sidaAndrad(a.klausuler, 2)) await skrivKlausuler(fu, 1, 2, a);
   }
   // Prislistan: ersätt rabattraden (originalet säger 10 %/10 %) med avtalets egna procentsatser.
-  if (!a.attachments?.price && (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10)) {
+  // Gäller även uppladdade prislistor med samma layout som originalet.
+  if (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10) {
     const pp = pris.getPage(0);
     const pb = await pris.embedFont(StandardFonts.HelveticaBold);
     pp.drawRectangle({ x: 74, y: 435, width: 450, height: 15, color: rgb(1, 1, 1) });
