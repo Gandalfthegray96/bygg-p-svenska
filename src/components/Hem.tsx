@@ -173,7 +173,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
       <section className="ds-panel min-w-0">
         <h3 className="mb-2 flex items-center gap-2 font-display text-base font-semibold text-foreground">Att göra{todo > 0 && <span className="rounded-full bg-destructive px-2 py-0.5 text-[11px] font-semibold text-destructive-foreground">{todo}</span>}</h3>
         {todo === 0 && <p className="text-sm text-muted-foreground">Inget som behöver göras just nu.</p>}
-        <ul className="grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2 2xl:max-h-96 2xl:grid-cols-3">
+        <ul className="grid max-h-72 gap-1 overflow-y-auto max-w-4xl sm:grid-cols-2">
           {forsenade.map((r) => (
             <li key={"f" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
               <Clock size={15} className="shrink-0 text-destructive" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">Uppföljning · {r.days} dagar utan svar</span></span>
