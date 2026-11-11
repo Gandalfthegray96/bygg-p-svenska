@@ -133,7 +133,7 @@ function PlanRow({ r, onSave }: { r: Row; onSave: (p: Plan) => void }) {
             {Array.from({ length: 52 }, (_, k) => k + 1).map((w) => <option key={w} value={w}>Besök {i + 1}: v{w} (Q{kvartal(w)})</option>)}
           </select>
         ))}
-        {!!p.filial && p.besok.every((b) => !!b.vecka) && <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-foreground"><Check size={14} />Planerad</span>}
+        {!!p.filial && p.besok.every((b) => !!b.vecka) && <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground"><Check size={14} />Planerad</span>}
         {p.besok.some((b) => !b.vecka) && p.besok.length > 0 && (
           <Button size="sm" variant="outline" onClick={() => { const first = p.besok[0]?.vecka ?? 4; const f = foreslaVeckor(p.besok.length, first); onSave({ ...p, besok: p.besok.map((b, i) => ({ ...b, vecka: b.vecka ?? f[i] ?? null })) }); }}>Föreslå veckor</Button>
         )}
