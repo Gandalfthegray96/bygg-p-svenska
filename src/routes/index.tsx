@@ -5,7 +5,7 @@ import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, f
 import { Tidslinje } from "@/components/Aktivitet";
 import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, ScrollText, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, CalendarRange, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, ScrollText, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loadKontakt } from "@/lib/kontakt";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -17,6 +17,7 @@ import { Hem, type Filter as HemFilter } from "@/components/Hem";
 import { FOLLOW_UP_DAYS, staleFor } from "@/lib/uppfoljning";
 import { Pipeline } from "@/components/Pipeline";
 import { Kalender } from "@/components/Kalender";
+import { Planering } from "@/components/Planering";
 import { Anvandare } from "@/components/Anvandare";
 import { Express } from "@/components/Express";
 import { Indexering } from "@/components/Indexering";
@@ -84,7 +85,7 @@ export const Route = createFileRoute("/")({
   component: App,
 });
 
-type Tab = "hem" | "lista" | "pipeline" | "express" | "kalender" | "kund" | "forsatt" | "objekt" | "pris" | "villkor" | "avtal" | "sparade" | "anvandare";
+type Tab = "hem" | "lista" | "pipeline" | "express" | "kalender" | "planering" | "kund" | "forsatt" | "objekt" | "pris" | "villkor" | "avtal" | "sparade" | "anvandare";
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "hem", label: "Översikt", icon: House },
   { id: "lista", label: "Avtalsöversikt", icon: FolderOpen },
@@ -98,6 +99,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "express", label: "Express", icon: Zap },
   { id: "sparade", label: "Sparade", icon: Archive },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
+  { id: "planering", label: "Planering", icon: CalendarRange },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
 
@@ -109,6 +111,7 @@ const MAIN: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "lista", label: "Avtal", icon: FolderOpen },
   { id: "kund", label: "Nytt avtal", icon: FilePlus2 },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
+  { id: "planering", label: "Planering", icon: CalendarRange },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
 const isMainActive = (main: Tab, tab: Tab) => (main === "kund" ? AVTAL_SUB.includes(tab) : main === tab);
@@ -210,7 +213,7 @@ function App() {
   const [tab, setTab] = useState<Tab>("hem");
   const [listFilter, setListFilter] = useState<HemFilter>("alla");
   const inAvtal = AVTAL_SUB.includes(tab);
-  const PAGE: Partial<Record<Tab, [string, string]>> = { hem: ["Översikt", "Nyckeltal och sammanställning"], lista: ["Avtalsöversikt", "Alla pågående, skickade och signerade avtal"], pipeline: ["Säljpipeline", "Förfrågningar och offerter"], express: ["Express", "Snabbkalkyl"], kalender: ["Kalender", "Planering"], sparade: ["Sparade avtal", "Versioner"], anvandare: ["Användare", "Konton och aktivitet"] };
+  const PAGE: Partial<Record<Tab, [string, string]>> = { hem: ["Översikt", "Nyckeltal och sammanställning"], lista: ["Avtalsöversikt", "Alla pågående, skickade och signerade avtal"], pipeline: ["Säljpipeline", "Förfrågningar och offerter"], express: ["Express", "Snabbkalkyl"], kalender: ["Kalender", "Planering"], planering: ["Planering", "Signerade avtal per filial, kvartal och vecka"], sparade: ["Sparade avtal", "Versioner"], anvandare: ["Användare", "Konton och aktivitet"] };
   const fetchRole = getMyRole;
   const [isAdmin, setIsAdmin] = useState(false);
   const [settings, setSettings] = useState(false);
@@ -455,6 +458,7 @@ function App() {
             )}
             <Installningar open={settings} onClose={() => setSettings(false)} isAdmin={isAdmin} onToast={setToast} onOpenUsers={() => setTab("anvandare")} onNameChange={(n) => setMe((m) => ({ ...m, name: n }))} store={store} onAttachmentsChanged={() => { void refreshShared().then(() => { const s = loadStore(); setStore(s); const v = currentId ? s[currentId]?.versions.at(-1) : undefined; if (v) { setA(normalizeAvtal(v.data)); setCurrentVersion(v.version); } }); }} />
             {tab === "anvandare" && isAdmin && <Anvandare onToast={setToast} isAdmin={isAdmin} />}
+            {tab === "planering" && <Planering store={store} onChanged={() => setStore(loadStore())} />}
             {tab === "kalender" && <Kalender defaultTitle={c.bestallare ? `Servicebesök ${c.bestallare}` : ""} defaultPlace={c.anlAdress} />}
 
             {tab === "kund" && (
