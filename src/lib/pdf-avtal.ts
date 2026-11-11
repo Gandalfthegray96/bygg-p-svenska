@@ -150,6 +150,21 @@ async function skrivKlausuler(doc: PDFDocument, idx: number, sida: 2 | 3, a: Avt
   return extra;
 }
 
+async function hittaRabattRad(bytes: Uint8Array): Promise<{ x: number; y: number; size: number } | null> {
+  try {
+    const pdfjs = await import("pdfjs-dist");
+    pdfjs.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+    const doc = await pdfjs.getDocument({ data: bytes }).promise;
+    const tc = await (await doc.getPage(1)).getTextContent();
+    for (const it of tc.items as { str?: string; transform?: number[] }[]) {
+      if (it.str?.includes("Avtalskunder erhåller") && it.transform) {
+        return { x: it.transform[4], y: it.transform[5], size: Math.abs(it.transform[3]) || 12 };
+      }
+    }
+  } catch { /* hittas inte – rör inte prislistan */ }
+  return null;
+}
+
 export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {}): Promise<Uint8Array> {
   const c = a.customer;
   const k = calculate(a);
@@ -191,10 +206,15 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
   // Prislistan: ersätt rabattraden (originalet säger 10 %/10 %) med avtalets egna procentsatser.
   // Gäller även uppladdade prislistor med samma layout som originalet.
   if (Number(a.rabattTim) !== 10 || Number(a.rabattMaterial) !== 10) {
-    const pp = pris.getPage(0);
-    const pb = await pris.embedFont(StandardFonts.HelveticaBold);
-    pp.drawRectangle({ x: 74, y: 435, width: 450, height: 15, color: rgb(1, 1, 1) });
-    pp.drawText(rabattText(a), { x: 76.6, y: 439.1, size: 12, font: pb, color: rgb(0, 0, 0) });
+    // Leta upp rabattraden där den faktiskt står (prislistor kan ha olika antal rader).
+    const pos = await hittaRabattRad(await pris.save());
+    if (pos) {
+      const pp = pris.getPage(0);
+      const pb = await pris.embedFont(StandardFonts.HelveticaBold);
+      const w = pp.getWidth();
+      pp.drawRectangle({ x: pos.x - 2, y: pos.y - 3, width: w - pos.x - 20, height: pos.size + 4, color: rgb(1, 1, 1) });
+      pp.drawText(rabattText(a), { x: pos.x, y: pos.y, size: pos.size, font: pb, color: rgb(0, 0, 0) });
+    }
   }
 
   const out = await PDFDocument.create();
