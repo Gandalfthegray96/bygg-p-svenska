@@ -21,3 +21,8 @@ export function foreslaVeckor(antal: number, start = 4): number[] {
   const steg = 52 / antal;
   return Array.from({ length: antal }, (_, i) => ((Math.round(start - 1 + i * steg) % 52) + 1));
 }
+
+/** Gissar filial från adressen: Borås-adresser till Borås, annars Göteborg. */
+export function gissaFilial(adress: string): "GBG" | "BORAS" {
+  return /bor[aå]s/i.test(adress) ? "BORAS" : "GBG";
+}

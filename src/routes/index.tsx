@@ -99,6 +99,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "express", label: "Express", icon: Zap },
   { id: "sparade", label: "Sparade", icon: Archive },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
+  { id: "planering", label: "Planering", icon: ClipboardList },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
 
@@ -110,6 +111,7 @@ const MAIN: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "lista", label: "Avtal", icon: FolderOpen },
   { id: "kund", label: "Nytt avtal", icon: FilePlus2 },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
+  { id: "planering", label: "Planering", icon: ClipboardList },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
 const isMainActive = (main: Tab, tab: Tab) => (main === "kund" ? AVTAL_SUB.includes(tab) : main === tab);
