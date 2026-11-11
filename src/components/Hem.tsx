@@ -12,11 +12,13 @@ import { FOLLOW_UP_DAYS, canSee, daysSinceActivity, isStale } from "@/lib/uppfol
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getSettings } from "@/lib/foretag-settings";
+import { FILIALER, filialFor } from "@/lib/planering";
 import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
-type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; signedAt: string; avtalNr: string; ansvarig: string; adress: string };
+type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; signedAt: string; avtalNr: string; ansvarig: string; adress: string; filial: "GBG" | "BORAS" };
 export type Filter = "alla" | Status | "forsenad";
-type Sort = "datum" | "varde" | "kund";
+const filLabel = (f: "GBG" | "BORAS") => FILIALER.find((x) => x.id === f)?.label ?? f;
+type Sort = "datum" | "varde" | "kund" | "filial";
 const METRIC = { v: "Värde", tb: "Täckningsbidrag", h: "Timmar" } as const;
 
 const STATUS_LABEL: Record<Status, string> = { offert: "Att skapa offert", utkast: "Utkast", skickat: "Väntar på svar", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
@@ -45,6 +47,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [sort, setSort] = useState<Sort>("datum");
   const [ansv, setAnsv] = useState("alla");
+  const [fil, setFil] = useState<"alla" | "GBG" | "BORAS">("alla");
   const [kund, setKund] = useState<string | null>(null);
   const [index, setIndex] = useState(false);
   const [imp, setImp] = useState(false);
@@ -58,7 +61,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
     Object.values(store).filter((f) => f.versions.length && !f.uppsagd).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
-      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a, getSettings()), signedAt: [...(f.log ?? [])].reverse().find((l) => l.kind === "signerat")?.at ?? v.savedAt, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "" };
+      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a, getSettings()), signedAt: [...(f.log ?? [])].reverse().find((l) => l.kind === "signerat")?.at ?? v.savedAt, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "", filial: filialFor(f.planering?.filial, a.customer.anlAdress ?? "") };
     }), [store, me]);
 
   const stat = (s: Status) => { const l = rows.filter((x) => x.status === s); return { n: l.length, sum: l.reduce((t, x) => t + x.perYear, 0) }; };
@@ -68,10 +71,10 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
 
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
-    const l = rows.filter((r) => (filter === "alla" || (filter === "forsenad" ? r.stale : r.status === filter)) && (ansv === "alla" || r.ansvarig.trim() === ansv) &&
-      (!s || [r.name, r.avtalNr, r.ansvarig, r.adress].some((x) => x.toLowerCase().includes(s))));
-    return l.sort((a, b) => sort === "varde" ? b.perYear - a.perYear : sort === "kund" ? a.name.localeCompare(b.name, "sv") : b.v.savedAt.localeCompare(a.v.savedAt));
-  }, [rows, q, filter, sort, ansv]);
+    const l = rows.filter((r) => (filter === "alla" || (filter === "forsenad" ? r.stale : r.status === filter)) && (ansv === "alla" || r.ansvarig.trim() === ansv) && (fil === "alla" || r.filial === fil) &&
+      (!s || [r.name, r.avtalNr, r.ansvarig, r.adress, filLabel(r.filial)].some((x) => x.toLowerCase().includes(s))));
+    return l.sort((a, b) => sort === "filial" ? filLabel(a.filial).localeCompare(filLabel(b.filial), "sv") || a.name.localeCompare(b.name, "sv") : sort === "varde" ? b.perYear - a.perYear : sort === "kund" ? a.name.localeCompare(b.name, "sv") : b.v.savedAt.localeCompare(a.v.savedAt));
+  }, [rows, q, filter, sort, ansv, fil]);
 
   const toggle = (f: Filter) => view === "oversikt" ? onGoList?.(f) : setFilter((cur) => (cur === f ? "alla" : f));
 
@@ -247,12 +250,16 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
           <button type="button" onClick={() => setVisaUpp((v) => !v)} aria-pressed={visaUpp}
             className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${visaUpp ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}>Uppsagda <span className="tabular-nums opacity-70">{nUpp}</span></button>
         </div>
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
           <label className="relative block min-w-0">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Sök kund, avtalsnr, ansvarig, adress" className="ds-input pl-9" aria-label="Sök avtal" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Sök kund, avtalsnr, ansvarig, adress, filial" className="ds-input pl-9" aria-label="Sök avtal" />
           </label>
           <div className="grid grid-cols-2 gap-2 sm:contents">
+            <select value={fil} onChange={(e) => setFil(e.target.value as typeof fil)} className="ds-input sm:w-36" aria-label="Filtrera filial">
+              <option value="alla">Alla filialer</option>
+              {FILIALER.map((f) => <option key={f.id} value={f.id}>{f.label} ({rows.filter((r) => r.filial === f.id).length})</option>)}
+            </select>
             <select value={ansv} onChange={(e) => setAnsv(e.target.value)} className="ds-input sm:w-40" aria-label="Filtrera ansvarig">
               <option value="alla">Alla säljare</option>
               {ansvariga.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -261,12 +268,13 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
               <option value="alla">Alla statusar</option>
               {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
             </select>
-            <label className="relative col-span-2 block sm:col-span-1">
+            <label className="relative block">
               <ArrowUpDown size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="ds-input pl-8 sm:w-40" aria-label="Sortera">
                 <option value="datum">Senast ändrad</option>
                 <option value="varde">Högst värde</option>
                 <option value="kund">Kund A–Ö</option>
+                <option value="filial">Filial</option>
               </select>
             </label>
           </div>
@@ -285,7 +293,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
                 <div className="min-w-0">
                   <p className="break-words text-[15px] font-semibold leading-tight text-foreground lg:truncate">{x.name}</p>
                   <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-                    <span className="font-medium tabular-nums text-foreground/70">{x.avtalNr || "Inget avtalsnr"}</span><span aria-hidden>·</span><span>v{x.v.version}</span><span aria-hidden>·</span><span className="tabular-nums">{new Date(x.v.savedAt).toLocaleDateString("sv-SE")}</span>
+                    <span className="font-medium tabular-nums text-foreground/70">{x.avtalNr || "Inget avtalsnr"}</span><span aria-hidden>·</span><span>v{x.v.version}</span><span aria-hidden>·</span><span className="tabular-nums">{new Date(x.v.savedAt).toLocaleDateString("sv-SE")}</span><span aria-hidden>·</span><span className="rounded border border-border px-1.5 text-[10px] font-medium text-foreground/70">{filLabel(x.filial)}</span>
                   </p>
                 </div>
                 <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium lg:hidden ${STATUS_CLS[x.status]}`}>{STATUS_LABEL[x.status]}</span>

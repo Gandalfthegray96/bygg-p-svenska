@@ -1,14 +1,14 @@
 import { useMemo, useRef, useState } from "react";
-import { Check, MapPin, TrendingUp } from "lucide-react";
+import { Check, MapPin, Search, TrendingUp, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { fmtPct, getSettings } from "@/lib/foretag-settings";
 import { Button } from "@/components/ui/button";
 import { type Avtal, calculate, fmtKr, indexera, lonsamhet, normalizeAvtal } from "@/lib/kalkyl";
 import { indexeraBatch, loadStore, setPlanering, type CustomerFolder, type Filial, type Planering as Plan } from "@/lib/avtal-store";
-import { FILIALER, KVARTAL_VECKOR, foreslaVeckor, gissaFilial, kvartal } from "@/lib/planering";
+import { FILIALER, KVARTAL_VECKOR, filialFor, foreslaVeckor, gissaFilial, kvartal } from "@/lib/planering";
 
 type Row = { f: CustomerFolder; kund: string; adress: string; avtalNr: string; a: Avtal; visits: { hours: number; trips: number; objekt: number; lista: string; pris: number }[]; plan: Plan };
-type Filter = "alla" | Filial | "ingen";
+type Filter = "alla" | Filial;
 
 function rows(store: Record<string, CustomerFolder>): Row[] {
   const out: Row[] = [];
@@ -19,7 +19,7 @@ function rows(store: Record<string, CustomerFolder>): Row[] {
     const c = calculate(a);
     const visits = c.visits.map((x) => ({ hours: x.hours, trips: x.trips, objekt: a.rows.filter((r) => r.visits >= x.k).reduce((s, r) => s + r.qty, 0), lista: objektLista(a, x.k), pris: x.perVisit }));
     const besok = visits.map((_, i) => f.planering?.besok[i] ?? { vecka: null });
-    out.push({ f, a, kund: a.customer.bestallare || f.name, adress: a.customer.anlAdress, avtalNr: a.customer.avtalNr, visits, plan: { filial: f.planering?.filial, besok } });
+    out.push({ f, a, kund: a.customer.bestallare || f.name, adress: a.customer.anlAdress, avtalNr: a.customer.avtalNr, visits, plan: { filial: filialFor(f.planering?.filial, a.customer.anlAdress), besok } });
   }
   return out.sort((x, y) => x.kund.localeCompare(y.kund, "sv"));
 }
@@ -37,11 +37,14 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
   const [vecka, setVecka] = useState<number | null>(null);
   const [popup, setPopup] = useState<string | null>(null);
   const all = useMemo(() => rows(store), [store]);
-  const shown = all.filter((r) => filter === "alla" || (filter === "ingen" ? !r.plan.filial : r.plan.filial === filter));
+  const [sok, setSok] = useState("");
+  const shown = all.filter((r) => filter === "alla" || r.plan.filial === filter);
+  const s0 = sok.trim().toLowerCase();
+  const traffar = s0 ? shown.filter((r) => [r.kund, r.adress, r.avtalNr].some((x) => (x ?? "").toLowerCase().includes(s0))).slice(0, 30) : [];
   // Läser alltid senast sparade planering så filial- och veckoval inte skriver över varandra.
   const save = (r: Row, update: (p: Plan) => Plan) => {
     const cur = loadStore()[r.f.id]?.planering;
-    const base: Plan = { filial: cur?.filial, besok: r.visits.map((_, i) => cur?.besok[i] ?? { vecka: null }) };
+    const base: Plan = { filial: cur?.filial ?? r.plan.filial, besok: r.visits.map((_, i) => cur?.besok[i] ?? { vecka: null }) };
     setPlanering(r.f.id, update(base));
     onChanged();
   };
@@ -64,10 +67,33 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
   return (
     <div className="min-w-0 space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        {([["alla", "Alla filialer"], ...FILIALER.map((f) => [f.id, f.label]), ["ingen", "Ingen filial"]] as [Filter, string][]).map(([id, label]) => (
+        {([["alla", "Alla filialer"], ...FILIALER.map((f) => [f.id, f.label])] as [Filter, string][]).map(([id, label]) => (
           <Button key={id} size="sm" variant={filter === id ? "default" : "outline"} onClick={() => setFilter(id)}>{label}</Button>
         ))}
       </div>
+
+      <section className="ds-panel space-y-3 bg-card">
+        <label className="relative block min-w-0">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input value={sok} onChange={(e) => setSok(e.target.value)} placeholder="Sök kund, adress eller avtalsnr" className="ds-input pl-9 pr-9" aria-label="Sök avtal i planeringen" />
+          {sok && <button type="button" onClick={() => setSok("")} aria-label="Rensa sökning" className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"><X size={14} /></button>}
+        </label>
+        {s0 && (traffar.length === 0 ? <p className="text-sm text-muted-foreground">Inga avtal matchar sökningen.</p> : (
+          <ul className="divide-y divide-border">
+            {traffar.map((r) => (
+              <li key={r.f.id} className="min-w-0 space-y-1.5 py-2 text-sm">
+                <button type="button" onClick={() => setPopup(r.f.id)} className="break-words text-left font-medium text-foreground underline-offset-2 hover:underline">{r.kund}</button>
+                <div className="break-words text-xs text-muted-foreground">{[r.avtalNr, r.adress, FILIALER.find((x) => x.id === r.plan.filial)?.label].filter(Boolean).join(" · ")}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {r.plan.besok.map((b, i) => b.vecka ? (
+                    <Button key={i} size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setQ(kvartal(b.vecka!)); setVecka(b.vecka); }}>Besök {i + 1}: v{b.vecka} (Q{kvartal(b.vecka)})</Button>
+                  ) : <span key={i} className="text-xs text-muted-foreground">Besök {i + 1}: ej planerat</span>)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ))}
+      </section>
 
       <section className="ds-panel space-y-3 bg-card">
         <h2 className="font-display text-base font-semibold text-foreground">Att planera <span className="text-muted-foreground">({kvar} kvar)</span></h2>
@@ -142,12 +168,6 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
         <p className="text-xs text-muted-foreground">Bocka i när ärendet är skapat i Mobigo.</p>
       </section>
 
-      <section className="ds-panel space-y-3 bg-card">
-        <h2 className="font-display text-base font-semibold text-foreground">Alla signerade avtal <span className="text-muted-foreground">({shown.length})</span></h2>
-        <div className="divide-y divide-border">
-          {shown.map((r) => <PlanRow key={r.f.id} r={r} onSave={(u) => save(r, u)} onShowQ={(k) => { setQ(k); setVecka(null); }} onOpen={() => setPopup(r.f.id)} />)}
-        </div>
-      </section>
       <AvtalPopup r={popRow} onClose={() => setPopup(null)} onChanged={onChanged} />
     </div>
   );

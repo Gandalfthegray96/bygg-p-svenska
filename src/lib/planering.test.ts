@@ -13,3 +13,10 @@ test("Borås-adress ger filial Borås, annars Göteborg", () => {
   expect(gf("Storgatan 1, 503 30 Borås")).toBe("BORAS");
   expect(gf("Hamngatan 2, Göteborg")).toBe("GBG");
 });
+
+import { filialFor } from "./planering";
+test("Skene räknas till Borås och sparad filial vinner", () => {
+  expect(gf("Gränevägen 7, Skene")).toBe("BORAS");
+  expect(filialFor(undefined, "Ekenleden 2, Göteborg")).toBe("GBG");
+  expect(filialFor("BORAS", "Ekenleden 2, Göteborg")).toBe("BORAS");
+});
