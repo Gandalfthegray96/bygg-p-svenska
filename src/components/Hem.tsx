@@ -318,6 +318,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
               </div>
             </li>
           ))}
+        </ul>
       </section>
       </>}
       {kund && <KundKort name={kund} store={store} onClose={() => setKund(null)} onChanged={() => onChanged?.()}
