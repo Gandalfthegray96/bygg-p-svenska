@@ -158,7 +158,7 @@ async function hittaRabattRad(bytes: Uint8Array): Promise<{ x: number; y: number
     const tc = await (await doc.getPage(1)).getTextContent();
     for (const it of tc.items as { str?: string; transform?: number[] }[]) {
       if (it.str?.includes("Avtalskunder erhåller") && it.transform) {
-        return { x: it.transform[4], y: it.transform[5], size: Math.abs(it.transform[3]) || 12 };
+        return { x: it.transform[4] ?? 0, y: it.transform[5] ?? 0, size: Math.abs(it.transform[3] ?? 12) || 12 };
       }
     }
   } catch { /* hittas inte – rör inte prislistan */ }
