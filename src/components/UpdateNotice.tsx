@@ -80,8 +80,9 @@ export function UpdateNotice() {
     <>
       {nyFinns && (
         <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-primary px-3 py-1.5 text-xs text-primary-foreground">
-          <Sparkles size={14} /> En ny version finns – den laddas nästa gång du laddar om appen.
-          <button className="underline" onClick={() => setNyFinns(false)}>Stäng</button>
+          <Sparkles size={14} /> En ny version av appen finns.
+          <Button size="sm" variant="secondary" className="h-6 px-2 text-xs" onClick={() => window.location.reload()}>Uppdatera nu</Button>
+          <button className="underline" onClick={() => setNyFinns(false)}>Senare</button>
         </div>
       )}
       <Dialog open={open} onOpenChange={(o) => { if (!o) stang(); }}>
