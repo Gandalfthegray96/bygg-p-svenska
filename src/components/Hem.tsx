@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ArrowUpDown, ArrowUpRight, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound, Wrench, Building2, Handshake, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
 import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
 import { ImportPdf } from "./ImportPdf";
@@ -235,6 +237,16 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
             <Button onClick={onNew} className="hidden gap-1.5 sm:inline-flex"><Plus size={16} />Nytt avtal</Button>
           </div>
         </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Snabbfilter">
+          {([["alla","Alla"],["signerat","Aktiva / Signerade"],["skickat","Väntar på svar"],["utkast","Utkast"],["forhandling","Förhandling"]] as [Filter,string][]).map(([f,l]) => (
+            <button key={f} type="button" onClick={() => { setFilter(f); setVisaUpp(false); }} aria-pressed={filter===f && !visaUpp}
+              className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${filter===f && !visaUpp ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}>
+              {l} <span className="tabular-nums opacity-70">{f==="alla" ? rows.length : rows.filter((r) => r.status===f).length}</span>
+            </button>
+          ))}
+          <button type="button" onClick={() => setVisaUpp((v) => !v)} aria-pressed={visaUpp}
+            className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${visaUpp ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}>Uppsagda <span className="tabular-nums opacity-70">{nUpp}</span></button>
+        </div>
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <label className="relative block min-w-0">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -263,31 +275,46 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         {rows.length === 0 && <p className="text-sm text-muted-foreground">Inga sparade avtal ännu.</p>}
         {rows.length > 0 && shown.length === 0 && <p className="text-sm text-muted-foreground">Inga avtal matchar sökningen.</p>}
 
-        <ul className="divide-y divide-border rounded-lg border border-border">
+        <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_8rem_8rem_9rem_auto] gap-x-4 border-b border-border px-4 pb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:grid">
+          <span>Kund</span><span>Ansvarig</span><span className="text-right">Årsvärde</span><span className="text-right">TB / TG</span><span>Status</span><span className="text-right">Åtgärder</span>
+        </div>
+        <ul className="divide-y divide-border lg:-mt-3">
           {shown.map((x) => (
-            <li key={x.id} className="flex flex-col gap-2 p-3 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto_auto_auto] sm:items-center sm:gap-x-3">
-              <div className="flex min-w-0 items-start justify-between gap-3 sm:contents">
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="break-words font-medium text-foreground sm:truncate">{x.name} <span className="text-xs text-muted-foreground">v{x.v.version}</span></p>
-                  <p className="break-words text-xs text-muted-foreground sm:truncate">
-                    {x.avtalNr ? `Nr ${x.avtalNr}` : "Inget avtalsnr"} · {new Date(x.v.savedAt).toLocaleDateString("sv-SE")}
+            <li key={x.id} className="group rounded-lg border border-border p-4 transition-colors hover:bg-muted/40 max-lg:mb-2 lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_8rem_8rem_9rem_auto] lg:items-center lg:gap-x-4 lg:rounded-none lg:border-0 lg:px-4 lg:py-3.5">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words text-[15px] font-semibold leading-tight text-foreground lg:truncate">{x.name}</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                    <span className="font-medium tabular-nums text-foreground/70">{x.avtalNr || "Inget avtalsnr"}</span><span aria-hidden>·</span><span>v{x.v.version}</span><span aria-hidden>·</span><span className="tabular-nums">{new Date(x.v.savedAt).toLocaleDateString("sv-SE")}</span>
                   </p>
                 </div>
-                <span className="hidden shrink-0 text-right text-xs tabular-nums sm:order-3 sm:block" title="Täckningsbidrag per år (internt)"><span className="font-semibold text-success">{fmtKr(Math.round(x.lon.tb))}</span><span className="block text-muted-foreground">TG {pct(x.lon.tg)}</span></span>
-                <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground sm:order-3">{fmtKr(x.perYear)}<span className="text-xs font-normal text-muted-foreground">/år</span></span>
+                <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium lg:hidden ${STATUS_CLS[x.status]}`}>{STATUS_LABEL[x.status]}</span>
               </div>
-              <span className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground sm:order-2">{x.ansvarig && <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sidebar text-[10px] font-bold text-sidebar-foreground">{x.ansvarig.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}</span>}<span className="min-w-0 truncate">{x.stale && <span className="mr-2 inline-flex items-center gap-1 font-semibold text-destructive"><AlertTriangle size={12} />{x.days} dagar sedan skickat</span>}{x.ansvarig ? `Ansvarig: ${x.ansvarig}` : "Ingen ansvarig"}</span></span>
-              <div className="flex flex-wrap items-center justify-between gap-2 sm:contents">
+              <div className="mt-3 flex min-w-0 items-center gap-2 text-xs text-muted-foreground lg:mt-0">
+                {x.ansvarig && <span aria-hidden className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sidebar text-[10px] font-bold text-sidebar-foreground">{x.ansvarig.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()}</span>}
+                <span className="min-w-0 truncate">{x.ansvarig || "Ingen ansvarig"}</span>
+                {x.stale && <span className="inline-flex shrink-0 items-center gap-1 font-medium text-destructive" title={`${x.days} dagar sedan skickat`}><AlertTriangle size={12} />{x.days} d</span>}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 lg:contents">
+                <div className="lg:text-right"><p className="text-[11px] text-muted-foreground lg:hidden">Årsvärde</p><p className="text-sm font-semibold tabular-nums text-foreground">{fmtKr(x.perYear)}</p></div>
+                <div className="text-right" title="Täckningsbidrag per år (internt)"><p className="text-[11px] text-muted-foreground lg:hidden">TB / TG</p><p className="text-sm font-medium tabular-nums text-success">{fmtKr(Math.round(x.lon.tb))}</p><p className="text-[11px] tabular-nums text-muted-foreground">TG {pct(x.lon.tg)}</p></div>
+              </div>
+              <div className="mt-3 lg:mt-0">
                 <select value={x.status} aria-label="Status"
                   onChange={(e) => { setVersionStatus(x.id, x.v.version, e.target.value as Status); onChanged?.(); }}
-                  className={`ds-badge outline-none sm:order-4 ${STATUS_CLS[x.status]}`}>
+                  className={`w-full cursor-pointer rounded-md border-0 px-2 py-1 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring lg:w-auto ${STATUS_CLS[x.status]}`}>
                   {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
                 </select>
-                <div className="flex gap-1.5 sm:order-5 sm:justify-self-end">
-                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => setKund(x.name)}><UserRound size={14} />Kundkort</Button>
-                  <Button variant="ghost" size="sm" className="gap-1 text-destructive" onClick={() => setUpp(x.id)}><Ban size={14} />Säg upp</Button>
-                  <Button variant="outline" size="sm" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
-                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-1.5 lg:mt-0 lg:justify-end">
+                <Button variant="ghost" size="sm" className="gap-1 max-lg:flex-1" onClick={() => setKund(x.name)}><UserRound size={14} />Kundkort</Button>
+                <Button size="sm" className="max-lg:flex-1" onClick={() => onOpen(x.id, x.name, x.v)}>Öppna</Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Fler åtgärder"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onSelect={() => setUpp(x.id)}><Ban size={14} />Säg upp avtal</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </li>
           ))}
