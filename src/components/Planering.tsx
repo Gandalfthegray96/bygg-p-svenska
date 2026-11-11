@@ -26,7 +26,7 @@ function rows(store: Record<string, CustomerFolder>): Row[] {
 
 /** Objekt i besök k, t.ex. "3 st Tsp el, 21 st Vikport". */
 function objektLista(a: Avtal, k: number) {
-  return a.rows.filter((r) => r.visits >= k).map((r) => `${r.qty} st ${r.name || "objekt"}${r.make && !r.name.toLowerCase().includes(r.make.toLowerCase()) ? ` (${r.make})` : ""}`).join(", ");
+  return a.rows.filter((r) => r.visits >= k).map((r) => `${/^\s*\d+\s*st\b/i.test(r.name || "") ? "" : `${r.qty} st `}${r.name || "objekt"}${r.make && !r.name.toLowerCase().includes(r.make.toLowerCase()) ? ` (${r.make})` : ""}`).join(", ");
 }
 
 const fmtH = (h: number) => h.toLocaleString("sv-SE", { maximumFractionDigits: 1 });
@@ -124,7 +124,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
                         {r.adress && <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1"><MapPin size={12} className="mt-0.5 shrink-0" /><span className="break-words">{r.adress}</span></div>}
                         {v?.lista && <div className="break-words text-foreground">{v.lista}</div>}
                         <div className="flex flex-wrap gap-x-3 gap-y-1">
-                          <span>Besök {i + 1}</span><span>{v?.objekt ?? 0} obj</span><span>{fmtH(v?.hours ?? 0)} h</span><span>{v?.trips ?? 0} framk.</span>
+                          <span>Besök {i + 1}</span><span>{fmtH(v?.hours ?? 0)} h</span><span>{v?.trips ?? 0} framk.</span>
                           <span className="font-medium text-foreground">{fmtKr(v?.pris ?? 0)} exkl. moms</span>
                           {r.avtalNr && <span>{r.avtalNr}</span>}
                           {filter === "alla" && r.plan.filial && <span>{FILIALER.find((x) => x.id === r.plan.filial)?.label}</span>}
