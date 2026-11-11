@@ -12,7 +12,10 @@ export type Uppsagd = { datum: string; orsak: string; notering: string; by: stri
 export const UPPSAGD_ORSAKER = ["Pris", "Bytt leverantör", "Verksamheten flyttad/nedlagd", "Portar utbytta/borttagna", "Missnöjd med service", "Egen regi", "Annat"];
 /** Ett avtal = en egen post. Särskiljs av id; samma kund kan ha flera avtal. Äldre poster får kundnamnet som id. */
 export type Forfragan = { beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string; at: string; by: string; tilldelad?: string };
-export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[]; uppsagd?: Uppsagd; forfragan?: Forfragan };
+export type Filial = "GBG" | "BORAS";
+export type PlanBesok = { vecka: number | null; klar?: boolean };
+export type Planering = { filial?: Filial | undefined; besok: PlanBesok[] };
+export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[]; uppsagd?: Uppsagd; forfragan?: Forfragan; planering?: Planering };
 
 const STORE_KEY = "uc-avtal-store";
 const DRAFT_KEY = "uc-avtal-draft";
@@ -37,6 +40,7 @@ export function normalizeFolder(key: string, f: Partial<CustomerFolder> & { vers
   if (Array.isArray(f.contacts)) out.contacts = f.contacts;
   if (f.uppsagd && typeof f.uppsagd === "object") out.uppsagd = f.uppsagd;
   if (f.forfragan && typeof f.forfragan === "object") out.forfragan = f.forfragan;
+  if (f.planering && typeof f.planering === "object" && Array.isArray(f.planering.besok)) out.planering = f.planering;
   return out;
 }
 
@@ -266,4 +270,13 @@ export function createForfragan(f: { kund: string; adress: string; beskrivning: 
   store[id] = folder;
   saveStore(store);
   return id;
+}
+
+/** Sparar filial och planerade veckor för ett avtal (synkas till det delade registret). */
+export function setPlanering(id: string, p: Planering) {
+  const store = loadStore();
+  const f = store[id];
+  if (!f) return;
+  f.planering = p;
+  saveStore(store);
 }
