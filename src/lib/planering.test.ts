@@ -7,3 +7,9 @@ test("veckor mappas till kvartal som i Excel", () => {
 test("två besök från v4 hamnar v4 och v30", () => {
   expect(foreslaVeckor(2, 4).join()).toBe("4,30");
 });
+
+import { gissaFilial as gf } from "./planering";
+test("Borås-adress ger filial Borås, annars Göteborg", () => {
+  expect(gf("Storgatan 1, 503 30 Borås")).toBe("BORAS");
+  expect(gf("Hamngatan 2, Göteborg")).toBe("GBG");
+});
