@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Check, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, normalizeAvtal } from "@/lib/kalkyl";
-import { setPlanering, type CustomerFolder, type Filial, type Planering as Plan } from "@/lib/avtal-store";
+import { loadStore, setPlanering, type CustomerFolder, type Filial, type Planering as Plan } from "@/lib/avtal-store";
 import { FILIALER, KVARTAL_VECKOR, foreslaVeckor, kvartal } from "@/lib/planering";
 
 type Row = { f: CustomerFolder; kund: string; adress: string; avtalNr: string; visits: { hours: number; trips: number; objekt: number }[]; plan: Plan };
@@ -29,7 +29,13 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
   const [q, setQ] = useState<1 | 2 | 3 | 4>(() => kvartal(Math.min(52, Math.ceil(((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / 864e5 + 1) / 7))));
   const all = useMemo(() => rows(store), [store]);
   const shown = all.filter((r) => filter === "alla" || (filter === "ingen" ? !r.plan.filial : r.plan.filial === filter));
-  const save = (r: Row, p: Plan) => { setPlanering(r.f.id, p); onChanged(); };
+  // Läser alltid senast sparade planering så filial- och veckoval inte skriver över varandra.
+  const save = (r: Row, update: (p: Plan) => Plan) => {
+    const cur = loadStore()[r.f.id]?.planering;
+    const base: Plan = { filial: cur?.filial, besok: r.visits.map((_, i) => cur?.besok[i] ?? { vecka: null }) };
+    setPlanering(r.f.id, update(base));
+    onChanged();
+  };
   const done = (r: Row) => !!r.plan.filial && r.plan.besok.every((b) => !!b.vecka);
   // Avtal som var oplanerade när fliken öppnades stannar kvar i listan medan man fyller i dem.
   const pending = useRef<Set<string> | null>(null);
@@ -56,7 +62,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
         <h2 className="font-display text-base font-semibold text-foreground">Att planera <span className="text-muted-foreground">({kvar} kvar)</span></h2>
         {kvar === 0 && <p className="text-sm text-muted-foreground">Alla signerade avtal har filial och vecka.</p>}
         <div className="divide-y divide-border">
-          {attPlanera.map((r) => <PlanRow key={r.f.id} r={r} onSave={(p) => save(r, p)} />)}
+          {attPlanera.map((r) => <PlanRow key={r.f.id} r={r} onSave={(u) => save(r, u)} />)}
         </div>
       </section>
 
@@ -81,7 +87,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
                   {items.map(({ r, b, i }) => (
                     <li key={r.f.id + i} className="flex items-start gap-2 text-sm">
                       <button type="button" aria-label={b.klar ? "Markera ej klar" : "Markera ärende skapat"}
-                        onClick={() => save(r, { ...r.plan, besok: r.plan.besok.map((x, j) => (j === i ? { ...x, klar: !x.klar } : x)) })}
+                        onClick={() => save(r, (p) => ({ ...p, besok: p.besok.map((x, j) => (j === i ? { ...x, klar: !x.klar } : x)) }))}
                         className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded border ${b.klar ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
                         {b.klar && <Check size={12} />}
                       </button>
@@ -106,16 +112,25 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
       <section className="ds-panel space-y-3 bg-card">
         <h2 className="font-display text-base font-semibold text-foreground">Alla signerade avtal <span className="text-muted-foreground">({shown.length})</span></h2>
         <div className="divide-y divide-border">
-          {shown.map((r) => <PlanRow key={r.f.id} r={r} onSave={(p) => save(r, p)} />)}
+          {shown.map((r) => <PlanRow key={r.f.id} r={r} onSave={(u) => save(r, u)} />)}
         </div>
       </section>
     </div>
   );
 }
 
-function PlanRow({ r, onSave }: { r: Row; onSave: (p: Plan) => void }) {
+const fyllVeckor = (p: Plan): Plan => {
+  const f = foreslaVeckor(p.besok.length, p.besok[0]?.vecka ?? 4);
+  return { ...p, besok: p.besok.map((b, i) => ({ ...b, vecka: b.vecka ?? f[i] ?? null })) };
+};
+
+function PlanRow({ r, onSave }: { r: Row; onSave: (u: (p: Plan) => Plan) => void }) {
   const p = r.plan;
-  const setVecka = (i: number, v: string) => onSave({ ...p, besok: p.besok.map((b, j) => (j === i ? { ...b, vecka: v ? Number(v) : null } : b)) });
+  const setVecka = (i: number, v: string) => onSave((x) => ({ ...x, besok: x.besok.map((b, j) => (j === i ? { ...b, vecka: v ? Number(v) : null } : b)) }));
+  const setFilial = (v: string) => onSave((x) => {
+    const next = { ...x, filial: (v || undefined) as Filial | undefined };
+    return next.filial && next.besok.every((b) => !b.vecka) ? fyllVeckor(next) : next;
+  });
   return (
     <div className="flex flex-col gap-2 py-3 lg:flex-row lg:items-center">
       <div className="min-w-0 flex-1">
@@ -123,7 +138,7 @@ function PlanRow({ r, onSave }: { r: Row; onSave: (p: Plan) => void }) {
         <div className="truncate text-xs text-muted-foreground">{[r.avtalNr, r.adress].filter(Boolean).join(" · ")}</div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Filial" value={p.filial ?? ""} onChange={(e) => onSave({ ...p, filial: (e.target.value || undefined) as Filial | undefined })} className="ds-input h-9 w-32">
+        <select aria-label="Filial" value={p.filial ?? ""} onChange={(e) => setFilial(e.target.value)} className="ds-input h-9 w-32">
           <option value="">Filial…</option>
           {FILIALER.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
         </select>
@@ -135,7 +150,7 @@ function PlanRow({ r, onSave }: { r: Row; onSave: (p: Plan) => void }) {
         ))}
         {!!p.filial && p.besok.every((b) => !!b.vecka) && <span className="inline-flex items-center gap-1 text-xs font-medium text-foreground"><Check size={14} />Planerad</span>}
         {p.besok.some((b) => !b.vecka) && p.besok.length > 0 && (
-          <Button size="sm" variant="outline" onClick={() => { const first = p.besok[0]?.vecka ?? 4; const f = foreslaVeckor(p.besok.length, first); onSave({ ...p, besok: p.besok.map((b, i) => ({ ...b, vecka: b.vecka ?? f[i] ?? null })) }); }}>Föreslå veckor</Button>
+          <Button size="sm" variant="outline" onClick={() => onSave(fyllVeckor)}>Föreslå veckor</Button>
         )}
       </div>
     </div>
