@@ -14,7 +14,7 @@ export const UPPSAGD_ORSAKER = ["Pris", "Bytt leverantör", "Verksamheten flytta
 export type Forfragan = { beskrivning: string; kontakt: string; telefon: string; epost: string; kalla: string; at: string; by: string; tilldelad?: string };
 export type Filial = "GBG" | "BORAS";
 export type PlanBesok = { vecka: number | null; klar?: boolean };
-export type Planering = { filial?: Filial; besok: PlanBesok[] };
+export type Planering = { filial?: Filial | undefined; besok: PlanBesok[] };
 export type CustomerFolder = { id: string; name: string; versions: Version[]; log?: Activity[]; contacts?: Contact[]; uppsagd?: Uppsagd; forfragan?: Forfragan; planering?: Planering };
 
 const STORE_KEY = "uc-avtal-store";
