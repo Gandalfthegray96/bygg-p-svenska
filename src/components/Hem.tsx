@@ -275,12 +275,12 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
         {rows.length === 0 && <p className="text-sm text-muted-foreground">Inga sparade avtal ännu.</p>}
         {rows.length > 0 && shown.length === 0 && <p className="text-sm text-muted-foreground">Inga avtal matchar sökningen.</p>}
 
-        <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_8rem_8rem_9rem_auto] gap-x-4 border-b border-border px-4 pb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:grid">
-          <span>Kund</span><span>Ansvarig</span><span className="text-right">Årsvärde</span><span className="text-right">TB / TG</span><span>Status</span><span className="text-right">Åtgärder</span>
+        <div className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_8rem_8rem_9rem_15rem] gap-x-4 border-b border-border px-4 pb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:grid">
+          <span className="text-left">Kund</span><span className="text-left">Ansvarig</span><span className="text-right">Årsvärde</span><span className="text-right">TB / TG</span><span className="text-left">Status</span><span className="text-right">Åtgärder</span>
         </div>
         <ul className="divide-y divide-border lg:-mt-3">
           {shown.map((x) => (
-            <li key={x.id} className="group rounded-lg border border-border p-4 transition-colors hover:bg-muted/40 max-lg:mb-2 lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_8rem_8rem_9rem_auto] lg:items-center lg:gap-x-4 lg:rounded-none lg:border-0 lg:px-4 lg:py-3.5">
+            <li key={x.id} className="group rounded-lg border border-border p-4 transition-colors hover:bg-muted/40 max-lg:mb-2 lg:grid lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_8rem_8rem_9rem_15rem] lg:items-center lg:gap-x-4 lg:rounded-none lg:border-0 lg:px-4 lg:py-3.5">
               <div className="flex min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="break-words text-[15px] font-semibold leading-tight text-foreground lg:truncate">{x.name}</p>
@@ -297,7 +297,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 lg:contents">
                 <div className="lg:text-right"><p className="text-[11px] text-muted-foreground lg:hidden">Årsvärde</p><p className="text-sm font-semibold tabular-nums text-foreground">{fmtKr(x.perYear)}</p></div>
-                <div className="text-right" title="Täckningsbidrag per år (internt)"><p className="text-[11px] text-muted-foreground lg:hidden">TB / TG</p><p className="text-sm font-medium tabular-nums text-success">{fmtKr(Math.round(x.lon.tb))}</p><p className="text-[11px] tabular-nums text-muted-foreground">TG {pct(x.lon.tg)}</p></div>
+                <div className="text-right lg:text-right" title="Täckningsbidrag per år (internt)"><p className="text-[11px] text-muted-foreground lg:hidden">TB / TG</p><p className="text-sm font-medium tabular-nums text-success">{fmtKr(Math.round(x.lon.tb))}</p><p className="text-[11px] tabular-nums text-muted-foreground">TG {pct(x.lon.tg)}</p></div>
               </div>
               <div className="mt-3 lg:mt-0">
                 <select value={x.status} aria-label="Status"
