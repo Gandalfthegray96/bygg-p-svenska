@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Check, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, normalizeAvtal } from "@/lib/kalkyl";
@@ -30,7 +30,13 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
   const all = useMemo(() => rows(store), [store]);
   const shown = all.filter((r) => filter === "alla" || (filter === "ingen" ? !r.plan.filial : r.plan.filial === filter));
   const save = (r: Row, p: Plan) => { setPlanering(r.f.id, p); onChanged(); };
-  const attPlanera = shown.filter((r) => !r.plan.filial || r.plan.besok.some((b) => !b.vecka));
+  const done = (r: Row) => !!r.plan.filial && r.plan.besok.every((b) => !!b.vecka);
+  // Avtal som var oplanerade när fliken öppnades stannar kvar i listan medan man fyller i dem.
+  const pending = useRef<Set<string> | null>(null);
+  pending.current ??= new Set(all.filter((r) => !done(r)).map((r) => r.f.id));
+  for (const r of all) if (!done(r)) pending.current.add(r.f.id);
+  const attPlanera = shown.filter((r) => pending.current!.has(r.f.id));
+  const kvar = attPlanera.filter((r) => !done(r)).length;
 
   const weeks = KVARTAL_VECKOR[q].map((w) => {
     const items = shown.flatMap((r) => r.plan.besok.map((b, i) => ({ r, b, i })).filter((x) => x.b.vecka === w));
@@ -47,8 +53,8 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
       </div>
 
       <section className="ds-panel space-y-3 bg-card">
-        <h2 className="font-display text-base font-semibold text-foreground">Att planera <span className="text-muted-foreground">({attPlanera.length})</span></h2>
-        {attPlanera.length === 0 && <p className="text-sm text-muted-foreground">Alla signerade avtal har filial och vecka.</p>}
+        <h2 className="font-display text-base font-semibold text-foreground">Att planera <span className="text-muted-foreground">({kvar} kvar)</span></h2>
+        {kvar === 0 && <p className="text-sm text-muted-foreground">Alla signerade avtal har filial och vecka.</p>}
         <div className="divide-y divide-border">
           {attPlanera.map((r) => <PlanRow key={r.f.id} r={r} onSave={(p) => save(r, p)} />)}
         </div>
@@ -127,6 +133,7 @@ function PlanRow({ r, onSave }: { r: Row; onSave: (p: Plan) => void }) {
             {Array.from({ length: 52 }, (_, k) => k + 1).map((w) => <option key={w} value={w}>Besök {i + 1}: v{w} (Q{kvartal(w)})</option>)}
           </select>
         ))}
+        {!!p.filial && p.besok.every((b) => !!b.vecka) && <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-foreground"><Check size={14} />Planerad</span>}
         {p.besok.some((b) => !b.vecka) && p.besok.length > 0 && (
           <Button size="sm" variant="outline" onClick={() => { const first = p.besok[0]?.vecka ?? 4; const f = foreslaVeckor(p.besok.length, first); onSave({ ...p, besok: p.besok.map((b, i) => ({ ...b, vecka: b.vecka ?? f[i] ?? null })) }); }}>Föreslå veckor</Button>
         )}

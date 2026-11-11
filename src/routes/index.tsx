@@ -5,7 +5,7 @@ import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, f
 import { Tidslinje } from "@/components/Aktivitet";
 import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
-import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, CalendarRange, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, ScrollText, Search, Trash2, User, Users, X } from "lucide-react";
+import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, ClipboardList, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, ScrollText, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { loadKontakt } from "@/lib/kontakt";
 import { downloadExcel, fileBase } from "@/lib/excel";
@@ -99,7 +99,7 @@ const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "express", label: "Express", icon: Zap },
   { id: "sparade", label: "Sparade", icon: Archive },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
-  { id: "planering", label: "Planering", icon: CalendarRange },
+  { id: "planering", label: "Planering", icon: ClipboardList },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
 
@@ -111,7 +111,7 @@ const MAIN: { id: Tab; label: string; icon: typeof User }[] = [
   { id: "lista", label: "Avtal", icon: FolderOpen },
   { id: "kund", label: "Nytt avtal", icon: FilePlus2 },
   { id: "kalender", label: "Kalender", icon: CalendarDays },
-  { id: "planering", label: "Planering", icon: CalendarRange },
+  { id: "planering", label: "Planering", icon: ClipboardList },
   { id: "anvandare", label: "Användare", icon: Users },
 ];
 const isMainActive = (main: Tab, tab: Tab) => (main === "kund" ? AVTAL_SUB.includes(tab) : main === tab);
