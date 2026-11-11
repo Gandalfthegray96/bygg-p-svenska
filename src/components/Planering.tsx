@@ -153,7 +153,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
   );
 }
 
-function AvtalPopup({ r, onClose, onChanged }: { r?: Row; onClose: () => void; onChanged: () => void }) {
+function AvtalPopup({ r, onClose, onChanged }: { r: Row | undefined; onClose: () => void; onChanged: () => void }) {
   const [pct, setPct] = useState(() => fmtPct(getSettings().indexPct));
   const p = Number(pct.replace(",", ".")) || 0;
   const c = r ? calculate(r.a) : null;
