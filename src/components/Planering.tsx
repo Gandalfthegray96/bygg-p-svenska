@@ -51,7 +51,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
   const qHours = weeks.reduce((s, w) => s + w.hours, 0);
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         {([["alla", "Alla filialer"], ...FILIALER.map((f) => [f.id, f.label]), ["ingen", "Ingen filial"]] as [Filter, string][]).map(([id, label]) => (
           <Button key={id} size="sm" variant={filter === id ? "default" : "outline"} onClick={() => setFilter(id)}>{label}</Button>
@@ -75,9 +75,9 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
           </div>
           <span className="text-sm text-muted-foreground">Q{q}: {fmtH(qHours)} h planerat</span>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {weeks.map(({ w, items, hours }) => (
-            <div key={w} className="rounded-lg border border-border p-3">
+            <div key={w} className="min-w-0 rounded-lg border border-border p-3">
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="font-semibold text-foreground">Vecka {w}</span>
                 <span className="text-muted-foreground">{items.length} besök · {fmtH(hours)} h</span>
@@ -85,18 +85,20 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
               {items.length === 0 ? <p className="text-xs text-muted-foreground">Inget planerat</p> : (
                 <ul className="space-y-1.5">
                   {items.map(({ r, b, i }) => (
-                    <li key={r.f.id + i} className="flex items-start gap-2 text-sm">
+                    <li key={r.f.id + i} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2 border-b border-border/50 py-2 text-sm last:border-b-0">
                       <button type="button" aria-label={b.klar ? "Markera ej klar" : "Markera ärende skapat"}
                         onClick={() => save(r, (p) => ({ ...p, besok: p.besok.map((x, j) => (j === i ? { ...x, klar: !x.klar } : x)) }))}
                         className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded border ${b.klar ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
                         {b.klar && <Check size={12} />}
                       </button>
                       <div className="min-w-0">
-                        <div className={`truncate font-medium ${b.klar ? "text-muted-foreground line-through" : "text-foreground"}`}>{r.kund}</div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {r.adress && <><MapPin size={11} className="mr-0.5 inline" />{r.adress} · </>}
-                          Besök {i + 1} · {r.visits[i]?.objekt ?? 0} obj · {fmtH(r.visits[i]?.hours ?? 0)} h · {r.visits[i]?.trips ?? 0} framk.
-                          {filter === "alla" && r.plan.filial && ` · ${FILIALER.find((x) => x.id === r.plan.filial)?.label}`}
+                        <div className={`break-words font-medium ${b.klar ? "text-muted-foreground line-through" : "text-foreground"}`}>{r.kund}</div>
+                        <div className="mt-1 space-y-1 text-xs leading-relaxed text-muted-foreground">
+                          {r.adress && <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1"><MapPin size={12} className="mt-0.5 shrink-0" /><span className="break-words">{r.adress}</span></div>}
+                          <div className="flex flex-wrap gap-x-3 gap-y-1">
+                            <span>Besök {i + 1}</span><span>{r.visits[i]?.objekt ?? 0} obj</span><span>{fmtH(r.visits[i]?.hours ?? 0)} h</span><span>{r.visits[i]?.trips ?? 0} framk.</span>
+                            {filter === "alla" && r.plan.filial && <span>{FILIALER.find((x) => x.id === r.plan.filial)?.label}</span>}
+                          </div>
                         </div>
                       </div>
                     </li>
@@ -134,12 +136,12 @@ function PlanRow({ r, onSave, onShowQ }: { r: Row; onSave: (u: (p: Plan) => Plan
     return next.filial && next.besok.every((b) => !b.vecka) ? fyllVeckor(next) : next;
   });
   return (
-    <div className="flex flex-col gap-2 py-3 lg:flex-row lg:flex-wrap lg:items-center">
+    <div className="flex min-w-0 flex-col gap-2 py-3 lg:flex-row lg:flex-wrap lg:items-center">
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-foreground">{r.kund}</div>
-        <div className="truncate text-xs text-muted-foreground">{[r.avtalNr, r.adress].filter(Boolean).join(" · ")}</div>
+        <div className="break-words text-sm font-medium text-foreground">{r.kund}</div>
+        <div className="break-words text-xs leading-relaxed text-muted-foreground">{[r.avtalNr, r.adress].filter(Boolean).join(" · ")}</div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <select aria-label="Filial" value={p.filial ?? ""} onChange={(e) => setFilial(e.target.value)} className="ds-input h-9 w-32">
           <option value="">Filial…</option>
           {FILIALER.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}

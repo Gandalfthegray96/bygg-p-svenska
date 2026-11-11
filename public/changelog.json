@@ -1,5 +1,13 @@
 [
   {
+    "datum": "2026-11-11-planering-mobil",
+    "rubrik": "Tydligare planering på mobilen",
+    "punkter": [
+      "Kundnamn och adresser visas på flera rader utan att kapas.",
+      "Besök, antal objekt, timmar och framkörningar får plats även på små skärmar."
+    ]
+  },
+  {
     "datum": "2026-11-11-planering",
     "rubrik": "Planering per filial",
     "punkter": [
