@@ -1,11 +1,13 @@
 import { useMemo, useRef, useState } from "react";
-import { Check, MapPin } from "lucide-react";
+import { Check, MapPin, TrendingUp } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { fmtPct, getSettings } from "@/lib/foretag-settings";
 import { Button } from "@/components/ui/button";
-import { calculate, normalizeAvtal } from "@/lib/kalkyl";
-import { loadStore, setPlanering, type CustomerFolder, type Filial, type Planering as Plan } from "@/lib/avtal-store";
+import { type Avtal, calculate, fmtKr, indexera, lonsamhet, normalizeAvtal } from "@/lib/kalkyl";
+import { indexeraBatch, loadStore, setPlanering, type CustomerFolder, type Filial, type Planering as Plan } from "@/lib/avtal-store";
 import { FILIALER, KVARTAL_VECKOR, foreslaVeckor, gissaFilial, kvartal } from "@/lib/planering";
 
-type Row = { f: CustomerFolder; kund: string; adress: string; avtalNr: string; visits: { hours: number; trips: number; objekt: number }[]; plan: Plan };
+type Row = { f: CustomerFolder; kund: string; adress: string; avtalNr: string; a: Avtal; visits: { hours: number; trips: number; objekt: number; lista: string; pris: number }[]; plan: Plan };
 type Filter = "alla" | Filial | "ingen";
 
 function rows(store: Record<string, CustomerFolder>): Row[] {
@@ -15,11 +17,16 @@ function rows(store: Record<string, CustomerFolder>): Row[] {
     if (!v || v.status !== "signerat" || f.uppsagd) continue;
     const a = normalizeAvtal(v.data);
     const c = calculate(a);
-    const visits = c.visits.map((x) => ({ hours: x.hours, trips: x.trips, objekt: a.rows.filter((r) => r.visits >= x.k).reduce((s, r) => s + r.qty, 0) }));
+    const visits = c.visits.map((x) => ({ hours: x.hours, trips: x.trips, objekt: a.rows.filter((r) => r.visits >= x.k).reduce((s, r) => s + r.qty, 0), lista: objektLista(a, x.k), pris: x.perVisit }));
     const besok = visits.map((_, i) => f.planering?.besok[i] ?? { vecka: null });
-    out.push({ f, kund: a.customer.bestallare || f.name, adress: a.customer.anlAdress, avtalNr: a.customer.avtalNr, visits, plan: { filial: f.planering?.filial, besok } });
+    out.push({ f, a, kund: a.customer.bestallare || f.name, adress: a.customer.anlAdress, avtalNr: a.customer.avtalNr, visits, plan: { filial: f.planering?.filial, besok } });
   }
   return out.sort((x, y) => x.kund.localeCompare(y.kund, "sv"));
+}
+
+/** Objekt i besök k, t.ex. "3 st Tsp el, 21 st Vikport". */
+function objektLista(a: Avtal, k: number) {
+  return a.rows.filter((r) => r.visits >= k).map((r) => `${r.qty} st ${r.name || "objekt"}${r.make && !r.name.toLowerCase().includes(r.make.toLowerCase()) ? ` (${r.make})` : ""}`).join(", ");
 }
 
 const fmtH = (h: number) => h.toLocaleString("sv-SE", { maximumFractionDigits: 1 });
@@ -27,6 +34,8 @@ const fmtH = (h: number) => h.toLocaleString("sv-SE", { maximumFractionDigits: 1
 export function Planering({ store, onChanged }: { store: Record<string, CustomerFolder>; onChanged: () => void }) {
   const [filter, setFilter] = useState<Filter>("alla");
   const [q, setQ] = useState<1 | 2 | 3 | 4>(() => kvartal(Math.min(52, Math.ceil(((Date.now() - new Date(new Date().getFullYear(), 0, 1).getTime()) / 864e5 + 1) / 7))));
+  const [vecka, setVecka] = useState<number | null>(null);
+  const [popup, setPopup] = useState<string | null>(null);
   const all = useMemo(() => rows(store), [store]);
   const shown = all.filter((r) => filter === "alla" || (filter === "ingen" ? !r.plan.filial : r.plan.filial === filter));
   // Läser alltid senast sparade planering så filial- och veckoval inte skriver över varandra.
@@ -49,6 +58,8 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
     return { w, items, hours: items.reduce((s, x) => s + (x.r.visits[x.i]?.hours ?? 0), 0) };
   });
   const qHours = weeks.reduce((s, w) => s + w.hours, 0);
+  const sel = weeks.find((x) => x.w === vecka) ?? weeks.find((x) => x.items.length) ?? weeks[0];
+  const popRow = popup ? all.find((r) => r.f.id === popup) : undefined;
 
   return (
     <div className="min-w-0 space-y-5">
@@ -62,7 +73,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
         <h2 className="font-display text-base font-semibold text-foreground">Att planera <span className="text-muted-foreground">({kvar} kvar)</span></h2>
         {kvar === 0 && <p className="text-sm text-muted-foreground">Alla signerade avtal har filial och vecka.</p>}
         <div className="divide-y divide-border">
-          {attPlanera.map((r) => <PlanRow key={r.f.id} r={r} onSave={(u) => save(r, u)} onShowQ={setQ} />)}
+          {attPlanera.map((r) => <PlanRow key={r.f.id} r={r} onSave={(u) => save(r, u)} onShowQ={(k) => { setQ(k); setVecka(null); }} onOpen={() => setPopup(r.f.id)} />)}
         </div>
       </section>
 
@@ -70,54 +81,123 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
             {([1, 2, 3, 4] as const).map((k) => (
-              <Button key={k} size="sm" variant={q === k ? "default" : "ghost"} onClick={() => setQ(k)}>Q{k}</Button>
+              <Button key={k} size="sm" variant={q === k ? "default" : "ghost"} onClick={() => { setQ(k); setVecka(null); }}>Q{k}</Button>
             ))}
           </div>
           <span className="text-sm text-muted-foreground">Q{q}: {fmtH(qHours)} h planerat</span>
         </div>
-        <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
-          {weeks.map(({ w, items, hours }) => (
-            <div key={w} className="min-w-0 rounded-lg border border-border p-3">
-              <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-semibold text-foreground">Vecka {w}</span>
-                <span className="text-muted-foreground">{items.length} besök · {fmtH(hours)} h</span>
-              </div>
-              {items.length === 0 ? <p className="text-xs text-muted-foreground">Inget planerat</p> : (
-                <ul className="space-y-1.5">
-                  {items.map(({ r, b, i }) => (
-                    <li key={r.f.id + i} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2 border-b border-border/50 py-2 text-sm last:border-b-0">
-                      <button type="button" aria-label={b.klar ? "Markera ej klar" : "Markera ärende skapat"}
-                        onClick={() => save(r, (p) => ({ ...p, besok: p.besok.map((x, j) => (j === i ? { ...x, klar: !x.klar } : x)) }))}
-                        className={`mt-0.5 grid size-4 shrink-0 place-items-center rounded border ${b.klar ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-                        {b.klar && <Check size={12} />}
-                      </button>
-                      <div className="min-w-0">
-                        <div className={`break-words font-medium ${b.klar ? "text-muted-foreground line-through" : "text-foreground"}`}>{r.kund}</div>
-                        <div className="mt-1 space-y-1 text-xs leading-relaxed text-muted-foreground">
-                          {r.adress && <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1"><MapPin size={12} className="mt-0.5 shrink-0" /><span className="break-words">{r.adress}</span></div>}
-                          <div className="flex flex-wrap gap-x-3 gap-y-1">
-                            <span>Besök {i + 1}</span><span>{r.visits[i]?.objekt ?? 0} obj</span><span>{fmtH(r.visits[i]?.hours ?? 0)} h</span><span>{r.visits[i]?.trips ?? 0} framk.</span>
-                            {filter === "alla" && r.plan.filial && <span>{FILIALER.find((x) => x.id === r.plan.filial)?.label}</span>}
-                          </div>
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 lg:grid-cols-13">
+          {weeks.map(({ w, items, hours }) => {
+            const klara = items.filter((x) => x.b.klar).length;
+            const on = sel?.w === w;
+            return (
+              <button key={w} type="button" onClick={() => setVecka(w)} aria-pressed={on}
+                className={`min-w-0 rounded-lg border p-2 text-left transition ${on ? "border-primary bg-primary/15" : "border-border hover:bg-muted"} ${items.length === 0 ? "opacity-60" : ""}`}>
+                <div className="text-sm font-semibold text-foreground">v{w}</div>
+                <div className="text-[11px] leading-tight text-muted-foreground">{items.length} besök</div>
+                <div className="text-[11px] leading-tight text-muted-foreground">{fmtH(hours)} h</div>
+                {items.length > 0 && <div className={`mt-1 text-[10px] font-medium ${klara === items.length ? "text-foreground" : "text-muted-foreground"}`}>{klara}/{items.length} i Mobigo</div>}
+              </button>
+            );
+          })}
+        </div>
+        {sel && (
+          <div className="min-w-0 rounded-lg border border-border p-3">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-semibold text-foreground">Vecka {sel.w}</span>
+              <span className="text-muted-foreground">{sel.items.length} besök · {fmtH(sel.hours)} h</span>
+            </div>
+            {sel.items.length === 0 ? <p className="text-xs text-muted-foreground">Inget planerat</p> : (
+              <ul className="space-y-1.5">
+                {sel.items.map(({ r, b, i }) => {
+                  const v = r.visits[i];
+                  return (
+                  <li key={r.f.id + i} className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2 border-b border-border/50 py-2 text-sm last:border-b-0">
+                    <button type="button" aria-label={b.klar ? "Markera ej klar" : "Markera ärende skapat"}
+                      onClick={() => save(r, (p) => ({ ...p, besok: p.besok.map((x, j) => (j === i ? { ...x, klar: !x.klar } : x)) }))}
+                      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded border ${b.klar ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
+                      {b.klar && <Check size={13} />}
+                    </button>
+                    <div className="min-w-0">
+                      <button type="button" onClick={() => setPopup(r.f.id)} className={`break-words text-left font-medium underline-offset-2 hover:underline ${b.klar ? "text-muted-foreground line-through" : "text-foreground"}`}>{r.kund}</button>
+                      <div className="mt-1 space-y-1 text-xs leading-relaxed text-muted-foreground">
+                        {r.adress && <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-1"><MapPin size={12} className="mt-0.5 shrink-0" /><span className="break-words">{r.adress}</span></div>}
+                        {v?.lista && <div className="break-words text-foreground">{v.lista}</div>}
+                        <div className="flex flex-wrap gap-x-3 gap-y-1">
+                          <span>Besök {i + 1}</span><span>{v?.objekt ?? 0} obj</span><span>{fmtH(v?.hours ?? 0)} h</span><span>{v?.trips ?? 0} framk.</span>
+                          <span className="font-medium text-foreground">{fmtKr(v?.pris ?? 0)} exkl. moms</span>
+                          {r.avtalNr && <span>{r.avtalNr}</span>}
+                          {filter === "alla" && r.plan.filial && <span>{FILIALER.find((x) => x.id === r.plan.filial)?.label}</span>}
+                          {b.klar && <span className="font-medium text-foreground">Ärende skapat i Mobigo</span>}
                         </div>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
+                    </div>
+                  </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">Bocka i när ärendet är skapat i Mobigo.</p>
       </section>
 
       <section className="ds-panel space-y-3 bg-card">
         <h2 className="font-display text-base font-semibold text-foreground">Alla signerade avtal <span className="text-muted-foreground">({shown.length})</span></h2>
         <div className="divide-y divide-border">
-          {shown.map((r) => <PlanRow key={r.f.id} r={r} onSave={(u) => save(r, u)} onShowQ={setQ} />)}
+          {shown.map((r) => <PlanRow key={r.f.id} r={r} onSave={(u) => save(r, u)} onShowQ={(k) => { setQ(k); setVecka(null); }} onOpen={() => setPopup(r.f.id)} />)}
         </div>
       </section>
+      <AvtalPopup r={popRow} onClose={() => setPopup(null)} onChanged={onChanged} />
     </div>
+  );
+}
+
+function AvtalPopup({ r, onClose, onChanged }: { r?: Row; onClose: () => void; onChanged: () => void }) {
+  const [pct, setPct] = useState(() => fmtPct(getSettings().indexPct));
+  const p = Number(pct.replace(",", ".")) || 0;
+  const c = r ? calculate(r.a) : null;
+  const l = r ? lonsamhet(r.a) : null;
+  return (
+    <Dialog open={!!r} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        {r && c && l && <>
+          <DialogHeader>
+            <DialogTitle className="break-words">{r.kund}</DialogTitle>
+            <DialogDescription className="break-words">{[r.avtalNr, r.adress, `v${r.f.versions.at(-1)?.version}`].filter(Boolean).join(" · ")}</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {[["Per år", fmtKr(c.perYear)], ["5 år", fmtKr(c.total5)], ["TB / år", fmtKr(l.tb)], ["TG", `${Math.round(l.tg)} %`]].map(([k, v]) => (
+              <div key={k} className="rounded-lg border border-border p-2"><div className="text-xs text-muted-foreground">{k}</div><div className="font-semibold tabular-nums text-foreground">{v}</div></div>
+            ))}
+          </div>
+          <div className="text-xs text-muted-foreground">Timpris {fmtKr(r.a.hourRate)} · framkörning {fmtKr(r.a.tripFee)}{r.a.discount ? ` · rabatt ${r.a.discount} % på arbete` : ""}</div>
+          <div>
+            <h3 className="mb-1 text-sm font-semibold text-foreground">Objekt</h3>
+            <ul className="divide-y divide-border text-sm">
+              {r.a.rows.map((x) => <li key={x.id} className="flex justify-between gap-3 py-1.5"><span className="min-w-0 break-words">{x.qty} st {x.name || "objekt"}{x.make ? ` (${x.make})` : ""}</span><span className="shrink-0 text-muted-foreground">{x.visits} besök/år · {x.minutes} min</span></li>)}
+            </ul>
+          </div>
+          <div>
+            <h3 className="mb-1 text-sm font-semibold text-foreground">Per besök</h3>
+            <ul className="divide-y divide-border text-sm">
+              {c.visits.map((v, i) => <li key={i} className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 py-1.5"><span className="font-medium">Besök {i + 1}</span><span className="text-muted-foreground">{fmtH(v.hours)} h · {v.trips} framk. · arbete {fmtKr(v.laborNet)} · framk. {fmtKr(v.travel)}</span><span className="font-semibold tabular-nums">{fmtKr(v.perVisit)}</span></li>)}
+            </ul>
+          </div>
+          <div className="space-y-2 rounded-lg border border-border p-3">
+            <h3 className="text-sm font-semibold text-foreground">Årlig indexreglering</h3>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="block w-28"><span className="mb-1 block text-xs text-muted-foreground">Uppräkning (%)</span>
+                <input inputMode="decimal" value={pct} onChange={(e) => setPct(e.target.value)} className="ds-input" /></label>
+              <p className="text-sm tabular-nums">{fmtKr(c.perYear)} → <span className="font-semibold">{fmtKr(calculate(indexera(r.a, p)).perYear)}</span> / år</p>
+            </div>
+            <Button type="button" disabled={p === 0} className="gap-1.5" onClick={() => { indexeraBatch([r.f.id], p, (x) => indexera(x, p)); onChanged(); }}>
+              <TrendingUp size={16} />Räkna upp {String(p).replace(".", ",")} % och spara ny version
+            </Button>
+          </div>
+        </>}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -126,7 +206,7 @@ const fyllVeckor = (p: Plan): Plan => {
   return { ...p, besok: p.besok.map((b, i) => ({ ...b, vecka: b.vecka ?? f[i] ?? null })) };
 };
 
-function PlanRow({ r, onSave, onShowQ }: { r: Row; onSave: (u: (p: Plan) => Plan) => void; onShowQ: (q: 1 | 2 | 3 | 4) => void }) {
+function PlanRow({ r, onSave, onShowQ, onOpen }: { r: Row; onSave: (u: (p: Plan) => Plan) => void; onShowQ: (q: 1 | 2 | 3 | 4) => void; onOpen: () => void }) {
   const p = r.plan;
   const [kvitto, setKvitto] = useState(false);
   const foresla = () => { onSave((x) => fyllVeckor({ ...x, filial: x.filial ?? gissaFilial(r.adress) })); setKvitto(true); };
@@ -138,7 +218,7 @@ function PlanRow({ r, onSave, onShowQ }: { r: Row; onSave: (u: (p: Plan) => Plan
   return (
     <div className="flex min-w-0 flex-col gap-2 py-3 lg:flex-row lg:flex-wrap lg:items-center">
       <div className="min-w-0 flex-1">
-        <div className="break-words text-sm font-medium text-foreground">{r.kund}</div>
+        <button type="button" onClick={onOpen} className="break-words text-left text-sm font-medium text-foreground underline-offset-2 hover:underline">{r.kund}</button>
         <div className="break-words text-xs leading-relaxed text-muted-foreground">{[r.avtalNr, r.adress].filter(Boolean).join(" · ")}</div>
       </div>
       <div className="flex min-w-0 flex-wrap items-center gap-2">
