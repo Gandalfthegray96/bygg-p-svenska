@@ -22,7 +22,12 @@ export function foreslaVeckor(antal: number, start = 4): number[] {
   return Array.from({ length: antal }, (_, i) => ((Math.round(start - 1 + i * steg) % 52) + 1));
 }
 
-/** Gissar filial från adressen: Borås-adresser till Borås, annars Göteborg. */
+/** Gissar filial från adressen: Borås-trakten (Borås, Skene, Kinna, Ulricehamn m.fl.) till Borås, annars Göteborg. */
 export function gissaFilial(adress: string): "GBG" | "BORAS" {
-  return /bor[aå]s/i.test(adress) ? "BORAS" : "GBG";
+  return /bor[aå]s|skene|kinna|ulricehamn|fritsla|sandared|viskafors|dalsj[oö]fors|svenljunga|tranemo|bollebygd/i.test(adress) ? "BORAS" : "GBG";
+}
+
+/** Avtalets filial: sparat val, annars gissad från adressen — inget avtal saknar filial. */
+export function filialFor(sparad: "GBG" | "BORAS" | undefined, adress: string): "GBG" | "BORAS" {
+  return sparad ?? gissaFilial(adress ?? "");
 }
