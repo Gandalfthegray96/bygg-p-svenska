@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-12-gbg-import",
+    "rubrik": "Göteborg inlagt och smartare import",
+    "punkter": [
+      "Alla Göteborgsanläggningar från planeringsfilen ligger nu som signerade avtal med veckor i Planering.",
+      "Importen från kundmappen fyller bara i kunder som redan finns: avtalsnr, ansvarig, kontaktuppgifter och kalkyl.",
+      "Nya kunder skapas inte av importen."
+    ]
+  },
+  {
     "datum": "2026-11-11-planering-mobil",
     "rubrik": "Tydligare planering på mobilen",
     "punkter": [

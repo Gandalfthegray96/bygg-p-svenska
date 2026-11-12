@@ -24,3 +24,4 @@
 - Background notifications use Web Push: device subscriptions in `push_subscriptions`, sent server-side by src/lib/push.functions.ts (needs VAPID_PRIVATE_JWK env), shown by public/sw.js — so they arrive even when the app is closed.
 - Update popup reads public/changelog.json (newest first) at runtime so an open old version shows the new release notes; add an entry there with each release.
 - PDF attachments use immutable private Storage files and per-version references; shared defaults apply to new agreements only. Admin price-list updates append versions, leaving all historical versions and other attachments unchanged.
+- Folder PDF import only enriches existing agreement posts (matched by avtalsnr, customer/folder name, address via src/lib/import-match.ts) and writes a new version filling only empty fields — avoids duplicate customers from messy SharePoint folders.

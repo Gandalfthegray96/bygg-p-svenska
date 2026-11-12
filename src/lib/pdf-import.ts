@@ -7,7 +7,28 @@ export type ImportHit = {
   file: string; path: string; kind: ImportKind; reason: string;
   kund: string; avtalNr: string; datum: string; adress: string; perYear: number | null;
   objekt: ImportObj[]; besokPerAr: number; kalkyler: Kalkyl[];
+  /** Kunduppgifter ur avtalet (ansvarig säljare = Vår referens) — fyller tomma fält på befintlig post. */
+  info: Partial<Record<InfoKey, string>>;
 };
+export type InfoKey = "varRef" | "erRef" | "kontaktperson" | "telefon" | "epost" | "epostFaktura" | "orgNr";
+const INFO: [InfoKey, RegExp][] = [
+  ["varRef", /Vår\s+ref(?:erens)?\s*:?[ \t]*([^\n]{2,50})/i],
+  ["erRef", /Er\s+ref(?:erens)?\s*:?[ \t]*([^\n]{2,50})/i],
+  ["kontaktperson", /Kontaktperson\s*:?[ \t]*([^\n]{2,50})/i],
+  ["telefon", /Tel(?:efon)?\.?\s*:?[ \t]*(\+?[\d][\d\s\-]{5,18}\d)/i],
+  ["epostFaktura", /E-?post\s+faktura\s*:?[ \t]*([\w.+-]+@[\w.-]+\.\w+)/i],
+  ["epost", /E-?post\s*:?[ \t]*([\w.+-]+@[\w.-]+\.\w+)/i],
+  ["orgNr", /Org\.?\s*(?:nr|nummer)\.?\s*:?[ \t]*(\d{6}-?\d{4})/i],
+];
+/** Plockar kunduppgifter; tomma eller etikett-lika värden hoppas över. UK Portservices egna nummer räknas inte som kundens. */
+export function parseInfo(t: string): Partial<Record<InfoKey, string>> {
+  const out: Partial<Record<InfoKey, string>> = {};
+  for (const [k, re] of INFO) {
+    const v = pick(t, re).replace(/\s+(Er|Vår)\s+ref.*$/i, "").trim();
+    if (v && !/:$/.test(v) && !/^(Er|Vår|Telefon|E-?post|Kontakt)/i.test(v)) out[k] = v;
+  }
+  return out;
+}
 
 const AVTAL_ORD = [/förebyggande\s+underhåll/i, /underhållsavtal/i, /serviceavtal/i, /\bFU[\s_\-.]?(avtal|\d)/i, /garantiservice/i, /servicetillfällen/i, /avtal\s+mellan\s+parter/i, /servicebesök\s*\/\s*år/i];
 // "Faktura" räknas bara som riktig faktura — inte kontaktfält som "E-post Faktura" / "Märkning Faktura".
@@ -36,7 +57,7 @@ export function classify(text: string, file: string, path: string, folder: strin
   const kalkyler = parseKalkyler(t);
   const k0 = kalkyler[0];
   const perYear = k0 ? sumYear(kalkyler) : perYearOf(t);
-  const base = { file, path, kund, avtalNr, datum, adress, perYear, objekt: k0?.objekt ?? [], besokPerAr: k0?.besokPerAr ?? 2, kalkyler };
+  const base = { file, path, kund, avtalNr, datum, adress, perYear, objekt: k0?.objekt ?? [], besokPerAr: k0?.besokPerAr ?? 2, kalkyler, info: parseInfo(t) };
   if (!t.trim()) return { ...base, kind: avtal ? "granska" : "ej", reason: "Ingen text i PDF:en (skannad?)" };
   if (!avtal || (ej && avtal < 2)) return { ...base, kind: "ej", reason: kalkyler.length ? "Endast kalkyl – kan slås ihop med ett avtal" : ej ? "Ser ut som faktura/offert/protokoll" : "Inget avtalsord hittades" };
   const saknas = [!avtalNr && "avtalsnr", !kund && "kund", perYear === null && "pris"].filter(Boolean);

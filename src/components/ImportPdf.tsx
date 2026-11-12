@@ -2,10 +2,11 @@ import { useRef, useState } from "react";
 import { FolderUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classify, mergeKalkyler, pdfText, type ImportHit, type ImportKind, type Kalkyl } from "@/lib/pdf-import";
-import { avtalNrOwner, importAvtal, type CustomerFolder, type Status } from "@/lib/avtal-store";
+import { avtalNrOwner, fyllImport, type CustomerFolder, type Status } from "@/lib/avtal-store";
+import { matchPosts, type Match } from "@/lib/import-match";
 import { fmtKr } from "@/lib/kalkyl";
 
-type Item = ImportHit & { on: boolean; status: Status; dup: string | null; kalk: string };
+type Item = ImportHit & { on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[] };
 
 /** Filer med samma avtalsnr blir ett avtal: bästa filen blir huvudpost, övriga ger kalkyler/uppgifter. */
 function groupByAvtalNr(list: Item[]): Item[] {
@@ -74,8 +75,12 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       try { text = await pdfText(await file.arrayBuffer()); } catch { /* trasig pdf */ }
       const h = classify(text, file.name, path, folder);
       // Dubblettkontroll bara mot sparade avtal i registret – inte mot andra filer i importen.
-      const dup = h.avtalNr ? avtalNrOwner(store, h.avtalNr) : null;
-      out.push({ ...h, on: h.kind !== "ej" && !dup, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}` });
+      // Bara befintliga kunder i appen: utan träff hamnar filen under "Ej avtal".
+      const cands = h.kind === "ej" && !h.kalkyler.length ? [] : matchPosts(store, h);
+      const post = cands[0]?.id ?? "";
+      if (!post && h.kind !== "ej") { h.kind = "ej"; h.reason = "Kunden finns inte i appen"; }
+      const dup = h.avtalNr && post ? avtalNrOwner(store, h.avtalNr, post) : null;
+      out.push({ ...h, on: h.kind !== "ej" && !dup, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}`, post, cands });
       setBusy({ n: i + 1, of: files.length });
     }
     const merged = groupByAvtalNr(out);
@@ -97,22 +102,23 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
   };
 
   const upd = (i: number, p: Partial<Item>) => setItems((l) => l.map((x, j) => (j === i ? { ...x, ...p } : x)));
-  const valda = items.filter((x) => x.on && x.kind !== "ej" && !x.dup);
+  const valda = items.filter((x) => x.on && x.kind !== "ej" && !x.dup && x.post);
   const spara = () => {
     if (!valda.length) return;
-    const n = importAvtal(valda.map((x) => {
+    const n = fyllImport(valda.map((x) => {
       const k = kalkOf(items, x);
       const src = x.kalk.startsWith(`${x.path}|`) ? "" : x.kalk.slice(0, x.kalk.lastIndexOf("|"));
-      return k ? { ...x, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : x;
+      const base = { ...x, postId: x.post };
+      return k ? { ...base, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : { ...base, objekt: [] };
     }));
-    alert(`${n} avtal importerade till registret.`);
+    alert(`${n} befintliga avtal uppdaterade med avtalsnr, ansvarig och uppgifter från PDF:erna.`);
     onDone();
   };
 
   return (
     <section className="ds-panel space-y-3">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <h2 className="font-display text-[15px] font-semibold text-foreground">Importera avtal från mapp</h2>
+        <h2 className="font-display text-[15px] font-semibold text-foreground">Fyll i avtal från kundmapp</h2>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Stäng"><X size={16} /></Button>
       </div>
       <input ref={input} type="file" multiple accept="application/pdf" className="hidden" {...{ webkitdirectory: "", directory: "" }} onChange={(e) => onPick(e.target.files)} />
@@ -120,7 +126,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
         <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-center">
           <FolderUp size={28} className="text-muted-foreground" />
           <p className="text-sm text-foreground">Dra hit kundmappen (från SharePoint/OneDrive på datorn)</p>
-          <p className="text-xs text-muted-foreground">Appen läser varje PDF och sorterar ut avtalen. Inget sparas förrän du godkänner.</p>
+          <p className="text-xs text-muted-foreground">Appen läser varje PDF, hittar rätt kund bland avtalen som redan finns och fyller i avtalsnr, ansvarig, kontaktuppgifter och kalkyl. Nya kunder skapas inte. Inget sparas förrän du godkänner.</p>
           <Button variant="outline" disabled={!!busy} onClick={() => input.current?.click()}>Välj mapp</Button>
           {busy && <p className="text-xs text-muted-foreground">Läser {busy.n} av {busy.of} PDF:er …</p>}
         </div>
@@ -144,8 +150,12 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                     <p className="text-xs"><span className={`rounded px-1.5 py-0.5 ${TABS.find((t) => t.id === x.kind)!.cls}`}>{x.reason}</span>{x.dup && <span className="ml-2 text-destructive">Avtalsnr finns redan hos {x.dup}</span>}</p>
                     {x.kind !== "ej" && (
                       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <select className="ds-input col-span-2 sm:col-span-4" value={x.post} onChange={(e) => upd(i, { post: e.target.value, dup: x.avtalNr ? avtalNrOwner(store, x.avtalNr, e.target.value) : null })} aria-label="Befintligt avtal">
+                          {x.cands.map((c) => <option key={c.id} value={c.id}>Fyller i: {c.name}{c.adress ? ` – ${c.adress}` : ""}</option>)}
+                        </select>
+                        {!!Object.keys(x.info).length && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{[x.info.varRef && `Ansvarig: ${x.info.varRef}`, x.info.kontaktperson && `Kontakt: ${x.info.kontaktperson}`, x.info.telefon, x.info.epost, x.info.orgNr && `Org.nr ${x.info.orgNr}`].filter(Boolean).join(" · ")}</p>}
                         <input className="ds-input" value={x.kund} onChange={(e) => upd(i, { kund: e.target.value })} placeholder="Kund" aria-label="Kund" />
-                        <input className="ds-input" value={x.avtalNr} onChange={(e) => upd(i, { avtalNr: e.target.value, dup: e.target.value ? avtalNrOwner(store, e.target.value) : null })} placeholder="Avtalsnr" aria-label="Avtalsnr" />
+                        <input className="ds-input" value={x.avtalNr} onChange={(e) => upd(i, { avtalNr: e.target.value, dup: e.target.value ? avtalNrOwner(store, e.target.value, x.post) : null })} placeholder="Avtalsnr" aria-label="Avtalsnr" />
                         <input className="ds-input" value={x.datum} onChange={(e) => upd(i, { datum: e.target.value })} placeholder="Datum" aria-label="Datum" />
                         <select className="ds-input" value={x.status} onChange={(e) => upd(i, { status: e.target.value as Status })} aria-label="Status">
                           <option value="signerat">Signerat</option><option value="skickat">Väntar på svar</option><option value="utkast">Utkast</option>
@@ -169,7 +179,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
           </ul>
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => setItems([])}>Börja om</Button>
-            <Button onClick={spara} disabled={!valda.length}>Spara {valda.length} avtal till registret</Button>
+            <Button onClick={spara} disabled={!valda.length}>Fyll i {valda.length} avtal</Button>
           </div>
         </>
       )}
