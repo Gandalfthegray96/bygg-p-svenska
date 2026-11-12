@@ -42,3 +42,9 @@ test("avtalsnr ur filnamn och korta mappnamn ignoreras", () => {
   expect(h.avtalNr).toBe("LIH_C0157");
   expect(h.kund).toBe("");
 });
+
+import { parseInfo } from "./pdf-import";
+it("läser ansvarig och kunduppgifter", () => {
+  const i = parseInfo("Vår Referens: Andre Linder\nEr Referens: Kalle Ek\nTelefon: 070-123 45 67\nE-post: kalle@ek.se\nOrg.nr: 556737-5026");
+  expect(i).toMatchObject({ varRef: "Andre Linder", erRef: "Kalle Ek", telefon: "070-123 45 67", epost: "kalle@ek.se", orgNr: "556737-5026" });
+});
