@@ -64,7 +64,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
     Object.values(store).filter((f) => f.versions.length && !f.uppsagd).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
-      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a, getSettings()), signedAt: [...(f.log ?? [])].reverse().find((l) => l.kind === "signerat")?.at ?? v.savedAt, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "", filial: filialFor(f.planering?.filial, a.customer.anlAdress ?? "") };
+      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a, getSettings()), signedAt: (/^\d{4}-\d{2}-\d{2}/.test(a.customer.datum ?? "") && a.customer.datum < (f.versions[0]?.savedAt ?? v.savedAt).slice(0, 10) ? a.customer.datum : undefined) ?? [...(f.log ?? [])].reverse().find((l) => l.kind === "signerat")?.at ?? v.savedAt, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "", filial: filialFor(f.planering?.filial, a.customer.anlAdress ?? "") };
     }), [store, me]);
 
   const nKomplett = rows.filter(komplett).length;
