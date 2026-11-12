@@ -156,6 +156,12 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
                           {filter === "alla" && r.plan.filial && <span>{FILIALER.find((x) => x.id === r.plan.filial)?.label}</span>}
                           {b.klar && <span className="font-medium text-foreground">Ärende skapat i Mobigo</span>}
                         </div>
+                        <label className="mt-1 inline-flex items-center gap-2">
+                          <span>Flytta till</span>
+                          <select aria-label={`Flytta besök ${i + 1} för ${r.kund}`} value={b.vecka ?? ""} onChange={(e) => { const nv = Number(e.target.value); if (!nv) return; save(r, (p) => ({ ...p, besok: p.besok.map((x, j) => (j === i ? { ...x, vecka: nv } : x)) })); setQ(kvartal(nv)); setVecka(nv); }} className="ds-input h-8 w-36 text-xs">
+                            {Array.from({ length: 52 }, (_, k) => k + 1).map((w) => <option key={w} value={w}>v{w} (Q{kvartal(w)})</option>)}
+                          </select>
+                        </label>
                       </div>
                     </div>
                   </li>
@@ -165,7 +171,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
             )}
           </div>
         )}
-        <p className="text-xs text-muted-foreground">Bocka i när ärendet är skapat i Mobigo.</p>
+        <p className="text-xs text-muted-foreground">Bocka i när ärendet är skapat i Mobigo. Flytta ett besök med "Flytta till".</p>
       </section>
 
       <AvtalPopup r={popRow} onClose={() => setPopup(null)} onChanged={onChanged} />
