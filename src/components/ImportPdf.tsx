@@ -5,6 +5,7 @@ import { classify, mergeKalkyler, pdfText, type ImportHit, type ImportKind, type
 import { avtalNrOwner, fyllImport, type CustomerFolder, type Status } from "@/lib/avtal-store";
 import { matchPosts, type Match } from "@/lib/import-match";
 import { fmtKr } from "@/lib/kalkyl";
+import { excelKalkyler } from "@/lib/kalkyl-import";
 
 type Item = ImportHit & { on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[] };
 
@@ -15,11 +16,12 @@ function groupByAvtalNr(list: Item[]): Item[] {
   const score = (x: Item) => (x.kind === "ok" ? 4 : x.kind === "granska" ? 2 : 0) + (x.kalkyler.length ? 1 : 0) + (x.adress ? 0.5 : 0);
   for (const g of groups.values()) {
     if (g.length < 2) continue;
-    const main = [...g].sort((a, b) => score(b) - score(a))[0]!;
+    const main = [...g].sort((a, b) => score(b) - score(a))[0];
+    if (!main) continue;
     const rest = g.filter((x) => x !== main);
     if (main.kind === "ej") main.kind = "granska";
     main.reason = `Sammanslaget av ${g.length} filer – välj kalkyl`;
-    main.on = !main.dup;
+    main.on = !!main.post && !main.dup;
     for (const r of rest) {
       main.kund ||= r.kund; main.adress ||= r.adress; main.datum ||= r.datum;
       r.kind = "ej"; r.on = false; r.reason = `Ingår i avtal ${main.avtalNr} (${main.file})`;
@@ -39,11 +41,14 @@ const kalkOf = (items: Item[], x: Item): Kalkyl | null => {
   return k === "all" ? mergeKalkyler(src.kalkyler) : src.kalkyler[Number(k)] ?? null;
 };
 type FsEntry = { isFile: boolean; isDirectory: boolean; name: string; fullPath: string; file?: (cb: (f: File) => void, err: (e: unknown) => void) => void; createReader?: () => { readEntries: (cb: (e: FsEntry[]) => void, err: (e: unknown) => void) => void } };
+const supportedFile = (name: string) => /\.(pdf|xlsx|xls)$/i.test(name) && !name.startsWith("~$");
 
 async function walk(e: FsEntry, out: { file: File; path: string }[]) {
-  if (e.isFile && /\.pdf$/i.test(e.name)) out.push({ file: await new Promise<File>((res, rej) => e.file!(res, rej)), path: e.fullPath.replace(/^\//, "") });
-  else if (e.isDirectory) {
-    const r = e.createReader!();
+  if (e.isFile && supportedFile(e.name) && e.file) {
+    const readFile = e.file;
+    out.push({ file: await new Promise<File>((res, rej) => readFile(res, rej)), path: e.fullPath.replace(/^\//, "") });
+  } else if (e.isDirectory && e.createReader) {
+    const r = e.createReader();
     for (;;) {
       const batch = await new Promise<FsEntry[]>((res, rej) => r.readEntries(res, rej));
       if (!batch.length) break;
@@ -61,6 +66,7 @@ const TABS: { id: ImportKind; label: string; cls: string }[] = [
 /** Importera en hel mapp (t.ex. SharePoint-synkad kundmapp): sållar avtal från andra PDF:er. */
 export function ImportPdf({ store, onClose, onDone }: { store: Record<string, CustomerFolder>; onClose: () => void; onDone: () => void }) {
   const input = useRef<HTMLInputElement>(null);
+  const singleInput = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState<{ n: number; of: number } | null>(null);
   const [tab, setTab] = useState<ImportKind>("ok");
@@ -72,15 +78,29 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const parts = path.split("/");
       const folder = parts.length > 1 ? parts[parts.length - 2] ?? "" : "";
       let text = "";
-      try { text = await pdfText(await file.arrayBuffer()); } catch { /* trasig pdf */ }
+      let kalkyler: Kalkyl[] = [];
+      const excel = /\.(xlsx|xls)$/i.test(file.name);
+      try {
+        const bytes = await file.arrayBuffer();
+        if (excel) kalkyler = await excelKalkyler(bytes);
+        else text = await pdfText(bytes);
+      } catch { /* trasig eller oläsbar fil */ }
       const h = classify(text, file.name, path, folder);
+      if (excel) {
+        const k = mergeKalkyler(kalkyler);
+        Object.assign(h, { kalkyler, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, kind: kalkyler.length ? "granska" : "ej", reason: kalkyler.length ? "Äldre Excelkalkyl – kontrollera kund och pris" : "Ingen stödd kalkyltabell hittades i Excel" });
+      }
       // Dubblettkontroll bara mot sparade avtal i registret – inte mot andra filer i importen.
       // Bara befintliga kunder i appen: utan träff hamnar filen under "Ej avtal".
       const cands = h.kind === "ej" && !h.kalkyler.length ? [] : matchPosts(store, h);
       const post = cands[0]?.id ?? "";
-      if (!post && h.kind !== "ej") { h.kind = "ej"; h.reason = "Kunden finns inte i appen"; }
+      if (h.kalkyler.length && h.kind === "ej" && post) { h.kind = "granska"; h.reason = "Kalkyl för befintligt avtal – kontrollera pris"; }
+      if (!post && h.kalkyler.length) {
+        h.kind = "granska"; h.reason = "Välj befintligt avtal – kunden kunde inte identifieras";
+        cands.push(...Object.values(store).map((f) => ({ id: f.id, name: f.name, adress: f.versions.at(-1)?.data.customer.anlAdress ?? "", score: 0 })).sort((a, b) => a.name.localeCompare(b.name, "sv")));
+      } else if (!post && h.kind !== "ej") { h.kind = "ej"; h.reason = "Kunden finns inte i appen"; }
       const dup = h.avtalNr && post ? avtalNrOwner(store, h.avtalNr, post) : null;
-      out.push({ ...h, on: h.kind !== "ej" && !dup, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}`, post, cands });
+      out.push({ ...h, on: h.kind !== "ej" && !!post && !dup, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}`, post, cands });
       setBusy({ n: i + 1, of: files.length });
     }
     const merged = groupByAvtalNr(out);
@@ -98,7 +118,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
   };
   const onPick = (fl: FileList | null) => {
     if (!fl) return;
-    void run(Array.from(fl).filter((f) => /\.pdf$/i.test(f.name)).map((f) => ({ file: f, path: (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name })));
+    void run(Array.from(fl).filter((f) => supportedFile(f.name)).map((f) => ({ file: f, path: (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name })));
   };
 
   const upd = (i: number, p: Partial<Item>) => setItems((l) => l.map((x, j) => (j === i ? { ...x, ...p } : x)));
@@ -111,7 +131,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const base = { ...x, postId: x.post };
       return k ? { ...base, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : { ...base, objekt: [] };
     }));
-    alert(`${n} befintliga avtal uppdaterade med avtalsnr, ansvarig och uppgifter från PDF:erna.`);
+    alert(`${n} befintliga avtal uppdaterade med uppgifter från filerna.`);
     onDone();
   };
 
@@ -121,14 +141,17 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
         <h2 className="font-display text-[15px] font-semibold text-foreground">Fyll i avtal från kundmapp</h2>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Stäng"><X size={16} /></Button>
       </div>
-      <input ref={input} type="file" multiple accept="application/pdf" className="hidden" {...{ webkitdirectory: "", directory: "" }} onChange={(e) => onPick(e.target.files)} />
+      <input ref={input} type="file" multiple accept=".pdf,.xlsx,.xls" className="hidden" {...{ webkitdirectory: "", directory: "" }} onChange={(e) => onPick(e.target.files)} />
+      <input ref={singleInput} type="file" multiple accept=".pdf,.xlsx,.xls" className="hidden" onChange={(e) => onPick(e.target.files)} />
       {!items.length && (
         <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-center">
           <FolderUp size={28} className="text-muted-foreground" />
           <p className="text-sm text-foreground">Dra hit kundmappen (från SharePoint/OneDrive på datorn)</p>
-          <p className="text-xs text-muted-foreground">Appen läser varje PDF, hittar rätt kund bland avtalen som redan finns och fyller i avtalsnr, ansvarig, kontaktuppgifter och kalkyl. Nya kunder skapas inte. Inget sparas förrän du godkänner.</p>
-          <Button variant="outline" disabled={!!busy} onClick={() => input.current?.click()}>Välj mapp</Button>
-          {busy && <p className="text-xs text-muted-foreground">Läser {busy.n} av {busy.of} PDF:er …</p>}
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button variant="outline" disabled={!!busy} onClick={() => input.current?.click()}>Välj mapp</Button>
+            <Button variant="outline" disabled={!!busy} onClick={() => singleInput.current?.click()}>Välj PDF eller Excel</Button>
+          </div>
+          {busy && <p className="text-xs text-muted-foreground">Läser {busy.n} av {busy.of} filer …</p>}
         </div>
       )}
       {!!items.length && (
@@ -147,10 +170,11 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                   {x.kind !== "ej" && <input type="checkbox" className="mt-1" checked={x.on && !x.dup} disabled={!!x.dup} onChange={(e) => upd(i, { on: e.target.checked })} aria-label="Importera" />}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs text-muted-foreground" title={x.path}>{x.path}</p>
-                    <p className="text-xs"><span className={`rounded px-1.5 py-0.5 ${TABS.find((t) => t.id === x.kind)!.cls}`}>{x.reason}</span>{x.dup && <span className="ml-2 text-destructive">Avtalsnr finns redan hos {x.dup}</span>}</p>
+                    <p className="text-xs"><span className={`rounded px-1.5 py-0.5 ${TABS.find((t) => t.id === x.kind)?.cls ?? ""}`}>{x.reason}</span>{x.dup && <span className="ml-2 text-destructive">Avtalsnr finns redan hos {x.dup}</span>}</p>
                     {x.kind !== "ej" && (
                       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <select className="ds-input col-span-2 sm:col-span-4" value={x.post} onChange={(e) => upd(i, { post: e.target.value, dup: x.avtalNr ? avtalNrOwner(store, x.avtalNr, e.target.value) : null })} aria-label="Befintligt avtal">
+                        <select className="ds-input col-span-2 sm:col-span-4" value={x.post} onChange={(e) => upd(i, { post: e.target.value, on: !!e.target.value, dup: x.avtalNr ? avtalNrOwner(store, x.avtalNr, e.target.value) : null })} aria-label="Befintligt avtal">
+                          <option value="">Välj befintligt avtal</option>
                           {x.cands.map((c) => <option key={c.id} value={c.id}>Fyller i: {c.name}{c.adress ? ` – ${c.adress}` : ""}</option>)}
                         </select>
                         {!!Object.keys(x.info).length && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{[x.info.varRef && `Ansvarig: ${x.info.varRef}`, x.info.kontaktperson && `Kontakt: ${x.info.kontaktperson}`, x.info.telefon, x.info.epost, x.info.orgNr && `Org.nr ${x.info.orgNr}`].filter(Boolean).join(" · ")}</p>}

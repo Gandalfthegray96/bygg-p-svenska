@@ -1,4 +1,5 @@
 // Mapp-import av gamla avtals-PDF:er: sållar bort icke-avtal och plockar ut kund, avtalsnr, datum och kalkyler.
+import { parseLegacyText } from "./kalkyl-import";
 export type ImportKind = "ok" | "granska" | "ej";
 export type ImportObj = { name: string; qty: number };
 /** En kalkyl (Bilaga 1-sida) — en PDF kan innehålla flera anläggningar. */
@@ -113,7 +114,7 @@ export function parseKalkyler(t: string): Kalkyl[] {
     if (seen.has(key)) continue;
     seen.add(key); out.push(k);
   }
-  return out;
+  return [...out, ...parseLegacyText(t)];
 }
 
 /** Bakåtkompatibel: första kalkylen. */
