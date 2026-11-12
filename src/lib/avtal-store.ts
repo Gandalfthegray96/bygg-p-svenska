@@ -280,3 +280,38 @@ export function setPlanering(id: string, p: Planering) {
   f.planering = p;
   saveStore(store);
 }
+
+/** Mapp-import mot befintliga poster: ny version där avtalsnr, ansvarig och kunduppgifter fylls i (bara tomma fält),
+ *  objekt/pris tas från PDF:ens kalkyl om den finns. Status, planering och logg behålls. */
+export function fyllImport(items: { postId: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; objekt?: { name: string; qty: number }[]; besokPerAr?: number; info?: Partial<Record<string, string>> }[]): number {
+  const store = loadStore();
+  let n = 0;
+  for (const it of items) {
+    const f = store[it.postId];
+    const last = f?.versions.at(-1);
+    if (!f || !last) continue;
+    if (it.avtalNr && avtalNrOwner(store, it.avtalNr, f.id)) continue;
+    const a = normalizeAvtal(structuredClone(last.data));
+    const c = a.customer as unknown as Record<string, string>;
+    const fill: Record<string, string> = { ...(it.info ?? {}), avtalNr: it.avtalNr, datum: it.datum, anlAdress: it.adress };
+    const filled: string[] = [];
+    for (const [k, v] of Object.entries(fill)) if (v?.trim() && !(c[k] ?? "").trim()) { c[k] = v.trim(); filled.push(k); }
+    if (it.objekt?.length) {
+      const besok = clampVisits(it.besokPerAr ?? 2);
+      a.rows = it.objekt.map((o) => ({ ...newRow(), name: o.name, qty: Math.max(1, o.qty), visits: besok }));
+      a.adjust = "";
+    }
+    if (it.perYear !== null && a.rows.length) {
+      const diff = it.perYear - calculate(a).perYear;
+      const nv = calculate(a).visits.length || 1;
+      a.adjust = String(Math.round((diff / nv) * 100) / 100).replace(".", ",");
+    }
+    const version = last.version + 1;
+    f.versions.push({ version, savedAt: new Date().toISOString(), data: a, status: last.status ?? "signerat" });
+    logTo(f, "version", `Uppgifter importerade från PDF (v${version}): ${it.path}${filled.length ? ` – ifyllt: ${filled.join(", ")}` : ""}`);
+    if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
+    n++;
+  }
+  saveStore(store);
+  return n;
+}
