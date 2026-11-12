@@ -39,6 +39,7 @@ export function parseLegacyText(text: string): Kalkyl[] {
   return sections.flatMap((s, i) => {
     const rows: unknown[][] = [["Objekt/typ", "Antal objekt"]];
     for (const line of s.split("\n").slice(1)) {
+      if (/\s[x×]\s/i.test(line) && !/^.+?\s+\d+\s+[x×]\s/i.test(line)) continue;
       const m = line.trim().match(/^(.*?)\s+(\d[\d\s.,]*)(?:\s*(?:kr|x|=).*)?$/i);
       if (m) rows.push([m[1], m[2]]);
       else if (/servicetillfällen\s+per\s+år|TOTAL\s+SUMMA\s+per\s+servicetillfälle/i.test(line)) rows.push([line]);
