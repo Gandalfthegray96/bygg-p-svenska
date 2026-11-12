@@ -10,4 +10,4 @@ test("avtalsnr ger säker träff", () => expect(matchPosts(store, { kund: "", av
 test("adressen väljer rätt anläggning hos samma kund", () =>
     expect(matchPosts(store, { kund: "Tingstad Papper", avtalNr: "", adress: "Tagenevägen 80, Hisings Kärra", path: "x.pdf" })[0]?.id).toBe("b"));
 test("kundmappens namn räcker", () => expect(matchPosts(store, { kund: "", avtalNr: "", adress: "", path: "Kunder/Saltex/AV/a.pdf" })[0]?.id).toBe("c"));
-test("okänd kund ger ingen träff", () => expect(matchPosts(store, { kund: "Volvo Cars", avtalNr: "", adress: "", path: "Volvo/a.pdf" })).toHaveLength(0));
+test("okänd kund ger ingen träff", () => expect(matchPosts(store, { kund: "Volvo Cars", avtalNr: "", adress: "", path: "Volvo/a.pdf" }).length).toBe(0));
