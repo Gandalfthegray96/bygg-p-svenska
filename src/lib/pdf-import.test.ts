@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { classify, parseObjekt } from "./pdf-import";
+import { classify, parseInfo, parseObjekt } from "./pdf-import";
 
 test("dagens avtal blir grönt", () => {
     const t = "FÖREBYGGANDE UNDERHÅLLSAVTAL\nAvtal nr: FU-1234\nBeställare: Bygg AB\n2025-03-01\nKostnad per år (exkl. moms): 12 345,00 kr";
@@ -43,8 +43,7 @@ test("avtalsnr ur filnamn och korta mappnamn ignoreras", () => {
   expect(h.kund).toBe("");
 });
 
-import { parseInfo } from "./pdf-import";
-it("läser ansvarig och kunduppgifter", () => {
+test("läser ansvarig och kunduppgifter", () => {
   const i = parseInfo("Vår Referens: Andre Linder\nEr Referens: Kalle Ek\nTelefon: 070-123 45 67\nE-post: kalle@ek.se\nOrg.nr: 556737-5026");
-  expect(i).toMatchObject({ varRef: "Andre Linder", erRef: "Kalle Ek", telefon: "070-123 45 67", epost: "kalle@ek.se", orgNr: "556737-5026" });
+  expect(JSON.stringify(i)).toBe(JSON.stringify({ varRef: "Andre Linder", erRef: "Kalle Ek", telefon: "070-123 45 67", epost: "kalle@ek.se", orgNr: "556737-5026" }));
 });
