@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-12-aldre-kalkyl",
+    "rubrik": "Import av äldre FU-kalkyler",
+    "punkter": [
+      "Äldre kalkyler med Objekt/typ kan läsas från Excel och PDF.",
+      "Pris per servicetillfälle och antal besök läses in som årspris.",
+      "Välj enstaka PDF- eller Excelfiler och koppla kalkylen till ett befintligt avtal före import."
+    ]
+  },
+  {
     "datum": "2026-11-12-gbg-import",
     "rubrik": "Göteborg inlagt och smartare import",
     "punkter": [
