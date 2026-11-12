@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Öppet
+- [ ] Läs äldre FU-kalkyler från Excel och PDF i kundmappsimporten; verifiera med FU_1_och_21.xlsx.
 - [x] Admin: ladda upp PDF-bilagor för nya avtal; uppdatera endast prislistan för utvalda äldre avtal som nya versioner. Verifierat uppladdning, urval, oförändrad historik och PDF-export.
 - [x] Glasstil i vänstermenyn och större sammanfattning uppe till höger med objekt, tid och pris per år; verifierat ändrade värden, omladdning och telefonbredd utan kalkyländring.
 - [x] Gemensamt designsystem: rött/blått/svart/vitt, typografi, avstånd, former och kontrollstilar; tillämpa i hela appen utan kalkyl- eller dokumentändringar.
