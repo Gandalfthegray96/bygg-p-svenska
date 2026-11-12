@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-12-kalkylformat",
+    "rubrik": "Importen känner igen fler kalkyler",
+    "punkter": [
+      "Servicekalkyl Enkel och Servicekalkyl Flera fastigheter läses från Excel.",
+      "Dagens FU-mall (Kalkyl-fliken) läses från Excel.",
+      "Äldre FU-avtal med kalkyl inuti PDF:en (t.ex. \"Summa per servicetillfälle 4,600:-\") får rätt pris per år."
+    ]
+  },
+  {
     "datum": "2026-11-12-arbetsko",
     "rubrik": "Arbetskö och smartare import",
     "punkter": [
