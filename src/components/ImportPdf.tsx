@@ -7,7 +7,7 @@ import { matchPosts, type Match } from "@/lib/import-match";
 import { fmtKr } from "@/lib/kalkyl";
 import { excelKalkyler } from "@/lib/kalkyl-import";
 
-type Item = ImportHit & { on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[] };
+type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[] };
 
 /** Filer med samma avtalsnr blir ett avtal: bästa filen blir huvudpost, övriga ger kalkyler/uppgifter. */
 function groupByAvtalNr(list: Item[]): Item[] {
@@ -30,6 +30,33 @@ function groupByAvtalNr(list: Item[]): Item[] {
       const src = rest.find((r) => r.kalkyler.length);
       if (src) main.kalk = `${src.path}|${src.kalkyler.length > 1 ? "all" : 0}`;
     }
+  }
+  return list;
+}
+/** Kundmapp för en fil: katalogen, utan avslutande AV/Avt/A/FU/Kalkyl-undermapp. */
+const kundDir = (path: string) => { const d = path.split("/").slice(0, -1); while (d.length > 1 && /^(av|avt|avtal|a|fu|kalkyl(er)?|underhåll|serviceavtal)$/i.test(d.at(-1) ?? "")) d.pop(); return d.join("/").toLowerCase(); };
+/** Avtal och lösa kalkyler i samma kundmapp hör ihop: senast ändrade kalkylen kopplas automatiskt till avtalet. */
+function groupByFolder(list: Item[]): Item[] {
+  const live = list.filter((x) => !x.reason.startsWith("Ingår i"));
+  const dirs = new Map<string, Item[]>();
+  for (const x of live) { const k = kundDir(x.path); if (k) dirs.set(k, [...(dirs.get(k) ?? []), x]); }
+  for (const g of dirs.values()) {
+    const kalk = g.filter((x) => x.kalkyler.length).sort((a, b) => b.mod - a.mod);
+    const avtal = g.filter((x) => x.avtalNr && x.kind !== "ej" || (x.post && !x.kalkyler.length)).sort((a, b) => b.mod - a.mod);
+    const latest = kalk[0];
+    if (!latest) continue;
+    const mains = avtal.length ? avtal : [latest];
+    for (const m of mains) {
+      if (m !== latest && !m.kalkyler.length) m.kalk = `${latest.path}|${latest.kalkyler.length > 1 ? "all" : 0}`;
+      if (!m.post && latest.post) { m.post = latest.post; m.cands = latest.cands; }
+      if (m.kind === "ej" && m.post) m.kind = "granska";
+      m.on = !!m.post && !m.dup && m.kind !== "ej";
+    }
+    for (const k of kalk) if (!mains.includes(k)) {
+      if (mains.length === 1 && mains[0] && !mains[0].post && k.post) { mains[0].post = k.post; mains[0].cands = k.cands; mains[0].on = !mains[0].dup; }
+      k.kind = "ej"; k.on = false; k.reason = k === latest ? `Senaste kalkylen – kopplad till ${mains.map((m) => m.file).join(", ")}` : `Äldre kalkyl – ersatt av ${latest.file}`;
+    }
+    for (const m of mains) if (m !== latest && m.post) { m.kind = m.dup ? "granska" : "ok"; m.reason = `Avtal + senaste kalkyl (${latest.file}) från samma mapp`; }
   }
   return list;
 }
@@ -100,10 +127,10 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
         cands.push(...Object.values(store).map((f) => ({ id: f.id, name: f.name, adress: f.versions.at(-1)?.data.customer.anlAdress ?? "", score: 0 })).sort((a, b) => a.name.localeCompare(b.name, "sv")));
       } else if (!post && h.kind !== "ej") { h.kind = "ej"; h.reason = "Kunden finns inte i appen"; }
       const dup = h.avtalNr && post ? avtalNrOwner(store, h.avtalNr, post) : null;
-      out.push({ ...h, on: h.kind !== "ej" && !!post && !dup, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}`, post, cands });
+      out.push({ ...h, on: h.kind !== "ej" && !!post && !dup, mod: file.lastModified || 0, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}`, post, cands });
       setBusy({ n: i + 1, of: files.length });
     }
-    const merged = groupByAvtalNr(out);
+    const merged = groupByFolder(groupByAvtalNr(out));
     setItems(merged); setBusy(null); setTab(merged.some((x) => x.kind === "ok") ? "ok" : "granska");
   };
 
@@ -175,7 +202,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                         <select className="ds-input col-span-2 sm:col-span-4" value={x.post} onChange={(e) => upd(i, { post: e.target.value, on: !!e.target.value, dup: x.avtalNr ? avtalNrOwner(store, x.avtalNr, e.target.value) : null })} aria-label="Befintligt avtal">
                           <option value="">Välj befintligt avtal</option>
-                          {x.cands.map((c) => <option key={c.id} value={c.id}>Fyller i: {c.name}{c.adress ? ` – ${c.adress}` : ""}</option>)}
+                          {x.cands.map((c) => <option key={c.id} value={c.id}>{c.name}{c.adress ? ` – ${c.adress}` : ""}</option>)}
                         </select>
                         {!!Object.keys(x.info).length && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{[x.info.varRef && `Ansvarig: ${x.info.varRef}`, x.info.kontaktperson && `Kontakt: ${x.info.kontaktperson}`, x.info.telefon, x.info.epost, x.info.orgNr && `Org.nr ${x.info.orgNr}`].filter(Boolean).join(" · ")}</p>}
                         <input className="ds-input" value={x.kund} onChange={(e) => upd(i, { kund: e.target.value })} placeholder="Kund" aria-label="Kund" />

@@ -1,5 +1,13 @@
 [
   {
+    "datum": "2026-11-12-arbetsko",
+    "rubrik": "Arbetskö och smartare import",
+    "punkter": [
+      "Avtalsöversikten visar bara avtal som saknar pris eller avtalsnummer – \"Se alla avtal\" visar hela registret.",
+      "Importen kopplar avtal och lösa kalkyler i samma kundmapp och väljer den senast ändrade kalkylen automatiskt."
+    ]
+  },
+  {
     "datum": "2026-11-12-aldre-kalkyl",
     "rubrik": "Import av äldre FU-kalkyler",
     "punkter": [
