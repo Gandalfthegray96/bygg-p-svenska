@@ -329,6 +329,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
                   <DropdownMenuTrigger asChild><Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Fler åtgärder"><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onSelect={() => setUpp(x.id)}><Ban size={14} />Säg upp avtal</DropdownMenuItem>
+                    <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onSelect={() => { if (window.confirm(`Radera avtalet permanent?\n\n${x.name}\n${x.adress || "Ingen adress"}\n${x.avtalNr ? `Avtalsnr ${x.avtalNr}` : "Inget avtalsnr"}\n\nAlla versioner och loggen tas bort för alla användare.`)) { deleteAgreement(x.id); onChanged?.(); } }}><Trash2 size={14} />Radera avtal</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
