@@ -47,3 +47,12 @@ test("läser ansvarig och kunduppgifter", () => {
   const i = parseInfo("Vår Referens: Andre Linder\nEr Referens: Kalle Ek\nTelefon: 070-123 45 67\nE-post: kalle@ek.se\nOrg.nr: 556737-5026");
   expect(JSON.stringify(i)).toBe(JSON.stringify({ varRef: "Andre Linder", erRef: "Kalle Ek", telefon: "070-123 45 67", epost: "kalle@ek.se", orgNr: "556737-5026" }));
 });
+
+import { classify as classify2, perVisitOf } from "./pdf-import";
+test("besökspris läses och räknas om till årspris", () => {
+  expect(perVisitOf("Summa per servicetillfälle exkl moms 1 865:-")).toBe(1865);
+  expect(perVisitOf("Pris: 1865 kr/besök")).toBe(1865);
+  const h = classify2("Förebyggande underhåll\nAvt.nr 5266\nAntal service per år 2\nPris per besök: 1 865 kr", "avtal.pdf", "Montano/avtal.pdf", "Montano");
+  expect(h.avtalNr).toBe("5266");
+  expect(h.perYear).toBe(3730);
+});
