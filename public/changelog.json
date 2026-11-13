@@ -1,5 +1,13 @@
 [
   {
+    "datum": "2026-11-13-mappimport",
+    "rubrik": "Mappimporten fungerar igen",
+    "punkter": [
+      "Rättat felet som stoppade mappar från att läsas när de drogs in.",
+      "Flera mappar kan släppas samtidigt; ett tydligt meddelande visas om en mapp inte går att läsa."
+    ]
+  },
+  {
     "datum": "2026-11-12-kalkylformat",
     "rubrik": "Importen känner igen fler kalkyler",
     "punkter": [

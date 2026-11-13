@@ -6,6 +6,7 @@ import { avtalNrOwner, fyllImport, type CustomerFolder, type Status } from "@/li
 import { matchPosts, type Match } from "@/lib/import-match";
 import { fmtKr } from "@/lib/kalkyl";
 import { excelKalkyler } from "@/lib/kalkyl-import";
+import { droppedImportFiles, supportedFile } from "@/lib/import-files";
 
 type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[] };
 
@@ -67,23 +68,6 @@ const kalkOf = (items: Item[], x: Item): Kalkyl | null => {
   if (!src?.kalkyler.length) return null;
   return k === "all" ? mergeKalkyler(src.kalkyler) : src.kalkyler[Number(k)] ?? null;
 };
-type FsEntry = { isFile: boolean; isDirectory: boolean; name: string; fullPath: string; file?: (cb: (f: File) => void, err: (e: unknown) => void) => void; createReader?: () => { readEntries: (cb: (e: FsEntry[]) => void, err: (e: unknown) => void) => void } };
-const supportedFile = (name: string) => /\.(pdf|xlsx|xls)$/i.test(name) && !name.startsWith("~$");
-
-async function walk(e: FsEntry, out: { file: File; path: string }[]) {
-  if (e.isFile && supportedFile(e.name) && e.file) {
-    const readFile = e.file;
-    out.push({ file: await new Promise<File>((res, rej) => readFile(res, rej)), path: e.fullPath.replace(/^\//, "") });
-  } else if (e.isDirectory && e.createReader) {
-    const r = e.createReader();
-    for (;;) {
-      const batch = await new Promise<FsEntry[]>((res, rej) => r.readEntries(res, rej));
-      if (!batch.length) break;
-      for (const c of batch) await walk(c, out);
-    }
-  }
-}
-
 const TABS: { id: ImportKind; label: string; cls: string }[] = [
   { id: "ok", label: "Klara", cls: "bg-success/15 text-success" },
   { id: "granska", label: "Granska", cls: "bg-primary/20 text-foreground" },
@@ -97,6 +81,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState<{ n: number; of: number } | null>(null);
   const [tab, setTab] = useState<ImportKind>("ok");
+  const [dropError, setDropError] = useState("");
 
   const run = async (files: { file: File; path: string }[]) => {
     const out: Item[] = [];
@@ -140,12 +125,22 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
 
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault();
-    const files: { file: File; path: string }[] = [];
-    for (const it of Array.from(e.dataTransfer.items)) {
-      const en = (it as DataTransferItem & { webkitGetAsEntry?: () => FsEntry | null }).webkitGetAsEntry?.();
-      if (en) await walk(en, files);
+    e.stopPropagation();
+    if (busy) return;
+    setDropError("");
+    setBusy({ n: 0, of: 0 });
+    try {
+      const files = await droppedImportFiles(e.dataTransfer);
+      if (!files.length) {
+        setDropError("Inga PDF- eller Excelfiler hittades i det du släppte.");
+        setBusy(null);
+        return;
+      }
+      await run(files);
+    } catch {
+      setBusy(null);
+      setDropError("Mappen kunde inte läsas. Kontrollera att filerna finns på datorn och försök igen med Välj mapp.");
     }
-    void run(files);
   };
   const onPick = (fl: FileList | null) => {
     if (!fl) return;
@@ -181,7 +176,8 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
           <Button variant="outline" disabled={!!busy} onClick={() => input.current?.click()}>Välj mapp</Button>
           <Button variant="outline" disabled={!!busy} onClick={() => singleInput.current?.click()}>Välj PDF eller Excel</Button>
         </div>
-        {busy && <p className="text-xs text-muted-foreground">Läser {busy.n} av {busy.of} filer …</p>}
+        {busy && <p className="text-xs text-muted-foreground">{busy.of ? `Läser ${busy.n} av ${busy.of} filer …` : "Letar efter PDF- och Excelfiler i mapparna …"}</p>}
+        {dropError && <p role="alert" className="text-sm text-destructive">{dropError}</p>}
       </div>
       {!!items.length && (
         <>
