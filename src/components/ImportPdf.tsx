@@ -130,8 +130,12 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       out.push({ ...h, on: h.kind !== "ej" && !!post && !dup, mod: file.lastModified || 0, status: "signerat", dup, kalk: `${path}|${h.kalkyler.length > 1 ? "all" : 0}`, post, cands });
       setBusy({ n: i + 1, of: files.length });
     }
-    const merged = groupByFolder(groupByAvtalNr(out));
-    setItems(merged); setBusy(null); setTab(merged.some((x) => x.kind === "ok") ? "ok" : "granska");
+    setBusy(null);
+    setItems((prev) => {
+      const merged = groupByFolder(groupByAvtalNr([...prev, ...out]));
+      if (!prev.length) setTab(merged.some((x) => x.kind === "ok") ? "ok" : "granska");
+      return merged;
+    });
   };
 
   const onDrop = async (e: React.DragEvent) => {
@@ -170,17 +174,15 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       </div>
       <input ref={input} type="file" multiple accept=".pdf,.xlsx,.xls" className="hidden" {...{ webkitdirectory: "", directory: "" }} onChange={(e) => onPick(e.target.files)} />
       <input ref={singleInput} type="file" multiple accept=".pdf,.xlsx,.xls" className="hidden" onChange={(e) => onPick(e.target.files)} />
-      {!items.length && (
-        <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-center">
-          <FolderUp size={28} className="text-muted-foreground" />
-          <p className="text-sm text-foreground">Dra hit kundmappen (från SharePoint/OneDrive på datorn)</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button variant="outline" disabled={!!busy} onClick={() => input.current?.click()}>Välj mapp</Button>
-            <Button variant="outline" disabled={!!busy} onClick={() => singleInput.current?.click()}>Välj PDF eller Excel</Button>
-          </div>
-          {busy && <p className="text-xs text-muted-foreground">Läser {busy.n} av {busy.of} filer …</p>}
+      <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className={`flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border text-center ${items.length ? "p-3" : "p-6"}`}>
+        {!items.length && <FolderUp size={28} className="text-muted-foreground" />}
+        <p className="text-sm text-foreground">{items.length ? "Dra hit fler mappar – de läggs till i listan nedan" : "Dra hit en eller flera kundmappar (från SharePoint/OneDrive på datorn)"}</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button variant="outline" disabled={!!busy} onClick={() => input.current?.click()}>Välj mapp</Button>
+          <Button variant="outline" disabled={!!busy} onClick={() => singleInput.current?.click()}>Välj PDF eller Excel</Button>
         </div>
-      )}
+        {busy && <p className="text-xs text-muted-foreground">Läser {busy.n} av {busy.of} filer …</p>}
+      </div>
       {!!items.length && (
         <>
           <div className="flex flex-wrap gap-2">
