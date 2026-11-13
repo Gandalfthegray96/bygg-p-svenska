@@ -105,7 +105,7 @@ export function parseKalkyler(t: string): Kalkyl[] {
     const rows = rest ? [rest] : [];
     for (; j < lines.length && j < i + 80; j++) {
       const l = lines[j]!;
-      if (/^Objekt\s+Antal\b/i.test(l)) break;
+      if (/^Objekt\s+Antal\b/i.test(l) || /AVTALSTID|Prislista|Timdebitering/i.test(l)) break;
       const b = l.match(/servicetillfällen\s+per\s+år\s*:?\s*(\d{1,2})/i); if (b) besok = Number(b[1]);
       if (/Kostnad\s+per\s+år/i.test(l)) { perYear = perYearOf(l); break; }
       if (/^Totalt antal objekt|servicetillfälle|^Kostnad/i.test(l)) continue;
@@ -149,12 +149,16 @@ export async function pdfText(bytes: ArrayBuffer, maxPages = 14): Promise<string
       }
     } catch { /* inga fält */ }
     const c = await page.getTextContent();
-    let lastY: number | null = null;
-    for (const it of c.items as { str: string; transform: number[] }[]) {
-      const y = it.transform[5] ?? 0;
-      out += lastY !== null && Math.abs(y - lastY) > 2 ? "\n" : " ";
-      out += it.str; lastY = y;
+    // Visuell ordning (uppifrån och ned, vänster till höger) — mallens etiketter och ifyllda värden ligger i olika strömordning.
+    const items = (c.items as { str: string; transform: number[] }[])
+      .filter((it) => typeof it.str === "string" && it.str.trim())
+      .map((it) => ({ s: it.str, x: it.transform[4] ?? 0, y: it.transform[5] ?? 0 }));
+    const rows: { y: number; parts: { s: string; x: number }[] }[] = [];
+    for (const it of items.sort((a, b) => b.y - a.y)) {
+      const r = rows.find((r) => Math.abs(r.y - it.y) <= 4);
+      if (r) r.parts.push(it); else rows.push({ y: it.y, parts: [it] });
     }
+    out += rows.map((r) => r.parts.sort((a, b) => a.x - b.x).map((p) => p.s).join(" ")).join("\n");
     out += "\n";
   }
   await doc.destroy();
