@@ -25,3 +25,4 @@
 - Update popup reads public/changelog.json (newest first) at runtime so an open old version shows the new release notes; add an entry there with each release.
 - PDF attachments use immutable private Storage files and per-version references; shared defaults apply to new agreements only. Admin price-list updates append versions, leaving all historical versions and other attachments unchanged.
 - Folder PDF/Excel import only enriches existing agreement posts; legacy FU tables are parsed by src/lib/kalkyl-import.ts, requiring explicit agreement selection when no customer matches — avoids duplicates and guessing a customer for standalone calculations.
+- Folder drops capture all filesystem entries synchronously and read them through src/lib/import-files.ts with native method receivers intact — prevents expired drag data and Illegal invocation errors.
