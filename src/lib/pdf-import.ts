@@ -105,7 +105,7 @@ export function parseKalkyler(t: string): Kalkyl[] {
     const rows = rest ? [rest] : [];
     for (; j < lines.length && j < i + 80; j++) {
       const l = lines[j]!;
-      if (/^Objekt\s+Antal\b/i.test(l) || /TOTAL\s+SUMMA|AVTALSTID|Prislista|Timdebitering/i.test(l)) break;
+      if (/^Objekt\s+Antal\b/i.test(l) || /AVTALSTID|Prislista|Timdebitering/i.test(l)) break;
       const b = l.match(/servicetillfällen\s+per\s+år\s*:?\s*(\d{1,2})/i); if (b) besok = Number(b[1]);
       if (/Kostnad\s+per\s+år/i.test(l)) { perYear = perYearOf(l); break; }
       if (/^Totalt antal objekt|servicetillfälle|^Kostnad/i.test(l)) continue;
