@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { ArrowUpDown, ArrowUpRight, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound, Wrench, Building2, Handshake, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 import { KundKort } from "./KundKort";
 import { IndexBatch } from "./IndexBatch";
 import { ImportPdf } from "./ImportPdf";
@@ -13,7 +13,7 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Area, AreaChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getSettings } from "@/lib/foretag-settings";
 import { FILIALER, filialFor } from "@/lib/planering";
-import { setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
+import { deleteAgreement, setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
 type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; signedAt: string; avtalNr: string; ansvarig: string; adress: string; filial: "GBG" | "BORAS" };
 export type Filter = "alla" | Status | "forsenad";

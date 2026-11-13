@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Mail, Phone, Plus, Trash2, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
-import { addNote, customerKey, deleteNote, setCustomerContacts, type Contact, type CustomerFolder, type Version, type Status } from "@/lib/avtal-store";
+import { addNote, customerKey, deleteAgreement, deleteNote, setCustomerContacts, type Contact, type CustomerFolder, type Version, type Status } from "@/lib/avtal-store";
 import { Tidslinje, type LogItem } from "./Aktivitet";
 
 const STATUS: Record<Status, { t: string; cls: string }> = {
