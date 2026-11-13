@@ -3,7 +3,9 @@ import type { CustomerFolder } from "./avtal-store";
 
 const STOP = /\b(ab|aktiebolag|hb|kb|fastighets?|fastigheter|bostäder|brf|i|och|the|c\/o)\b/g;
 export const normKund = (s: string) =>
-  s.toLowerCase().replace(/\(.*?\)/g, " ").replace(/[^a-zåäö0-9 ]/g, " ").replace(STOP, " ").replace(/\s+/g, " ").trim();
+  s.toLowerCase().replace(/\(.*?\)/g, " ").replace(/[^a-zåäö0-9 ]/g, " ").replace(STOP, " ").replace(/\s+/g, " ").trim()
+    // Genitiv-s: "Karlssons" = "Karlsson"
+    .split(" ").map((w) => (w.length > 4 && /[^s]s$/.test(w) ? w.slice(0, -1) : w)).join(" ");
 const normAdr = (s: string) => s.toLowerCase().replace(/[^a-zåäö0-9]/g, "");
 
 export type Match = { id: string; name: string; adress: string; score: number };
