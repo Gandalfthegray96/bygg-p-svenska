@@ -82,6 +82,8 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
   const [busy, setBusy] = useState<{ n: number; of: number } | null>(null);
   const [tab, setTab] = useState<ImportKind>("ok");
   const [dropError, setDropError] = useState("");
+  const [sok, setSok] = useState<Record<string, string>>({});
+  const [avtalSok, setAvtalSok] = useState<Record<string, string>>({});
 
   const run = async (files: { file: File; path: string }[]) => {
     const out: Item[] = [];
@@ -199,9 +201,10 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                     <p className="text-xs"><span className={`rounded px-1.5 py-0.5 ${TABS.find((t) => t.id === x.kind)?.cls ?? ""}`}>{x.reason}</span>{x.dup && <span className="ml-2 text-destructive">Avtalsnr finns redan hos {x.dup}</span>}</p>
                     {x.kind !== "ej" && (
                       <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <input className="ds-input col-span-2 sm:col-span-4" value={avtalSok[x.path] ?? ""} onChange={(e) => setAvtalSok((m) => ({ ...m, [x.path]: e.target.value }))} placeholder="Sök avtal (kund, adress, avtalsnr)" aria-label="Sök avtal" />
                         <select className="ds-input col-span-2 sm:col-span-4" value={x.post} onChange={(e) => upd(i, { post: e.target.value, on: !!e.target.value, dup: x.avtalNr ? avtalNrOwner(store, x.avtalNr, e.target.value) : null })} aria-label="Befintligt avtal">
                           <option value="">Välj befintligt avtal</option>
-                          {x.cands.map((c) => <option key={c.id} value={c.id}>{c.name}{c.adress ? ` – ${c.adress}` : ""}</option>)}
+                          {(() => { const q = (avtalSok[x.path] ?? "").trim().toLowerCase(); const all = q ? Object.values(store).map((f) => ({ id: f.id, name: f.name, adress: f.versions.at(-1)?.data.customer.anlAdress ?? "", nr: f.versions.at(-1)?.data.customer.avtalNr ?? "" })).filter((c) => `${c.name} ${c.adress} ${c.nr}`.toLowerCase().includes(q)).slice(0, 50) : x.cands; return all.some((c) => c.id === x.post) || !x.post ? all : [...x.cands.filter((c) => c.id === x.post), ...all]; })().map((c) => <option key={c.id} value={c.id}>{c.name}{c.adress ? ` – ${c.adress}` : ""}</option>)}
                         </select>
                         {!!Object.keys(x.info).length && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{[x.info.varRef && `Ansvarig: ${x.info.varRef}`, x.info.kontaktperson && `Kontakt: ${x.info.kontaktperson}`, x.info.telefon, x.info.epost, x.info.orgNr && `Org.nr ${x.info.orgNr}`].filter(Boolean).join(" · ")}</p>}
                         <input className="ds-input" value={x.kund} onChange={(e) => upd(i, { kund: e.target.value })} placeholder="Kund" aria-label="Kund" />
@@ -210,9 +213,11 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                         <select className="ds-input" value={x.status} onChange={(e) => upd(i, { status: e.target.value as Status })} aria-label="Status">
                           <option value="signerat">Signerat</option><option value="skickat">Väntar på svar</option><option value="utkast">Utkast</option>
                         </select>
+                        <input className="ds-input col-span-2 sm:col-span-4" value={sok[x.path] ?? ""} onChange={(e) => setSok((m) => ({ ...m, [x.path]: e.target.value }))} placeholder="Sök kalkyl (filnamn, mapp) – tomt visar kalkyler i kundens mapp" aria-label="Sök kalkyl" />
                         <select className="ds-input col-span-2 sm:col-span-4" value={x.kalk} onChange={(e) => upd(i, { kalk: e.target.value })} aria-label="Kalkyl">
-                          {items.filter((y) => y.kalkyler.length).map((y) => (
-                            <optgroup key={y.path} label={y.path === x.path ? "Kalkyl i denna fil" : `Slå ihop med kalkyl från: ${y.file}`}>
+                          {(() => { const q = (sok[x.path] ?? "").trim().toLowerCase(); const dir = kundDir(x.path); const list = items.filter((y) => y.kalkyler.length && (y.path === x.path || `${y.kalk}` === x.kalk || x.kalk.startsWith(`${y.path}|`) || (q ? `${y.path} ${y.kalkyler.map((k) => k.namn).join(" ")}`.toLowerCase().includes(q) : kundDir(y.path) === dir))); return list.length ? null : <option value="" disabled>{q ? "Ingen kalkyl matchar sökningen" : "Inga kalkyler i kundens mapp – sök för att visa fler"}</option>; })()}
+                          {items.filter((y) => { const q = (sok[x.path] ?? "").trim().toLowerCase(); return y.kalkyler.length && (y.path === x.path || x.kalk.startsWith(`${y.path}|`) || (q ? `${y.path} ${y.kalkyler.map((k) => k.namn).join(" ")}`.toLowerCase().includes(q) : kundDir(y.path) === kundDir(x.path))); }).sort((a, b) => b.mod - a.mod).map((y) => (
+                            <optgroup key={y.path} label={y.path === x.path ? "Kalkyl i denna fil" : `${y.file}${y.mod ? ` (ändrad ${new Date(y.mod).toLocaleDateString("sv-SE")})` : ""} – ${y.path.split("/").slice(0, -1).join("/")}`}>
                               {y.kalkyler.map((k, ki) => <option key={ki} value={`${y.path}|${ki}`}>{k.namn} – {k.objekt.reduce((s, o) => s + o.qty, 0)} objekt{k.perYear !== null ? `, ${fmtKr(k.perYear)}/år` : ""}</option>)}
                               {y.kalkyler.length > 1 && <option value={`${y.path}|all`}>Alla {y.kalkyler.length} sammanslagna</option>}
                             </optgroup>
