@@ -84,6 +84,14 @@ export function saveVersion(a: Avtal, existingId?: string): { id: string; versio
   return { id: folder.id, version };
 }
 
+/** Raderar hela avtalsposten (t.ex. importdubbletter); synken tar även bort raden i registret. */
+export function deleteAgreement(id: string) {
+  const store = loadStore();
+  if (!store[id]) return;
+  delete store[id];
+  saveStore(store);
+}
+
 export function deleteVersion(id: string, version: number) {
   const store = loadStore();
   const f = store[id];

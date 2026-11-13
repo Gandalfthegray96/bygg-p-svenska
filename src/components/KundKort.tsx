@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Mail, Phone, Plus, Trash2, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
-import { addNote, customerKey, deleteNote, setCustomerContacts, type Contact, type CustomerFolder, type Version, type Status } from "@/lib/avtal-store";
+import { addNote, customerKey, deleteAgreement, deleteNote, setCustomerContacts, type Contact, type CustomerFolder, type Version, type Status } from "@/lib/avtal-store";
 import { Tidslinje, type LogItem } from "./Aktivitet";
 
 const STATUS: Record<Status, { t: string; cls: string }> = {
@@ -82,7 +82,10 @@ export function KundKort({ name, store, onClose, onOpen, onChanged }: {
                     <p className="truncate text-sm font-medium text-foreground">{a.customer.avtalNr ? `Nr ${a.customer.avtalNr}` : "Inget avtalsnr"} <span className="text-xs text-muted-foreground">v{v.version}</span></p>
                     <p className="truncate text-xs text-muted-foreground">{a.customer.anlAdress || "Ingen adress"} · {fmtKr(perYear)}/år</p>
                   </button>
-                  <span className={`ds-badge ${STATUS[status].cls}`}>{STATUS[status].t}</span>
+                  <div className="flex items-center gap-1">
+                    <span className={`ds-badge ${STATUS[status].cls}`}>{STATUS[status].t}</span>
+                    <button aria-label="Radera avtal" title="Radera avtal" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive" onClick={() => { if (window.confirm(`Radera avtalet permanent?\n\n${a.customer.anlAdress || "Ingen adress"}\n${a.customer.avtalNr ? `Avtalsnr ${a.customer.avtalNr}` : "Inget avtalsnr"}`)) { deleteAgreement(f.id); onChanged(); } }}><Trash2 size={14} /></button>
+                  </div>
                 </li>
               ))}
             </ul>
