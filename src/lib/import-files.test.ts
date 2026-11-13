@@ -20,7 +20,7 @@ test("nested folder files retain the native file method receiver", async () => {
   };
   const out: { file: File; path: string }[] = [];
   await walkImportEntry(folder, out);
-  expect(out.map((item) => item.path)).toEqual(["Kunder/Saltex/AV/avtal.pdf"]);
+  expect(out.map((item) => item.path).join(",")).toBe("Kunder/Saltex/AV/avtal.pdf");
 });
 
 test("all dropped entries are captured before async reading clears the drop data", async () => {
@@ -29,10 +29,10 @@ test("all dropped entries are captured before async reading clears the drop data
   const items = [first, second].map((entry) => ({ kind: "file", webkitGetAsEntry: () => entry }));
   first.file = function (resolve) { items.length = 0; resolve(new File(["example"], this.name)); };
   const transfer = { items, files: [] } as unknown as DataTransfer;
-  expect((await droppedImportFiles(transfer)).map((item) => item.path)).toEqual(["A/avtal.pdf", "B/kalkyl.xlsx"]);
+  expect((await droppedImportFiles(transfer)).map((item) => item.path).join(",")).toBe("A/avtal.pdf,B/kalkyl.xlsx");
 });
 
 test("ordinary supported files work without filesystem entries", async () => {
   const transfer = { items: [], files: [new File(["pdf"], "avtal.pdf"), new File(["image"], "bild.jpg")] } as unknown as DataTransfer;
-  expect((await droppedImportFiles(transfer)).map((item) => item.path)).toEqual(["avtal.pdf"]);
+  expect((await droppedImportFiles(transfer)).map((item) => item.path).join(",")).toBe("avtal.pdf");
 });
