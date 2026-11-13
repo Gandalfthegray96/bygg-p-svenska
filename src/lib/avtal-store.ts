@@ -234,6 +234,7 @@ export function importAvtal(items: { kund: string; avtalNr: string; datum: strin
     const f: CustomerFolder = { id: crypto.randomUUID(), name: a.customer.bestallare, versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: it.status }] };
     logTo(f, "skapat", `Importerat från PDF: ${it.path}`);
     if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
+    else logTo(f, "notering", "Pris kunde inte läsas ur filen – fyll i pris manuellt");
     store[f.id] = f;
     n++;
   }
@@ -296,7 +297,8 @@ export function fyllImport(items: { postId: string; avtalNr: string; datum: stri
     const fill: Record<string, string> = { ...(it.info ?? {}), avtalNr: it.avtalNr, datum: it.datum, anlAdress: it.adress };
     const filled: string[] = [];
     for (const [k, v] of Object.entries(fill)) if (v?.trim() && !(c[k] ?? "").trim()) { c[k] = v.trim(); filled.push(k); }
-    if (it.objekt?.length) {
+    // Utan avtalspris skrivs inga objekt över – annars blir priset appens standardkalkyl i stället för avtalets.
+    if (it.objekt?.length && it.perYear !== null) {
       const besok = clampVisits(it.besokPerAr ?? 2);
       a.rows = it.objekt.map((o) => ({ ...newRow(), name: o.name, qty: Math.max(1, o.qty), visits: besok }));
       a.adjust = "";
@@ -310,6 +312,7 @@ export function fyllImport(items: { postId: string; avtalNr: string; datum: stri
     f.versions.push({ version, savedAt: new Date().toISOString(), data: a, status: last.status ?? "signerat" });
     logTo(f, "version", `Uppgifter importerade från PDF (v${version}): ${it.path}${filled.length ? ` – ifyllt: ${filled.join(", ")}` : ""}`);
     if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
+    else logTo(f, "notering", "Pris kunde inte läsas ur filen – fyll i pris manuellt");
     n++;
   }
   saveStore(store);

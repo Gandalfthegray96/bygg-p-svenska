@@ -57,7 +57,7 @@ function groupByFolder(list: Item[]): Item[] {
       if (mains.length === 1 && mains[0] && !mains[0].post && k.post) { mains[0].post = k.post; mains[0].cands = k.cands; mains[0].on = !mains[0].dup; }
       k.kind = "ej"; k.on = false; k.reason = k === latest ? `Senaste kalkylen – kopplad till ${mains.map((m) => m.file).join(", ")}` : `Äldre kalkyl – ersatt av ${latest.file}`;
     }
-    for (const m of mains) if (m !== latest && m.post) { m.kind = m.dup ? "granska" : "ok"; m.reason = `Avtal + senaste kalkyl (${latest.file}) från samma mapp`; }
+    for (const m of mains) if (m !== latest && m.post) { m.kind = m.dup || kalkOf(list, m)?.perYear == null ? "granska" : "ok"; m.reason = `Avtal + senaste kalkyl (${latest.file}) från samma mapp`; }
   }
   return list;
 }
@@ -100,13 +100,14 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const h = classify(text, file.name, path, folder);
       if (excel) {
         const k = mergeKalkyler(kalkyler);
-        Object.assign(h, { kalkyler, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, kind: kalkyler.length ? "granska" : "ej", reason: kalkyler.length ? "Äldre Excelkalkyl – kontrollera kund och pris" : "Ingen stödd kalkyltabell hittades i Excel" });
+        Object.assign(h, { kalkyler, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, kind: !kalkyler.length ? "ej" : k.perYear !== null ? "ok" : "granska", reason: !kalkyler.length ? "Ingen stödd kalkyltabell hittades i Excel" : k.perYear !== null ? "Excelkalkyl med pris" : "Excelkalkyl utan pris – fyll i pris" : "Ingen stödd kalkyltabell hittades i Excel" });
       }
       // Dubblettkontroll bara mot sparade avtal i registret – inte mot andra filer i importen.
       // Bara befintliga kunder i appen: utan träff hamnar filen under "Ej avtal".
       const cands = h.kind === "ej" && !h.kalkyler.length ? [] : matchPosts(store, h);
       const post = cands[0]?.id ?? "";
       if (h.kalkyler.length && h.kind === "ej" && post) { h.kind = "granska"; h.reason = "Kalkyl för befintligt avtal – kontrollera pris"; }
+      if (h.kind === "ok" && (cands[0]?.score ?? 0) < 60) { h.kind = "granska"; h.reason = "Osäker kundträff – kontrollera avtal"; }
       if (!post && h.kalkyler.length) {
         h.kind = "granska"; h.reason = "Välj befintligt avtal – kunden kunde inte identifieras";
         cands.push(...Object.values(store).map((f) => ({ id: f.id, name: f.name, adress: f.versions.at(-1)?.data.customer.anlAdress ?? "", score: 0 })).sort((a, b) => a.name.localeCompare(b.name, "sv")));

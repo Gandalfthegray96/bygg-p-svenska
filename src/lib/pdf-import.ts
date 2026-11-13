@@ -39,9 +39,17 @@ const pick = (t: string, re: RegExp) => (t.match(re)?.[1] ?? "").replace(/\s+/g,
 const amount = (s: string) => { const n = Number(s.replace(/[\s\u00a0.]/g, "").replace(",", ".")); return Number.isFinite(n) && n > 0 ? n : null; };
 const field = (t: string, name: string) => pick(t, new RegExp(`\\[\\[Fält ${name}: ([^\\]]*)\\]\\]`));
 const perYearOf = (t: string) => amount(pick(t, /(?:Kostnad|Pris|Avgift)\s+per\s+år[^\d\n]{0,40}([\d\s.]+(?:,\d{1,2})?)/i));
+const kr = (s: string) => { const t = s.replace(/[\s\u00a0]/g, "").replace(/:-$/, ""); const v = /^\d{1,3}([.,]\d{3})+$/.test(t) ? t.replace(/[.,]/g, "") : t.replace(",", "."); const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null; };
+/** Pris per servicebesök: "Summa per servicetillfälle 1 865:-", "Pris per besök: 1865 kr", "1 865 kr/besök". */
+export const perVisitOf = (t: string): number | null => {
+  const m = t.match(/(?:Summa|Kostnad|Pris|Avgift|Totalt)[^\n\d]{0,12}(?:per|\/)\s*(?:service)?(?:tillfälle|besök|servicebesök)[^\d\n]{0,40}(\d[\d\s\u00a0.,]*\d|\d)/i)
+    ?? t.match(/(\d[\d\s\u00a0.,]*\d)\s*(?:kr|:-|sek)\s*(?:\/|per)\s*(?:service)?(?:tillfälle|besök)/i);
+  return m ? kr(m[1]!) : null;
+};
+const besokOf = (t: string) => { const m = t.match(/(?:servicetillfällen?|service|besök)\s+per\s+år\s*:?\s*(\d{1,2})\b/i) ?? t.match(/(\d{1,2})\s*(?:besök|servicetillfällen|ggr)\s*(?:\/|per)\s*år/i); const n = Number(m?.[1]); return n >= 1 && n <= 12 ? n : null; };
 
 /** Avtalsnr ur filnamn, t.ex. "OF LIH_C0157-1.pdf" → "LIH_C0157". */
-export const avtalNrFromFile = (file: string) => file.match(/([A-Za-z]{2,5}_[A-Za-z]?\d{3,6})/)?.[1] ?? "";
+export const avtalNrFromFile = (file: string) => file.match(/([A-Za-z]{2,5}_[A-Za-z]?\d{3,6})/)?.[1] ?? file.match(/(?:avt(?:al)?|FU)[\s._\-]*(?:nr)?[\s._\-]*(\d{3,6})\b/i)?.[1] ?? "";
 
 /** Klassar en PDF utifrån dess text. folder = mappen filen ligger i (används som kundnamn om inget hittas). */
 export function classify(text: string, file: string, path: string, folder: string): ImportHit {
@@ -49,7 +57,7 @@ export function classify(text: string, file: string, path: string, folder: strin
   const hay = `${file}\n${t}`;
   const avtal = AVTAL_ORD.filter((r) => r.test(hay)).length;
   const ej = EJ_AVTAL.some((r) => r.test(t.slice(0, 1500)));
-  const avtalNr = pick(t, /Avtal\s*(?:s?nr|nummer)\.?\s*:?\s*([A-Za-z]{0,6}[\-\s]?\d[\w\-/]{0,20})/i) || field(t, "Dokument beteckning") || avtalNrFromFile(file);
+  const avtalNr = pick(t, /(?:Avtal\s*(?:s?nr|nummer|sbeteckning)|Avt\.?\s*nr)\.?\s*:?\s*([A-Za-z]{0,6}[\-_\s]?\d[\w\-/]{0,20})/i) || field(t, "Dokument beteckning") || avtalNrFromFile(file);
   let kund = field(t, "Kund 2") || pick(t, /Beställare\s*:?\s*\n?\s*([^\n]{2,60})/);
   if (/^(UK Portservice AB|Entrepren|Org\.?\s*nr)/i.test(kund)) kund = "";
   kund = kund || (folder.trim().length > 2 ? folder : "");
@@ -57,7 +65,10 @@ export function classify(text: string, file: string, path: string, folder: strin
   const adress = pick(t, /(?:Anläggningsadress|Adress obj\w*|Objektsadress)\s*:?\s*([^\n]{3,80})/i) || field(t, "Projekt");
   const kalkyler = parseKalkyler(t);
   const k0 = kalkyler[0];
-  const perYear = k0 ? sumYear(kalkyler) : perYearOf(t);
+  const pv = perVisitOf(t);
+  // Avtalets eget besökspris gäller när kalkyltabellen saknar årspris.
+  if (pv !== null && kalkyler.length === 1 && k0 && k0.perYear === null) k0.perYear = pv * (besokOf(t) ?? k0.besokPerAr);
+  const perYear = k0 ? sumYear(kalkyler) : perYearOf(t) ?? (pv !== null ? pv * (besokOf(t) ?? 2) : null);
   const base = { file, path, kund, avtalNr, datum, adress, perYear, objekt: k0?.objekt ?? [], besokPerAr: k0?.besokPerAr ?? 2, kalkyler, info: parseInfo(t) };
   if (!t.trim()) return { ...base, kind: avtal ? "granska" : "ej", reason: "Ingen text i PDF:en (skannad?)" };
   if (!avtal || (ej && avtal < 2)) return { ...base, kind: "ej", reason: kalkyler.length ? "Endast kalkyl – kan slås ihop med ett avtal" : ej ? "Ser ut som faktura/offert/protokoll" : "Inget avtalsord hittades" };
