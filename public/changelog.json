@@ -6,7 +6,8 @@
       "Pris per besök (t.ex. 1 865 kr/besök) läses och räknas om till årspris.",
       "Avtalsnummer med bara siffror och \"Avt.nr\" hittas.",
       "Saknas pris skrivs inget gissat standardpris in – avtalet hamnar under Granska.",
-      "Excelkalkyler med pris och säker kundträff blir Klara direkt."
+      "Excelkalkyler med pris och säker kundträff blir Klara direkt.",
+      "Sökfält för att hitta rätt avtal och kalkyl; kundens alla kalkyler i mappen visas med ändringsdatum, nyast först."
     ]
   },
   {
