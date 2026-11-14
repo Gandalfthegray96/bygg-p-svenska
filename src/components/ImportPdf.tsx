@@ -112,10 +112,19 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
     void run(Array.from(fl).filter((f) => supportedFile(f.name)).map((f) => ({ file: f, path: (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name })));
   };
 
-  const upd = (i: number, p: Partial<Item>) => setItems((l) => l.map((x, j) => (j === i ? { ...x, ...p } : x)));
+  const upd = (i: number, p: Partial<Item>) => setItems((l) => l.map((x, j) => {
+    if (j !== i) return x;
+    const next = { ...x, ...p };
+    if (p.post !== undefined) {
+      const fac = p.post ? facilitiesOf(normalizeAvtal(store[p.post]?.versions.at(-1)?.data)) : [];
+      next.facility = fac.length === 1 ? fac[0]?.id ?? "" : "";
+    }
+    if (Object.keys(p).some((key) => !["on", "confirmed"].includes(key))) next.confirmed = false;
+    return next;
+  }));
   const valda = items.filter((x) => x.on && x.kind !== "ej" && !x.dup && x.post);
   const repeatedTarget = valda.some((x) => valda.filter((y) => y.post === x.post).length > 1);
-  const pendingLink = valda.some((x) => !x.facility || !x.confirmed);
+  const pendingLink = valda.some((x) => !x.facility || !x.confirmed || (x.facility === "new" && !x.adress.trim()));
   const spara = () => {
     if (!valda.length || repeatedTarget || pendingLink) return;
     const n = fyllImport(valda.map((x) => {
@@ -124,7 +133,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const source = items.find((y) => y.path === (src || x.path));
       const documents = [sourceDocument(x, x.mod, /\.(xlsx|xls)$/i.test(x.file) ? "kalkyl" : "huvudavtal", x.facility === "new" ? undefined : x.facility, src ? null : k), ...(source && src ? [sourceDocument(source, source.mod, "kalkyl", x.facility === "new" ? undefined : x.facility, k)] : []), ...items.filter((y) => x.related.includes(y.path)).map((y) => sourceDocument(y, y.mod, y.kalkyler.length ? "kalkyl" : "annat"))];
       const base = { ...x, postId: x.post, facilityId: x.facility, documents };
-      return k ? { ...base, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : { ...base, objekt: [] };
+      return k ? { ...base, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : { ...base, objekt: [], perYear: x.kalkyler.length ? null : x.perYear };
     }));
     alert(`${n} befintliga avtal uppdaterade med uppgifter från filerna.`);
     onDone();

@@ -35,15 +35,15 @@ test("historical sources append without replacing originals or prices", () => {
   const newer = sourceDocument(hit({ path: "new.xlsx", file: "new.xlsx" }), 0, "kalkyl", "default");
   agreement.documents = [older];
   expect(attachImportSources(agreement, "default", "Gatan 1", [older, newer])).toBe(true);
-  expect(agreement.documents).toEqual([older, newer]);
-  expect(agreement.rows).toEqual(original.rows); expect(agreement.adjust).toBe(original.adjust);
+  expect(JSON.stringify(agreement.documents)).toBe(JSON.stringify([older, newer]));
+  expect(JSON.stringify(agreement.rows)).toBe(JSON.stringify(original.rows)); expect(agreement.adjust).toBe(original.adjust);
 });
 test("new service addresses get unique identities without merging existing rows", () => {
   const agreement = emptyAvtal(); const rows = structuredClone(agreement.rows);
   expect(attachImportSources(agreement, "new", "Gatan 2", [])).toBe(true);
   expect(attachImportSources(agreement, "new", "Gatan 3", [])).toBe(true);
   expect(new Set(agreement.facilities?.map((facility) => facility.id)).size).toBe(3);
-  expect(agreement.rows).toEqual(rows);
+  expect(JSON.stringify(agreement.rows)).toBe(JSON.stringify(rows));
   expect(attachImportSources(agreement, "unknown", "Gatan 4", [])).toBe(false);
 });
 test("only named customer directories supply related document candidates", () => {
