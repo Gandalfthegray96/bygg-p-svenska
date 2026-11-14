@@ -9,7 +9,53 @@ export type ObjRow = {
   inspNo: string;
   /** Intern notering — visas aldrig för kund */
   note: string;
+  /** Serviceadress som objektet hör till (saknas = avtalets standardadress) */
+  facilityId?: string;
 };
+
+/** Serviceadress med egen identitet. Ett avtal kan omfatta flera. */
+export type Facility = {
+  id: string;
+  name: string;
+  address: string;
+  postort?: string;
+  kontaktperson?: string;
+  telefon?: string;
+  /** gemensam = ingår i avtalets kalkyl, separat = eget pris */
+  pricingType: "gemensam" | "separat";
+  customPricing?: { perVisit?: number | null; perYear?: number | null; adjust?: string };
+};
+
+export type EvidenceCheck = {
+  check: string;
+  passed: boolean;
+  sourceValue: string | number;
+  calculatedValue: string | number;
+  sourceFile: string;
+  location?: string;
+};
+
+export type ImportEvidence = {
+  confidence: "hog" | "medel" | "lag";
+  priceType: "direkt_avlast_ar" | "direkt_avlast_besok" | "direkt_avlast_total5" | "beraknat_fran_timmar" | "okant";
+  checks: EvidenceCheck[];
+  unresolvedIssues: string[];
+};
+
+export type LinkedDocument = {
+  id: string;
+  fileName: string;
+  filePath: string;
+  documentType: "huvudavtal" | "kalkyl" | "prisjustering" | "offert" | "protokoll" | "annat";
+  facilityId?: string;
+  datum?: string;
+  perVisit?: number | null;
+  perYear?: number | null;
+  objektCount?: number;
+  notes?: string;
+};
+
+export const DEFAULT_FACILITY_ID = "default";
 
 export const OBJEKT_TYPER = [
   "Takskjutport", "Snabbrullport", "Rullport", "Vikport", "Lastbrygga", "Vädertätning", "Brandport",
@@ -58,6 +104,12 @@ export type Avtal = {
   sarskildaVillkor?: string;
   /** Avtalsspecifik text per rubrik i originalavtalet (id → text). Saknas = standardtext. */
   klausuler?: Record<string, string>;
+  /** Serviceadresser; saknas = en standardadress från kunduppgifterna */
+  facilities?: Facility[];
+  /** Hur importerade värden verifierades */
+  importEvidence?: ImportEvidence;
+  /** Källdokument kopplade till avtalet */
+  documents?: LinkedDocument[];
 };
 
 export const YEARS = 5;
@@ -105,6 +157,21 @@ export function normalizeAvtal(a: Partial<Avtal> | null | undefined): Avtal {
     show: { ...base.show, ...(a.show ?? {}) },
     rows: Array.isArray(a.rows) && a.rows.length ? a.rows.map((r) => ({ ...newRow(), ...r, visits: clampVisits(r.visits) })) : base.rows,
   };
+}
+
+/** Avtalets serviceadresser. Äldre avtal utan adresslista får en standardadress — sparad data ändras inte. */
+export function facilitiesOf(a: Avtal): Facility[] {
+  if (Array.isArray(a.facilities) && a.facilities.length) return a.facilities;
+  return [{ id: DEFAULT_FACILITY_ID, name: a.customer.anlObjekt, address: a.customer.anlAdress, kontaktperson: a.customer.kontaktperson, pricingType: "gemensam" }];
+}
+
+/** Objektrader per serviceadress; rader utan (eller med okänd) adress hamnar på första adressen. */
+export function rowsByFacility(a: Avtal): Record<string, ObjRow[]> {
+  const fac = facilitiesOf(a);
+  const ids = new Set(fac.map((f) => f.id));
+  const out: Record<string, ObjRow[]> = Object.fromEntries(fac.map((f) => [f.id, [] as ObjRow[]]));
+  for (const r of a.rows) out[r.facilityId && ids.has(r.facilityId) ? r.facilityId : fac[0].id].push(r);
+  return out;
 }
 
 /** Texten om avtalskundrabatt i prislistan, t.ex. "Avtalskunder erhåller 15% rabatt på ordinarie timpriser och 10% på material". */
