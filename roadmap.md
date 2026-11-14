@@ -3,7 +3,7 @@
 ## Historisk avtalsimport – godkänd stegplan
 - [x] Steg 1: bakåtkompatibla serviceadresser och källmetadata.
 - [x] Steg 2: fyra kalkylformat bevarade; pristyp, källposition, objektkontroller och PDF-adressgränser införda. Verifierat inloggad filinläsning med Herbert, CO_BE166 och två verkliga Excelkalkyler utan att spara några avtalsändringar.
-- [ ] Steg 3: säker dokumentkoppling för flera avtal/adresser utan automatisk sammanslagning på avtalsnummer.
+- [x] Steg 3: separata dokument utan sammanslagning på avtalsnummer/mapp/ändringsdatum; explicit avtals- och adressval, historiska källrelationer, nya facilityId och skydd av befintlig fleradresskalkyl. 65 tester godkända; Herbert, skannad kopia och Excel verifierade inloggat på dator/telefon utan att spara kundändringar. Källhänvisningar sparas, inte originalfiler; full prisgranskning och verkliga kundmappar återstår i steg 4–5.
 - [ ] Steg 4: evidensbaserad granskning och kontrollerat sparande utan dold prisutjämning.
 - [ ] Steg 5: verifiera verkliga kundmappar före full historisk import.
 

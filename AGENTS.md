@@ -27,3 +27,4 @@
 - Folder PDF/Excel import only enriches existing agreement posts; legacy FU tables are parsed by src/lib/kalkyl-import.ts, requiring explicit agreement selection when no customer matches — avoids duplicates and guessing a customer for standalone calculations.
 - Folder drops capture all filesystem entries synchronously and read them through src/lib/import-files.ts with native method receivers intact — prevents expired drag data and Illegal invocation errors.
 - Import parsers use import-evidence.ts for explicit price units, source positions and independent quantity/price checks; conflicting prices remain unresolved and never modify calculate().
+- Import document relationships use import-links.ts: never merge by agreement number, directory or modification time; confirm each target/facility, preserve source references, and keep multi-facility prices/rows unchanged until reviewed.

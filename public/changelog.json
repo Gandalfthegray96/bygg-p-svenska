@@ -1,5 +1,15 @@
 [
   {
+    "datum": "2026-11-14-import-steg3",
+    "rubrik": "Säkrare koppling av historiska dokument",
+    "punkter": [
+      "Filer med samma avtalsnummer eller kundmapp slås inte längre ihop automatiskt.",
+      "Avtal, serviceadress och dokumentkoppling bekräftas före sparande; flera kalkyler hålls åtskilda.",
+      "Historiska underlag kan kopplas till avtalet som källhänvisningar. Originalfilerna laddas inte upp.",
+      "Vid flera serviceadresser bevaras befintliga objekt och priser tills den kommande prisgranskningen."
+    ]
+  },
+  {
     "datum": "2026-11-14-import-steg2",
     "rubrik": "Säkrare inläsning av historiska kalkyler",
     "punkter": [

@@ -1,7 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
 import { cachedAttachments } from "./bilagor";
-import { type Avtal, calculate, clampVisits, emptyAvtal, fmtKr, newRow, normalizeAvtal } from "./kalkyl";
+import { type Avtal, type LinkedDocument, facilitiesOf, calculate, clampVisits, emptyAvtal, fmtKr, newRow, normalizeAvtal } from "./kalkyl";
+import { attachImportSources } from "./import-links";
 
 export type Status = "offert" | "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status; downloadedAt?: string };
@@ -292,26 +293,29 @@ export function setPlanering(id: string, p: Planering) {
 
 /** Mapp-import mot befintliga poster: ny version där avtalsnr, ansvarig och kunduppgifter fylls i (bara tomma fält),
  *  objekt/pris tas från PDF:ens kalkyl om den finns. Status, planering och logg behålls. */
-export function fyllImport(items: { postId: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; objekt?: { name: string; qty: number }[]; besokPerAr?: number; info?: Partial<Record<string, string>> }[]): number {
+export function fyllImport(items: { postId: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; objekt?: { name: string; qty: number }[]; besokPerAr?: number; info?: Partial<Record<string, string>>; facilityId?: string; documents?: LinkedDocument[] }[]): number {
   const store = loadStore();
   let n = 0;
   for (const it of items) {
+    if (items.filter((other) => other.postId === it.postId).length > 1) continue;
     const f = store[it.postId];
     const last = f?.versions.at(-1);
     if (!f || !last) continue;
     if (it.avtalNr && avtalNrOwner(store, it.avtalNr, f.id)) continue;
     const a = normalizeAvtal(structuredClone(last.data));
+    if (it.facilityId && !attachImportSources(a, it.facilityId, it.adress, it.documents ?? [])) continue;
+    const multipleFacilities = facilitiesOf(a).length > 1;
     const c = a.customer as unknown as Record<string, string>;
-    const fill: Record<string, string> = { ...(it.info ?? {}), avtalNr: it.avtalNr, datum: it.datum, anlAdress: it.adress };
+    const fill: Record<string, string> = { ...(it.info ?? {}), avtalNr: it.avtalNr, datum: it.datum, anlAdress: multipleFacilities ? "" : it.adress };
     const filled: string[] = [];
     for (const [k, v] of Object.entries(fill)) if (v?.trim() && !(c[k] ?? "").trim()) { c[k] = v.trim(); filled.push(k); }
     // Utan avtalspris skrivs inga objekt över – annars blir priset appens standardkalkyl i stället för avtalets.
-    if (it.objekt?.length && it.perYear !== null) {
+    if (it.objekt?.length && it.perYear !== null && !multipleFacilities) {
       const besok = clampVisits(it.besokPerAr ?? 2);
-      a.rows = it.objekt.map((o) => ({ ...newRow(), name: o.name, qty: Math.max(1, o.qty), visits: besok }));
+      a.rows = it.objekt.map((o) => ({ ...newRow(), name: o.name, qty: Math.max(1, o.qty), visits: besok, ...(it.facilityId ? { facilityId: it.facilityId } : {}) }));
       a.adjust = "";
     }
-    if (it.perYear !== null && a.rows.length) {
+    if (it.perYear !== null && a.rows.length && !multipleFacilities) {
       const diff = it.perYear - calculate(a).perYear;
       const nv = calculate(a).visits.length || 1;
       a.adjust = String(Math.round((diff / nv) * 100) / 100).replace(".", ",");
