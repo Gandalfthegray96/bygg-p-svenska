@@ -123,6 +123,12 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
     setBusy(null);
     setItems((prev) => {
       const merged = groupByFolder(groupByAvtalNr([...prev, ...out]));
+      // Linking a file must never erase a failed parser check.
+      for (const x of merged) {
+        const selected = kalkOf(merged, x);
+        const issues = selected?.evidence?.verification.unresolvedIssues ?? x.evidence?.verification.unresolvedIssues ?? [];
+        if (x.kind !== "ej" && issues.length) { x.kind = "granska"; x.reason = [...new Set(issues)].join(" "); x.on = false; }
+      }
       if (!prev.length) setTab(merged.some((x) => x.kind === "ok") ? "ok" : "granska");
       return merged;
     });

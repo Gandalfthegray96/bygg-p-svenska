@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { importNumber, priceLabel, verifyKalkyl, type ReadPrice } from "./import-evidence";
 import { classify, parseKalkyler, textPrices } from "./pdf-import";
-import { parseGsMall, parseLegacyRows } from "./kalkyl-import";
+import { parseGsMall, parseLegacyRows, parseLegacyText } from "./kalkyl-import";
 
 const source = { file: "kund.pdf", location: "Sida 2" };
 const price = (type: ReadPrice["type"], value: number, years?: number): ReadPrice => ({ type, value, ...(years === undefined ? {} : { years }), source });
@@ -68,4 +68,11 @@ test("äldre Excel kontrollerar totalsumman och behåller prisets cellreferens",
   const k = parseLegacyRows([["Objekt/typ", "Antal objekt"], ["Takskjutport", 7], ["Totalt antal objekt", 9], ["Antal service per år", 2], ["Pris per besök", 1865]], "Blad1", "fu.xlsx");
   expect(k?.evidence?.verification.checks.find((c) => c.check === "objektantal")?.passed).toBe(false);
   expect(k?.evidence?.prices[0]?.source.location).toBe("Blad1!B5");
+});
+
+test("äldre PDF får riktig sidreferens och stannar före nästa sida", () => {
+  const k = parseLegacyText("Avtal\n\f\nObjekt/typ Antal objekt\nTakskjutport 3 x 350 kr = 1050 kr\nTotalt antal objekt 3\nAntal service per år 2\nSumma per servicetillfälle 1 865 kr\n\f\nMaterial 900", "kund.pdf")[0];
+  expect(k?.objekt.reduce((s, o) => s + o.qty, 0)).toBe(3);
+  expect(k?.perYear).toBe(3730);
+  expect(k?.evidence?.prices[0]?.source.location.startsWith("Sida 2, rad")).toBe(true);
 });

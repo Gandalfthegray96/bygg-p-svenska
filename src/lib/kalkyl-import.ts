@@ -1,5 +1,5 @@
 import type { Kalkyl } from "./pdf-import";
-import { columnName, importNumber, priceRows, verifyKalkyl } from "./import-evidence";
+import { columnName, importNumber, priceLabel, priceRows, verifyKalkyl, type ReadPrice } from "./import-evidence";
 
 const num = importNumber;
 
@@ -43,18 +43,33 @@ export function parseLegacyRows(rows: unknown[][], namn: string, file = namn): K
 /** Equivalent PDF printout; only the first quantity after the name is an object count. */
 export function parseLegacyText(text: string, file = "PDF"): Kalkyl[] {
   const sections = text.split(/(?=Objekt\s*\/\s*typ\s+Antal\s+objekt)/i).filter((s) => /^Objekt\s*\/\s*typ/i.test(s));
+  let offset = 0;
   return sections.flatMap((s, i) => {
+    const start = text.indexOf(s, offset);
+    offset = Math.max(0, start) + s.length;
+    const prefix = text.slice(0, Math.max(0, start));
+    const page = prefix.split("\f").length;
+    const firstLine = (prefix.split("\f").at(-1) ?? "").split("\n").length;
     const rows: unknown[][] = [["Objekt/typ", "Antal objekt"]];
-    for (const raw of s.split("\n").slice(1)) {
+    const prices: ReadPrice[] = [];
+    for (const [index, raw] of s.split("\n").slice(1).entries()) {
+      if (raw.includes("\f")) break;
       const line = raw.replace(/\s*:\s*-/g, ":-").replace(/\s+/g, " ");
       if (/^(AVTALSTID|Prislista|Timdebitering|Bilaga\s*2|\f)/i.test(line.trim())) break;
       if (/\s[x×]\s/i.test(line) && !/^.+?\s+\d+\s+[x×]\s/i.test(line)) continue;
       const m = line.trim().match(/^(.*?)\s+(\d[\d\s.,]*)(?:\s*(?:kr|x|=|:-).*)?$/i);
-      if (m) rows.push([m[1], m[2]]);
+      if (m) {
+        rows.push([m[1], m[2]]);
+        const kind = priceLabel(m[1] ?? "");
+        const value = num(m[2]);
+        if (kind && value !== null && value > 0) prices.push({ ...kind, value, source: { file, location: `Sida ${page}, rad ${firstLine + index + 1}` } });
+      }
       else if (/(servicetillfällen?|service)\s+per\s+år|SUMMA\s+per\s+servicetillfälle/i.test(line)) rows.push([line]);
     }
     const k = parseLegacyRows(rows, `Äldre kalkyl ${i + 1}`, file);
-    return k ? [k] : [];
+    if (!k) return [];
+    const checked = verifyKalkyl({ source: { file, location: `Sida ${page}, rad ${firstLine}` }, prices, objects: k.objekt.reduce((total, o) => total + o.qty, 0), declaredObjects: k.evidence?.declaredObjects ?? null, visits: k.besokPerAr, visitsExplicit: k.evidence?.visitsExplicit ?? false });
+    return [{ ...k, perYear: checked.perYear, evidence: checked.evidence }];
   });
 }
 
