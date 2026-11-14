@@ -6,10 +6,11 @@ import { avtalNrOwner, fyllImport, type CustomerFolder, type Status } from "@/li
 import { matchPosts, type Match } from "@/lib/import-match";
 import { facilitiesOf, normalizeAvtal, fmtKr } from "@/lib/kalkyl";
 import { automaticPost, customerDirectory, linkageIssues, sameNumberDocuments, sourceDocument } from "@/lib/import-links";
+import { reviewPrice, withImportedRows, type PriceChoice } from "@/lib/price-review";
 import { excelKalkyler } from "@/lib/kalkyl-import";
 import { droppedImportFiles, supportedFile } from "@/lib/import-files";
 
-type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[]; facility: string; confirmed: boolean; related: string[] };
+type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[]; facility: string; confirmed: boolean; related: string[]; priceChoice?: PriceChoice };
 
 const kundDir = customerDirectory;
 /** kalk = "källfilens path|index" eller "path|all" — vilken kalkyl som ska användas för avtalet. */
@@ -25,15 +26,6 @@ const TABS: { id: ImportKind; label: string; cls: string }[] = [
   { id: "ej", label: "Ej avtal", cls: "bg-muted text-muted-foreground" },
 ];
 
-const priceReviewOf = (x: Row) => {
-  const k = kalkOfAll(x); const perYear = k ? k.perYear : x.perYear;
-  if (!x.post || perYear === null) return null;
-  const a = normalizeAvtal(storeRef.current[x.post]?.versions.at(-1)?.data);
-  if (!a || facilitiesOf(a).length > 1) return null;
-  const withRows = withImportedRows(a, k?.objekt, k?.besokPerAr, perYear);
-  return withRows.rows.length ? reviewPrice(withRows, perYear) : null;
-};
-const priceNeedsChoice = (x: Row) => priceReviewOf(x)?.level === "avvikelse" && !x.priceChoice;
 /** Importera en hel mapp (t.ex. SharePoint-synkad kundmapp): sållar avtal från andra PDF:er. */
 export function ImportPdf({ store, onClose, onDone }: { store: Record<string, CustomerFolder>; onClose: () => void; onDone: () => void }) {
   const input = useRef<HTMLInputElement>(null);
@@ -130,9 +122,19 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const fac = p.post ? facilitiesOf(normalizeAvtal(store[p.post]?.versions.at(-1)?.data)) : [];
       next.facility = fac.length === 1 ? fac[0]?.id ?? "" : "";
     }
-    if (Object.keys(p).some((key) => !["on", "confirmed"].includes(key))) next.confirmed = false;
+    if (Object.keys(p).some((key) => !["on", "confirmed", "priceChoice"].includes(key))) next.confirmed = false;
+    if (p.kalk !== undefined || p.post !== undefined) next.priceChoice = undefined;
     return next;
   }));
+const priceReviewOf = (x: Item) => {
+    const k = kalkOf(items, x); const perYear = k ? k.perYear : x.perYear;
+    if (!x.post || perYear === null) return null;
+    const a = normalizeAvtal(store[x.post]?.versions.at(-1)?.data);
+    if (!a || facilitiesOf(a).length > 1) return null;
+    const withRows = withImportedRows(a, k?.objekt, k?.besokPerAr, perYear);
+    return withRows.rows.length ? reviewPrice(withRows, perYear) : null;
+  };
+  const priceNeedsChoice = (x: Item) => priceReviewOf(x)?.level === "avvikelse" && !x.priceChoice;
   const valda = items.filter((x) => x.on && x.kind !== "ej" && !x.dup && x.post);
   const repeatedTarget = valda.some((x) => valda.filter((y) => y.post === x.post).length > 1);
   const pendingLink = valda.some((x) => !x.facility || !x.confirmed || (x.facility === "new" && !x.adress.trim()) || priceNeedsChoice(x));
