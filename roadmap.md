@@ -1,5 +1,12 @@
 # Roadmap
 
+## Historisk avtalsimport – godkänd stegplan
+- [x] Steg 1: bakåtkompatibla serviceadresser och källmetadata.
+- [x] Steg 2: fyra kalkylformat bevarade; pristyp, källposition, objektkontroller och PDF-adressgränser införda. Verifierat inloggad filinläsning med Herbert, CO_BE166 och två verkliga Excelkalkyler utan att spara några avtalsändringar.
+- [ ] Steg 3: säker dokumentkoppling för flera avtal/adresser utan automatisk sammanslagning på avtalsnummer.
+- [ ] Steg 4: evidensbaserad granskning och kontrollerat sparande utan dold prisutjämning.
+- [ ] Steg 5: verifiera verkliga kundmappar före full historisk import.
+
 ## Öppet
 - [x] Läs äldre FU-kalkyler från Excel och PDF i kundmappsimporten; FU_1_och_21.xlsx verifierad i inloggad importvy (1 takskjutport, 2 besök, 2 000 kr/år); 16 tester godkända. Inget kundavtal ändrat eftersom filen saknar kunduppgifter.
 - [x] Admin: ladda upp PDF-bilagor för nya avtal; uppdatera endast prislistan för utvalda äldre avtal som nya versioner. Verifierat uppladdning, urval, oförändrad historik och PDF-export.

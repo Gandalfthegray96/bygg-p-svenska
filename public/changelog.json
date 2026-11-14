@@ -1,5 +1,15 @@
 [
   {
+    "datum": "2026-11-14-import-steg2",
+    "rubrik": "Säkrare inläsning av historiska kalkyler",
+    "punkter": [
+      "Inläsningen skiljer besökspris, årspris och pris för en längre avtalsperiod.",
+      "Objektantal jämförs med dokumentets totalsumma och motstridiga priser markeras för granskning.",
+      "PDF-tabeller hålls åtskilda per sida och serviceadress; källpositioner sparas under inläsningen.",
+      "Befintliga avtal och prisberäkningen ändras inte av denna uppdatering."
+    ]
+  },
+  {
     "datum": "2026-11-13-importpriser",
     "rubrik": "Importen läser avtalets riktiga pris",
     "punkter": [
