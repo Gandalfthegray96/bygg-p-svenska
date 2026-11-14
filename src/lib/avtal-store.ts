@@ -1,3 +1,4 @@
+import { applyPriceChoice, reviewPrice, withImportedRows, type PriceChoice } from "./price-review";
 import { supabase } from "@/integrations/supabase/client";
 import { pushKey, pushShared } from "./cloud-sync";
 import { cachedAttachments } from "./bilagor";
@@ -242,7 +243,8 @@ export function importAvtal(items: { kund: string; avtalNr: string; datum: strin
     Object.assign(a.customer, { bestallare: it.kund.trim() || "Namnlös kund", avtalNr: it.avtalNr, anlAdress: it.adress, ...(it.datum ? { datum: it.datum } : {}) });
     const f: CustomerFolder = { id: crypto.randomUUID(), name: a.customer.bestallare, versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: it.status }] };
     logTo(f, "skapat", `Importerat från PDF: ${it.path}`);
-    if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
+    if (review) logTo(f, "notering", `Prisgranskning: dokument ${fmtKr(it.perYear ?? 0)}/år, kalkyl ${fmtKr(review.calculated)}/år, avvikelse ${fmtKr(review.diff ?? 0)} – valt: ${it.priceChoice === "avtal" ? "avtalspris (öppen justering per besök)" : "appens kalkyl"}`);
+    else if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad fil: ${fmtKr(it.perYear)} / år – ej tillämpat, granska priset`);
     else logTo(f, "notering", "Pris kunde inte läsas ur filen – fyll i pris manuellt");
     store[f.id] = f;
     n++;
@@ -293,7 +295,7 @@ export function setPlanering(id: string, p: Planering) {
 
 /** Mapp-import mot befintliga poster: ny version där avtalsnr, ansvarig och kunduppgifter fylls i (bara tomma fält),
  *  objekt/pris tas från PDF:ens kalkyl om den finns. Status, planering och logg behålls. */
-export function fyllImport(items: { postId: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; objekt?: { name: string; qty: number }[]; besokPerAr?: number; info?: Partial<Record<string, string>>; facilityId?: string; documents?: LinkedDocument[] }[]): number {
+export function fyllImport(items: { postId: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; objekt?: { name: string; qty: number }[]; besokPerAr?: number; info?: Partial<Record<string, string>>; facilityId?: string; documents?: LinkedDocument[]; priceChoice?: PriceChoice }[]): number {
   const store = loadStore();
   let n = 0;
   for (const it of items) {
@@ -309,21 +311,19 @@ export function fyllImport(items: { postId: string; avtalNr: string; datum: stri
     const fill: Record<string, string> = { ...(it.info ?? {}), avtalNr: it.avtalNr, datum: it.datum, anlAdress: multipleFacilities ? "" : it.adress };
     const filled: string[] = [];
     for (const [k, v] of Object.entries(fill)) if (v?.trim() && !(c[k] ?? "").trim()) { c[k] = v.trim(); filled.push(k); }
-    // Utan avtalspris skrivs inga objekt över – annars blir priset appens standardkalkyl i stället för avtalets.
-    if (it.objekt?.length && it.perYear !== null && !multipleFacilities) {
-      const besok = clampVisits(it.besokPerAr ?? 2);
-      a.rows = it.objekt.map((o) => ({ ...newRow(), name: o.name, qty: Math.max(1, o.qty), visits: besok, ...(it.facilityId ? { facilityId: it.facilityId } : {}) }));
-      a.adjust = "";
-    }
-    if (it.perYear !== null && a.rows.length && !multipleFacilities) {
-      const diff = it.perYear - calculate(a).perYear;
-      const nv = calculate(a).visits.length || 1;
-      a.adjust = String(Math.round((diff / nv) * 100) / 100).replace(".", ",");
+    // Utan avtalspris skrivs inga objekt över. Ingen dold utjämning: priset följer användarens uttryckliga val.
+    let priced = a;
+    let review: ReturnType<typeof reviewPrice> | null = null;
+    if (!multipleFacilities) {
+      const rowsSet = withImportedRows(a, it.objekt, it.besokPerAr, it.perYear, it.facilityId);
+      if (it.objekt?.length && it.perYear !== null) Object.assign(a, { rows: rowsSet.rows, adjust: "" });
+      if (it.perYear !== null && a.rows.length && it.priceChoice) { review = reviewPrice(a, it.perYear); priced = applyPriceChoice(a, it.perYear, it.priceChoice); Object.assign(a, { adjust: priced.adjust }); }
     }
     const version = last.version + 1;
     f.versions.push({ version, savedAt: new Date().toISOString(), data: a, status: last.status ?? "signerat" });
     logTo(f, "version", `Uppgifter importerade från PDF (v${version}): ${it.path}${filled.length ? ` – ifyllt: ${filled.join(", ")}` : ""}`);
-    if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
+    if (review) logTo(f, "notering", `Prisgranskning: dokument ${fmtKr(it.perYear ?? 0)}/år, kalkyl ${fmtKr(review.calculated)}/år, avvikelse ${fmtKr(review.diff ?? 0)} – valt: ${it.priceChoice === "avtal" ? "avtalspris (öppen justering per besök)" : "appens kalkyl"}`);
+    else if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad fil: ${fmtKr(it.perYear)} / år – ej tillämpat, granska priset`);
     else logTo(f, "notering", "Pris kunde inte läsas ur filen – fyll i pris manuellt");
     n++;
   }
