@@ -295,7 +295,7 @@ export function setPlanering(id: string, p: Planering) {
 
 /** Mapp-import mot befintliga poster: ny version där avtalsnr, ansvarig och kunduppgifter fylls i (bara tomma fält),
  *  objekt/pris tas från PDF:ens kalkyl om den finns. Status, planering och logg behålls. */
-export function fyllImport(items: { postId: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; objekt?: { name: string; qty: number }[]; besokPerAr?: number; info?: Partial<Record<string, string>>; facilityId?: string; documents?: LinkedDocument[]; priceChoice?: PriceChoice }[]): number {
+export function fyllImport(items: { postId: string; avtalNr: string; datum: string; adress: string; perYear: number | null; path: string; objekt?: { name: string; qty: number }[]; besokPerAr?: number; info?: Partial<Record<string, string>>; facilityId?: string; documents?: LinkedDocument[]; priceChoice?: PriceChoice | undefined }[]): number {
   const store = loadStore();
   let n = 0;
   for (const it of items) {

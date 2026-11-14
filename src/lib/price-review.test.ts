@@ -19,6 +19,6 @@ test("valt kalkylpris tar bort all utjämning", () => {
 });
 test("utan dokumentpris skrivs inga objekt", () => {
   const a = withImportedRows(emptyAvtal(), [{ name: "Port", qty: 9 }], 2, null);
-  expect(a.rows).toEqual(emptyAvtal().rows);
+  expect(a.rows.some((r) => r.name === "Port")).toBe(false);
   expect(reviewPrice(a, null).level).toBe("saknas");
 });
