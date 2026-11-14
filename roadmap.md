@@ -4,7 +4,7 @@
 - [x] Steg 1: bakåtkompatibla serviceadresser och källmetadata.
 - [x] Steg 2: fyra kalkylformat bevarade; pristyp, källposition, objektkontroller och PDF-adressgränser införda. Verifierat inloggad filinläsning med Herbert, CO_BE166 och två verkliga Excelkalkyler utan att spara några avtalsändringar.
 - [x] Steg 3: separata dokument utan sammanslagning på avtalsnummer/mapp/ändringsdatum; explicit avtals- och adressval, historiska källrelationer, nya facilityId och skydd av befintlig fleradresskalkyl. 65 tester godkända; Herbert, skannad kopia och Excel verifierade inloggat på dator/telefon utan att spara kundändringar. Källhänvisningar sparas, inte originalfiler; full prisgranskning och verkliga kundmappar återstår i steg 4–5.
-- [ ] Steg 4: evidensbaserad granskning och kontrollerat sparande utan dold prisutjämning.
+- [x] Steg 4: prisgranskning (dokumentpris, kalkylpris, avvikelse, uttryckligt val, loggat); fleradressavtal behåller priser. Ej provat i webbläsaren än.
 - [ ] Steg 5: verifiera verkliga kundmappar före full historisk import.
 
 ## Öppet

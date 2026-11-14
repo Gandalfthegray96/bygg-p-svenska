@@ -6,10 +6,11 @@ import { avtalNrOwner, fyllImport, type CustomerFolder, type Status } from "@/li
 import { matchPosts, type Match } from "@/lib/import-match";
 import { facilitiesOf, normalizeAvtal, fmtKr } from "@/lib/kalkyl";
 import { automaticPost, customerDirectory, linkageIssues, sameNumberDocuments, sourceDocument } from "@/lib/import-links";
+import { reviewPrice, withImportedRows, type PriceChoice } from "@/lib/price-review";
 import { excelKalkyler } from "@/lib/kalkyl-import";
 import { droppedImportFiles, supportedFile } from "@/lib/import-files";
 
-type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[]; facility: string; confirmed: boolean; related: string[] };
+type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[]; facility: string; confirmed: boolean; related: string[]; priceChoice?: PriceChoice | undefined };
 
 const kundDir = customerDirectory;
 /** kalk = "källfilens path|index" eller "path|all" — vilken kalkyl som ska användas för avtalet. */
@@ -72,7 +73,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const fac = post ? facilitiesOf(normalizeAvtal(store[post]?.versions.at(-1)?.data)) : [];
       const facility = fac.length === 1 ? fac[0]?.id ?? "" : "";
       if (h.kalkyler.length > 1 || fac.length > 1) { h.kind = "granska"; h.reason = "Flera kalkyler eller serviceadresser – välj koppling"; }
-      out.push({ ...h, on: h.kind === "ok" && !!post && !dup, mod: file.lastModified || 0, status: "signerat", dup, kalk: h.kalkyler.length === 1 ? `${path}|0` : "", post, cands, facility, confirmed: false, related: [] });
+      out.push({ ...h, on: h.kind === "ok" && !!post && !dup, mod: file.lastModified || 0, status: "signerat", dup, kalk: h.kalkyler.length === 1 ? `${path}|0` : "", post, cands, facility, confirmed: false, related: [], priceChoice: undefined });
       setBusy({ n: i + 1, of: files.length });
     }
     setBusy(null);
@@ -121,12 +122,22 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const fac = p.post ? facilitiesOf(normalizeAvtal(store[p.post]?.versions.at(-1)?.data)) : [];
       next.facility = fac.length === 1 ? fac[0]?.id ?? "" : "";
     }
-    if (Object.keys(p).some((key) => !["on", "confirmed"].includes(key))) next.confirmed = false;
+    if (Object.keys(p).some((key) => !["on", "confirmed", "priceChoice"].includes(key))) next.confirmed = false;
+    if (p.kalk !== undefined || p.post !== undefined) next.priceChoice = undefined;
     return next;
   }));
+const priceReviewOf = (x: Item) => {
+    const k = kalkOf(items, x); const perYear = k ? k.perYear : x.perYear;
+    if (!x.post || perYear === null) return null;
+    const a = normalizeAvtal(store[x.post]?.versions.at(-1)?.data);
+    if (!a || facilitiesOf(a).length > 1) return null;
+    const withRows = withImportedRows(a, k?.objekt, k?.besokPerAr, perYear);
+    return withRows.rows.length ? reviewPrice(withRows, perYear) : null;
+  };
+  const priceNeedsChoice = (x: Item) => priceReviewOf(x)?.level === "avvikelse" && !x.priceChoice;
   const valda = items.filter((x) => x.on && x.kind !== "ej" && !x.dup && x.post);
   const repeatedTarget = valda.some((x) => valda.filter((y) => y.post === x.post).length > 1);
-  const pendingLink = valda.some((x) => !x.facility || !x.confirmed || (x.facility === "new" && !x.adress.trim()));
+  const pendingLink = valda.some((x) => !x.facility || !x.confirmed || (x.facility === "new" && !x.adress.trim()) || priceNeedsChoice(x));
   const spara = () => {
     if (!valda.length || repeatedTarget || pendingLink) return;
     const n = fyllImport(valda.map((x) => {
@@ -134,7 +145,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const src = x.kalk.startsWith(`${x.path}|`) ? "" : x.kalk.slice(0, x.kalk.lastIndexOf("|"));
       const source = items.find((y) => y.path === (src || x.path));
       const documents = [sourceDocument(x, x.mod, /\.(xlsx|xls)$/i.test(x.file) ? "kalkyl" : "huvudavtal", x.facility === "new" ? undefined : x.facility, src ? null : k), ...(source && src ? [sourceDocument(source, source.mod, "kalkyl", x.facility === "new" ? undefined : x.facility, k)] : []), ...items.filter((y) => x.related.includes(y.path)).map((y) => sourceDocument(y, y.mod, y.kalkyler.length ? "kalkyl" : "annat"))];
-      const base = { ...x, postId: x.post, facilityId: x.facility, documents };
+      const base = { ...x, postId: x.post, facilityId: x.facility, documents, priceChoice: x.priceChoice };
       return k ? { ...base, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : { ...base, objekt: [], perYear: x.kalkyler.length ? null : x.perYear };
     }));
     alert(`${n} befintliga avtal uppdaterade med uppgifter från filerna.`);
@@ -207,7 +218,19 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
                           ))}
                           {!x.kalkyler.length && <option value={x.kalk}>Ingen kalkyl i filen{x.perYear !== null ? ` (pris ${fmtKr(x.perYear)}/år)` : ""}</option>}
                         </select>
-                        {(() => { const k = kalkOf(items, x); return k && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{k.objekt.reduce((s, o) => s + o.qty, 0)} objekt ({k.objekt.length} typer) · {k.besokPerAr} besök/år{k.perYear !== null && <> · pris: {fmtKr(k.perYear)} / år (kalkylen justeras till detta)</>}</p>; })()}
+                        {(() => { const k = kalkOf(items, x); return k && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">{k.objekt.reduce((s, o) => s + o.qty, 0)} objekt ({k.objekt.length} typer) · {k.besokPerAr} besök/år{k.perYear !== null && <> · pris: {fmtKr(k.perYear)} / år</>}</p>; })()}
+                        {(() => { const r = priceReviewOf(x); if (!r) return null; return (
+                          <div className="col-span-2 space-y-1 rounded-md border border-border p-2 text-xs sm:col-span-4">
+                            <p className="font-semibold text-foreground">Prisgranskning</p>
+                            <p>Dokumentets pris: <b>{r.document !== null ? `${fmtKr(r.document)} / år` : "saknas"}</b>{kalkOf(items, x)?.evidence?.prices[0]?.source.location ? ` · källa ${kalkOf(items, x)?.evidence?.prices[0]?.source.location}` : ""}</p>
+                            <p>Appens kalkyl: <b>{fmtKr(r.calculated)} / år</b></p>
+                            {r.level === "match" && <p className="text-success">Exakt match – inget att justera</p>}
+                            {r.level === "avvikelse" && <p className="text-destructive">Avvikelse {fmtKr(r.diff ?? 0)} / år – välj vilket pris som gäller</p>}
+                            {r.level === "avvikelse" && <div className="flex flex-wrap gap-3">
+                              <label className="flex gap-1"><input type="radio" name={`pris-${x.path}`} checked={x.priceChoice === "avtal"} onChange={() => upd(i, { priceChoice: "avtal" })} />Avtalets pris (öppen justering per besök)</label>
+                              <label className="flex gap-1"><input type="radio" name={`pris-${x.path}`} checked={x.priceChoice === "kalkyl"} onChange={() => upd(i, { priceChoice: "kalkyl" })} />Appens kalkyl</label>
+                            </div>}
+                          </div>); })()}
                         {linkageIssues(x, items.find((y) => x.kalk.startsWith(`${y.path}|`)), kalkOf(items, x)).map((issue) => <p key={issue} className="col-span-2 text-xs text-destructive sm:col-span-4">{issue}</p>)}
                         {(x.facility === "new" || (x.post && facilitiesOf(normalizeAvtal(store[x.post]?.versions.at(-1)?.data)).length > 1)) && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">Flera serviceadresser: källor och adresser sparas; befintliga objekt och priser behålls tills prisgranskningen i steg 4.</p>}
                         {!!kundDir(x.path) && items.filter((y) => y.path !== x.path && kundDir(y.path) === kundDir(x.path)).map((y) => <label key={y.path} className="col-span-2 flex min-w-0 gap-2 text-xs sm:col-span-4"><input type="checkbox" checked={x.related.includes(y.path)} onChange={(e) => upd(i, { related: e.target.checked ? [...x.related, y.path] : x.related.filter((p) => p !== y.path), confirmed: false })} /><span className="min-w-0 break-words">Historiskt underlag: {y.file}</span></label>)}
