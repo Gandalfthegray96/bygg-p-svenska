@@ -243,8 +243,7 @@ export function importAvtal(items: { kund: string; avtalNr: string; datum: strin
     Object.assign(a.customer, { bestallare: it.kund.trim() || "Namnlös kund", avtalNr: it.avtalNr, anlAdress: it.adress, ...(it.datum ? { datum: it.datum } : {}) });
     const f: CustomerFolder = { id: crypto.randomUUID(), name: a.customer.bestallare, versions: [{ version: 1, savedAt: new Date().toISOString(), data: a, status: it.status }] };
     logTo(f, "skapat", `Importerat från PDF: ${it.path}`);
-    if (review) logTo(f, "notering", `Prisgranskning: dokument ${fmtKr(it.perYear ?? 0)}/år, kalkyl ${fmtKr(review.calculated)}/år, avvikelse ${fmtKr(review.diff ?? 0)} – valt: ${it.priceChoice === "avtal" ? "avtalspris (öppen justering per besök)" : "appens kalkyl"}`);
-    else if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad fil: ${fmtKr(it.perYear)} / år – ej tillämpat, granska priset`);
+    if (it.perYear !== null) logTo(f, "notering", `Pris enligt importerad PDF: ${fmtKr(it.perYear)} / år`);
     else logTo(f, "notering", "Pris kunde inte läsas ur filen – fyll i pris manuellt");
     store[f.id] = f;
     n++;
