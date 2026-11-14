@@ -9,6 +9,15 @@
     ]
   },
   {
+    "datum": "2026-11-14-import-steg4",
+    "rubrik": "Prisgranskning i importen",
+    "punkter": [
+      "Importen visar dokumentets pris, appens kalkyl och avvikelsen.",
+      "Vid avvikelse väljer du själv vilket pris som gäller – inget justeras dolt.",
+      "Valet skrivs i avtalsloggen."
+    ]
+  },
+  {
     "datum": "2026-11-14-import-steg3",
     "rubrik": "Säkrare koppling av historiska dokument",
     "punkter": [
