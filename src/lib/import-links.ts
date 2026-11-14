@@ -1,6 +1,6 @@
 import type { CustomerFolder } from "./avtal-store";
 import { normKund } from "./import-match";
-import { facilitiesOf, normalizeAvtal, type LinkedDocument } from "./kalkyl";
+import { facilitiesOf, normalizeAvtal, type Avtal, type LinkedDocument } from "./kalkyl";
 import type { ImportHit, Kalkyl } from "./pdf-import";
 
 export const normAddress = (value: string) => value.split(",")[0]?.toLowerCase().replace(/[^a-zåäö0-9]/g, "") ?? "";
@@ -45,9 +45,22 @@ export function linkageIssues(hit: ImportHit, source: ImportHit | undefined, cal
 export function sourceDocument(hit: ImportHit, mod: number, documentType: LinkedDocument["documentType"], facilityId?: string, calculation?: Kalkyl | null): LinkedDocument {
   return {
     id: `${hit.path}|${documentType}|${facilityId ?? ""}|${calculation?.namn ?? ""}`,
-    fileName: hit.file, filePath: hit.path, documentType, facilityId,
-    datum: hit.datum || undefined, perYear: calculation?.perYear ?? hit.perYear,
+    fileName: hit.file, filePath: hit.path, documentType, ...(facilityId ? { facilityId } : {}),
+    ...(hit.datum ? { datum: hit.datum } : {}), perYear: calculation?.perYear ?? hit.perYear,
     objektCount: (calculation?.objekt ?? hit.objekt).reduce((sum, object) => sum + object.qty, 0),
     notes: [calculation && `Kalkyl: ${calculation.namn}`, mod && `Fil ändrad: ${new Date(mod).toISOString()}`, "Källhänvisning; originalfilen har inte laddats upp"].filter(Boolean).join(". "),
   };
+}
+
+export function attachImportSources(agreement: Avtal, facilityId: string, address: string, documents: LinkedDocument[]): boolean {
+  const facilities = facilitiesOf(agreement);
+  if (facilityId === "new") {
+    if (!address.trim()) return false;
+    facilityId = crypto.randomUUID();
+    agreement.facilities = [...facilities, { id: facilityId, name: address.trim(), address: address.trim(), pricingType: "gemensam" }];
+  } else if (!facilities.some((facility) => facility.id === facilityId)) return false;
+  const existing = new Map((agreement.documents ?? []).map((document) => [document.id, document]));
+  for (const document of documents) if (!existing.has(document.id)) existing.set(document.id, { ...document, facilityId: document.facilityId || facilityId });
+  agreement.documents = [...existing.values()];
+  return true;
 }
