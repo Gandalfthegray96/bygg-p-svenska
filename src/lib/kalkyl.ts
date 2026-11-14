@@ -170,7 +170,8 @@ export function rowsByFacility(a: Avtal): Record<string, ObjRow[]> {
   const fac = facilitiesOf(a);
   const ids = new Set(fac.map((f) => f.id));
   const out: Record<string, ObjRow[]> = Object.fromEntries(fac.map((f) => [f.id, [] as ObjRow[]]));
-  for (const r of a.rows) out[r.facilityId && ids.has(r.facilityId) ? r.facilityId : fac[0].id].push(r);
+  const first = fac[0]?.id ?? DEFAULT_FACILITY_ID;
+  for (const r of a.rows) (out[r.facilityId && ids.has(r.facilityId) ? r.facilityId : first] ??= []).push(r);
   return out;
 }
 
