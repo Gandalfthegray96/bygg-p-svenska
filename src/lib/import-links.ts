@@ -41,6 +41,15 @@ export function linkageIssues(hit: ImportHit, source: ImportHit | undefined, cal
   return issues;
 }
 
+/** Sibling documents remain separate review rows, including scanned copies. */
+export function sameNumberDocuments<T extends ImportHit>(items: T[]): T[] {
+  return items.map((item) => {
+    const nr = item.avtalNr.trim().toLowerCase();
+    if (!nr || !items.some((other) => other.path !== item.path && other.avtalNr.trim().toLowerCase() === nr)) return item;
+    return { ...item, kind: "granska", reason: `${item.reason}. Flera dokument har samma avtalsnummer – välj relation; ingen sammanslagning` };
+  });
+}
+
 /** File modification time remains technical metadata, not the agreement date or legal priority. */
 export function sourceDocument(hit: ImportHit, mod: number, documentType: LinkedDocument["documentType"], facilityId?: string, calculation?: Kalkyl | null): LinkedDocument {
   return {

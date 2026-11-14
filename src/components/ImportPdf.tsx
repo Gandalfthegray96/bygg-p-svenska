@@ -5,7 +5,7 @@ import { classify, mergeKalkyler, pdfText, type ImportHit, type ImportKind, type
 import { avtalNrOwner, fyllImport, type CustomerFolder, type Status } from "@/lib/avtal-store";
 import { matchPosts, type Match } from "@/lib/import-match";
 import { facilitiesOf, normalizeAvtal, fmtKr } from "@/lib/kalkyl";
-import { automaticPost, customerDirectory, linkageIssues, sourceDocument } from "@/lib/import-links";
+import { automaticPost, customerDirectory, linkageIssues, sameNumberDocuments, sourceDocument } from "@/lib/import-links";
 import { excelKalkyler } from "@/lib/kalkyl-import";
 import { droppedImportFiles, supportedFile } from "@/lib/import-files";
 
@@ -51,6 +51,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
         else text = await pdfText(bytes);
       } catch { /* trasig eller oläsbar fil */ }
       const h = classify(text, file.name, path, folder);
+      if (!excel && !text.trim() && /avtal/i.test(file.name)) { h.kind = "granska"; h.reason = "Skannat avtalsdokument – välj befintligt avtal och dokumentrelation"; }
       if (excel) {
         const k = mergeKalkyler(kalkyler);
         Object.assign(h, { kalkyler, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, kind: !kalkyler.length ? "ej" : k.perYear !== null ? "ok" : "granska", reason: !kalkyler.length ? "Ingen stödd kalkyltabell hittades i Excel" : k.perYear !== null ? "Excelkalkyl med pris" : "Excelkalkyl utan pris – fyll i pris" });
@@ -76,7 +77,8 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
     }
     setBusy(null);
     setItems((prev) => {
-      const merged = [...prev, ...out.filter((x) => !prev.some((old) => old.path === x.path))];
+      const merged = sameNumberDocuments([...prev, ...out.filter((x) => !prev.some((old) => old.path === x.path))]);
+      for (const x of merged) if (x.reason.includes("Flera dokument har samma avtalsnummer")) { x.on = false; x.confirmed = false; }
       // Linking a file must never erase a failed parser check.
       for (const x of merged) {
         const selected = kalkOf(merged, x);

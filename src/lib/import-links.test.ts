@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { attachImportSources, automaticPost, customerDirectory, linkageIssues, sourceDocument } from "./import-links";
+import { attachImportSources, automaticPost, customerDirectory, linkageIssues, sameNumberDocuments, sourceDocument } from "./import-links";
 import { emptyAvtal } from "./kalkyl";
 import type { CustomerFolder } from "./avtal-store";
 import type { ImportHit } from "./pdf-import";
@@ -49,4 +49,12 @@ test("new service addresses get unique identities without merging existing rows"
 test("only named customer directories supply related document candidates", () => {
   expect(customerDirectory("loose.pdf")).toBe("");
   expect(customerDirectory("Kunder/Test/AV/avtal.pdf")).toBe(customerDirectory("Kunder/Test/FU/kalkyl.xlsx"));
+});
+test("same number preserves both files, addresses and prices for review", () => {
+  const old = hit(); const newer = hit({ path: "new.pdf", adress: "Gatan 2", perYear: 4344, kind: "ej" });
+  const result = sameNumberDocuments([old, newer]);
+  expect(result.length).toBe(2); expect(result[0]?.kind).toBe("granska"); expect(result[1]?.kind).toBe("granska");
+  expect(result[0]?.perYear).toBe(3730); expect(result[1]?.perYear).toBe(4344);
+  expect(result[0]?.adress).toBe("Gatan 1"); expect(result[1]?.adress).toBe("Gatan 2");
+  expect(old.kind).toBe("ok");
 });
