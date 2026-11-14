@@ -4,7 +4,7 @@ import { classify, parseKalkyler, textPrices } from "./pdf-import";
 import { parseGsMall, parseLegacyRows } from "./kalkyl-import";
 
 const source = { file: "kund.pdf", location: "Sida 2" };
-const price = (type: ReadPrice["type"], value: number, years?: number): ReadPrice => ({ type, value, years, source });
+const price = (type: ReadPrice["type"], value: number, years?: number): ReadPrice => ({ type, value, ...(years === undefined ? {} : { years }), source });
 const check = (prices: ReadPrice[], declaredObjects = 7) => verifyKalkyl({ source, prices, objects: 7, declaredObjects, visits: 2, visitsExplicit: true });
 
 test("1865 kr per besök ger 3730 per år, inte standardkalkyl", () => {

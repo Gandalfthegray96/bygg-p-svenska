@@ -96,13 +96,15 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const excel = /\.(xlsx|xls)$/i.test(file.name);
       try {
         const bytes = await file.arrayBuffer();
-        if (excel) kalkyler = await excelKalkyler(bytes);
+        if (excel) kalkyler = await excelKalkyler(bytes, path);
         else text = await pdfText(bytes);
       } catch { /* trasig eller oläsbar fil */ }
       const h = classify(text, file.name, path, folder);
       if (excel) {
         const k = mergeKalkyler(kalkyler);
         Object.assign(h, { kalkyler, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, kind: !kalkyler.length ? "ej" : k.perYear !== null ? "ok" : "granska", reason: !kalkyler.length ? "Ingen stödd kalkyltabell hittades i Excel" : k.perYear !== null ? "Excelkalkyl med pris" : "Excelkalkyl utan pris – fyll i pris" });
+        const issues = kalkyler.flatMap((calculation) => calculation.evidence?.verification.unresolvedIssues ?? []);
+        if (issues.length) { h.kind = "granska"; h.reason = [...new Set(issues)].join(" "); }
       }
       // Dubblettkontroll bara mot sparade avtal i registret – inte mot andra filer i importen.
       // Bara befintliga kunder i appen: utan träff hamnar filen under "Ej avtal".

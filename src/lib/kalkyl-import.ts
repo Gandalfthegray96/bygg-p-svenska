@@ -79,7 +79,8 @@ export function parseServicekalkyl(rows: unknown[][], namn: string, file = namn)
   if (!objekt.length) return null;
   const sumRow = rows.findIndex((r) => /^Summa/i.test(txt(r[0])));
   const values = rows[sumRow] ?? [];
-  const col = values.findLastIndex((v) => num(v) === perVisit && perVisit !== null);
+  let col = -1;
+  values.forEach((v, i) => { if (perVisit !== null && num(v) === perVisit) col = i; });
   const prices = priceRows(rows, file, namn);
   if (!prices.length && perVisit !== null && perVisit > 0) prices.push({ type: "besok", value: perVisit, source: { file, location: `${namn}!${columnName(col)}${sumRow + 1}` } });
   return withEvidence({ namn, objekt, besokPerAr: 2, perYear: null }, rows, file, prices);

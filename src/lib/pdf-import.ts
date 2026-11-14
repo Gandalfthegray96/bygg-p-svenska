@@ -129,7 +129,7 @@ export function parseKalkyler(t: string, file = "PDF"): Kalkyl[] {
     const header = lines[i];
     if (!header || !/^Objekt\s+Antal\b/i.test(header.text)) continue;
     const prev = lines.slice(Math.max(0, i - 3), i).filter((l) => l.page === header.page && !/^(Bilaga|Sida|Objekt)/i.test(l.text));
-    const addressLine = prev.findLast((l) => /^(?:Anläggningsadress|Objektsadress|Serviceadress)\s*:/i.test(l.text));
+    const addressLine = [...prev].reverse().find((l) => /^(?:Anläggningsadress|Objektsadress|Serviceadress)\s*:/i.test(l.text));
     const adress = addressLine?.text.replace(/^[^:]+:\s*/, "");
     const namn = adress || prev.at(-1)?.text || `Kalkyl ${out.length + 1}`;
     const objekt: ImportObj[] = [];
@@ -161,7 +161,7 @@ export function parseKalkyler(t: string, file = "PDF"): Kalkyl[] {
     if (!objekt.length) continue;
     const besokPerAr = Math.min(12, Math.max(1, besok || 2));
     const checked = verifyKalkyl({ source: { file, location: `Sida ${header.page}, rad ${header.line}` }, prices, objects: objekt.reduce((s, o) => s + o.qty, 0), declaredObjects, visits: besokPerAr, visitsExplicit: besok > 0 });
-    const k: Kalkyl = { namn, objekt, besokPerAr, perYear: checked.perYear, adress, evidence: checked.evidence };
+    const k: Kalkyl = { namn, objekt, besokPerAr, perYear: checked.perYear, ...(adress ? { adress } : {}), evidence: checked.evidence };
     const key = JSON.stringify([header.page, namn, k.objekt, k.perYear]);
     if (seen.has(key)) continue;
     seen.add(key); out.push(k);
