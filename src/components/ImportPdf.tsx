@@ -10,7 +10,7 @@ import { reviewPrice, withImportedRows, type PriceChoice } from "@/lib/price-rev
 import { excelKalkyler } from "@/lib/kalkyl-import";
 import { droppedImportFiles, supportedFile } from "@/lib/import-files";
 
-type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[]; facility: string; confirmed: boolean; related: string[]; priceChoice?: PriceChoice };
+type Item = ImportHit & { mod: number; on: boolean; status: Status; dup: string | null; kalk: string; post: string; cands: Match[]; facility: string; confirmed: boolean; related: string[]; priceChoice?: PriceChoice | undefined };
 
 const kundDir = customerDirectory;
 /** kalk = "källfilens path|index" eller "path|all" — vilken kalkyl som ska användas för avtalet. */
