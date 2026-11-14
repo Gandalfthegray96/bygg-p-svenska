@@ -26,3 +26,4 @@
 - PDF attachments use immutable private Storage files and per-version references; shared defaults apply to new agreements only. Admin price-list updates append versions, leaving all historical versions and other attachments unchanged.
 - Folder PDF/Excel import only enriches existing agreement posts; legacy FU tables are parsed by src/lib/kalkyl-import.ts, requiring explicit agreement selection when no customer matches — avoids duplicates and guessing a customer for standalone calculations.
 - Folder drops capture all filesystem entries synchronously and read them through src/lib/import-files.ts with native method receivers intact — prevents expired drag data and Illegal invocation errors.
+- Import parsers use import-evidence.ts for explicit price units, source positions and independent quantity/price checks; conflicting prices remain unresolved and never modify calculate().

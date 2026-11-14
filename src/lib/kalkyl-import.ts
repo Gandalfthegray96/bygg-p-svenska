@@ -1,5 +1,5 @@
 import type { Kalkyl } from "./pdf-import";
-import { importNumber, priceRows, verifyKalkyl, type ReadPrice } from "./import-evidence";
+import { columnName, importNumber, priceRows, verifyKalkyl } from "./import-evidence";
 
 const num = importNumber;
 
