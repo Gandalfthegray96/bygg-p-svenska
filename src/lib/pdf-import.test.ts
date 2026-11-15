@@ -49,6 +49,22 @@ test("läser ansvarig och kunduppgifter", () => {
 });
 
 import { classify as classify2, perVisitOf } from "./pdf-import";
+test("historical company field and delivery address identify Herbert, not signature labels", () => {
+  const h = classify("FU - AVTAL\nAvser förebyggande underhåll\nBESTÄLLARE\nFöretag: AB Herbert Karlssons Charkuterifabrik\nLeveransadress: Industrivägen 4, Härryda\nBeställare UK Portservice AB\nBeställare: Leverantör: Daniel", "AV_Förslag_DANE_C0033.pdf", "avtal.pdf", "");
+  expect(h.kund).toBe("AB Herbert Karlssons Charkuterifabrik");
+  expect(h.adress).toBe("Industrivägen 4, Härryda");
+});
+test("CO_BE166 uses the customer form field rather than the supplier signature", () => {
+  const h = classify("[[Fält Kund: Gäsene Mejeriförening]]\n[[Fält Projekt: Alingsåsvägen 32 Ljung]]\nSERVICEAVTAL\nBeställare: Leverantör: Conny Berntsson", "Avtal.CO_BE166.pdf", "avtal.pdf", "");
+  expect(h.kund).toBe("Gäsene Mejeriförening");
+  expect(h.adress).toBe("Alingsåsvägen 32 Ljung");
+});
+test("Mobigo checklist is not an agreement despite preventive maintenance wording", () => {
+  expect(classify("Checklista/Protokoll\nX Förebyggande underhåll\nOrdernr\nKund Herbert", "2410_Herbert.pdf", "2410.pdf", "Herbert").kind).toBe("ej");
+});
+test("scanned signed agreement remains for review instead of discarded", () => {
+  expect(classify("\f\n", "Sig.Avtal_DANE_C0033.pdf", "scan.pdf", "").kind).toBe("granska");
+});
 test("besökspris läses och räknas om till årspris", () => {
   expect(perVisitOf("Summa per servicetillfälle exkl moms 1 865:-")).toBe(1865);
   expect(perVisitOf("Pris: 1865 kr/besök")).toBe(1865);
