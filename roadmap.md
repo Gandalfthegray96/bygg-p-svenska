@@ -4,8 +4,9 @@
 - [x] Steg 1: bakåtkompatibla serviceadresser och källmetadata.
 - [x] Steg 2: fyra kalkylformat bevarade; pristyp, källposition, objektkontroller och PDF-adressgränser införda. Verifierat inloggad filinläsning med Herbert, CO_BE166 och två verkliga Excelkalkyler utan att spara några avtalsändringar.
 - [x] Steg 3: separata dokument utan sammanslagning på avtalsnummer/mapp/ändringsdatum; explicit avtals- och adressval, historiska källrelationer, nya facilityId och skydd av befintlig fleradresskalkyl. 65 tester godkända; Herbert, skannad kopia och Excel verifierade inloggat på dator/telefon utan att spara kundändringar. Källhänvisningar sparas, inte originalfiler; full prisgranskning och verkliga kundmappar återstår i steg 4–5.
-- [x] Steg 4: prisgranskning (dokumentpris, kalkylpris, avvikelse, uttryckligt val, loggat); fleradressavtal behåller priser. Ej provat i webbläsaren än.
-- [ ] Steg 5: verifiera verkliga kundmappar före full historisk import.
+- [x] Steg 4: prisgranskning (dokumentpris, kalkylpris, avvikelse, uttryckligt val, loggat); fleradressavtal behåller priser. Prisval och lokal sparning verifierade inloggat med Herbert i steg 5.
+- [x] Steg 5, tillgängligt provmaterial: 11 verkliga filer provade inloggat; Herbert 6 objekt/8 062 kr per år och CO_BE166 9 objekt/9 200 kr per år. Isolerad sparning, prisval, oförändrade originalversioner och 798 poster verifierade, dator/telefon utan sidöverflöde. 81 tester godkända. Resultat och begränsningar i import-qa.md.
+- [ ] Steg 5, slutligt klartecken för massimport: kompletta kundmappar med verkliga fleradressavtal och äldre/nyare kalkyler behöver laddas upp; fleradresspriser är fortsatt skyddade, inte godkända för import.
 
 ## Öppet
 - [x] Läs äldre FU-kalkyler från Excel och PDF i kundmappsimporten; FU_1_och_21.xlsx verifierad i inloggad importvy (1 takskjutport, 2 besök, 2 000 kr/år); 16 tester godkända. Inget kundavtal ändrat eftersom filen saknar kunduppgifter.
