@@ -8,7 +8,7 @@ export type FsEntry = {
   createReader?: () => { readEntries: (cb: (entries: FsEntry[]) => void, err: (error: unknown) => void) => void };
 };
 
-export const supportedFile = (name: string) => /\.(pdf|xlsx|xls)$/i.test(name) && !name.startsWith("~$");
+export const supportedFile = (name: string) => /\.(pdf|xlsx|xls|xltx)$/i.test(name) && !name.startsWith("~$");
 
 export async function walkImportEntry(entry: FsEntry, out: ImportFile[]): Promise<void> {
   if (entry.isFile && supportedFile(entry.name) && entry.file) {

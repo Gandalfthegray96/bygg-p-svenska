@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { droppedImportFiles, walkImportEntry, type FsEntry } from "./import-files";
+import { droppedImportFiles, supportedFile, walkImportEntry, type FsEntry } from "./import-files";
+
+test("both learned historical XLTX templates are supported", () => {
+  expect(supportedFile("FU_Avtal_Enkel_Mall.xltx")).toBe(true);
+  expect(supportedFile("FU_GS_5år_Mall_-25_Q3.xltx")).toBe(true);
+  expect(supportedFile("~$FU_Avtal_Enkel_Mall.xltx")).toBe(false);
+});
 
 function fileEntry(path: string): FsEntry {
   return {

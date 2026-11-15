@@ -10,7 +10,7 @@ export function withImportedRows(a: Avtal, objekt: { name: string; qty: number }
     const besok = clampVisits(besokPerAr ?? 2);
     next.rows = objekt.map((o) => ({ ...newRow(), name: o.name, qty: Math.max(1, o.qty), visits: besok, ...(facilityId ? { facilityId } : {}) }));
   }
-  next.adjust = "";
+  if (objekt?.length && perYear !== null) next.adjust = "";
   return next;
 }
 
