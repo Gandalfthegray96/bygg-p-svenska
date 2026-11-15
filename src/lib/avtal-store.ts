@@ -315,6 +315,8 @@ export function fyllImport(items: { postId: string; avtalNr: string; datum: stri
     let review: ReturnType<typeof reviewPrice> | null = null;
     if (!multipleFacilities) {
       const rowsSet = withImportedRows(a, it.objekt, it.besokPerAr, it.perYear, it.facilityId);
+      // Reject a price-changing import without the explicit decision required by the review UI.
+      if (it.perYear !== null && rowsSet.rows.length && reviewPrice(rowsSet, it.perYear).level === "avvikelse" && !it.priceChoice) continue;
       if (it.objekt?.length && it.perYear !== null) Object.assign(a, { rows: rowsSet.rows, adjust: "" });
       if (it.perYear !== null && a.rows.length && it.priceChoice) { review = reviewPrice(a, it.perYear); priced = applyPriceChoice(a, it.perYear, it.priceChoice); Object.assign(a, { adjust: priced.adjust }); }
     }

@@ -17,7 +17,7 @@ export type InfoKey = "varRef" | "erRef" | "kontaktperson" | "telefon" | "epost"
 const INFO: [InfoKey, RegExp][] = [
   ["varRef", /Vår\s+ref(?:erens)?\s*:?[ \t]*([^\n]{2,50})/i],
   ["erRef", /Er\s+ref(?:erens)?\s*:?[ \t]*([^\n]{2,50})/i],
-  ["kontaktperson", /Kontaktperson\s*:?[ \t]*([^\n]{2,50})/i],
+  ["kontaktperson", /Kontaktperson(?:\s*\/\s*tel\s*efon\.?)?\s*:?[ \t]*([^\n]{2,80})/i],
   ["telefon", /Tel(?:efon)?\.?\s*:?[ \t]*(\+?[\d][\d\s\-]{5,18}\d)/i],
   ["epostFaktura", /E-?post\s+faktura\s*:?[ \t]*([\w.+-]+@[\w.-]+\.\w+)/i],
   ["epost", /E-?post\s*:?[ \t]*([\w.+-]+@[\w.-]+\.\w+)/i],
@@ -35,7 +35,7 @@ export function parseInfo(t: string): Partial<Record<InfoKey, string>> {
 
 const AVTAL_ORD = [/förebyggande\s+underhåll/i, /underhållsavtal/i, /serviceavtal/i, /\bFU[\s_\-.]?(avtal|\d)/i, /garantiservice/i, /servicetillfällen/i, /avtal\s+mellan\s+parter/i, /servicebesök\s*\/\s*år/i];
 // "Faktura" räknas bara som riktig faktura — inte kontaktfält som "E-post Faktura" / "Märkning Faktura".
-const EJ_AVTAL = [/faktura\s*(nr|nummer)|att\s+betala|\bOCR\b|förfallodatum/i, /följesedel/i, /offert\s*nr/i, /besiktningsprotokoll/i, /bruksanvisning|manual|datablad|monteringsanvisning/i, /arbetsorder/i];
+const EJ_AVTAL = [/faktura\s*(nr|nummer)|att\s+betala|\bOCR\b|förfallodatum/i, /följesedel/i, /offert\s*nr/i, /besiktningsprotokoll|checklista\s*\/\s*protokoll/i, /bruksanvisning|manual|datablad|monteringsanvisning/i, /arbetsorder/i];
 
 const pick = (t: string, re: RegExp) => (t.match(re)?.[1] ?? "").replace(/\s+/g, " ").trim();
 const field = (t: string, name: string) => pick(t, new RegExp(`\\[\\[Fält ${name}: ([^\\]]*)\\]\\]`));
@@ -77,11 +77,11 @@ export function classify(text: string, file: string, path: string, folder: strin
   const avtal = AVTAL_ORD.filter((r) => r.test(hay)).length;
   const ej = EJ_AVTAL.some((r) => r.test(t.slice(0, 1500)));
   const avtalNr = pick(t, /(?:Avtal\s*(?:s?nr|nummer|sbeteckning)|Avt\.?\s*nr)\.?\s*:?\s*([A-Za-z]{0,6}[\-_\s]?\d[\w\-/]{0,20})/i) || field(t, "Dokument beteckning") || avtalNrFromFile(file);
-  let kund = field(t, "Kund 2") || pick(t, /Beställare\s*:?\s*\n?\s*([^\n]{2,60})/);
+  let kund = field(t, "Kund 2") || field(t, "Kund") || pick(t, /^Företag\s*:\s*\n?\s*([^\n]{2,80})/im) || pick(t, /^Beställare\s*:[ \t]*([^\n]{2,80})/im);
   if (/^(UK Portservice AB|Entrepren|Org\.?\s*nr)/i.test(kund)) kund = "";
   kund = kund || (folder.trim().length > 2 ? folder : "");
   const datum = pick(t, /(20\d\d-\d\d-\d\d)/);
-  const adress = pick(t, /(?:Anläggningsadress|Adress obj\w*|Objektsadress)\s*:?\s*([^\n]{3,80})/i) || field(t, "Projekt");
+  const adress = pick(t, /(?:Anläggningsadress|Adress obj\w*|Objektsadress|Leveransadress)\s*:\s*([^\n]{3,80})/i) || field(t, "Projekt");
   const kalkyler = parseKalkyler(t, path);
   const k0 = kalkyler[0];
   const pv = perVisitOf(t);
@@ -92,7 +92,8 @@ export function classify(text: string, file: string, path: string, folder: strin
   const checked = verifyKalkyl({ source: { file: path, location: "PDF" }, prices: documentPrices, objects: k0?.objekt.reduce((s, o) => s + o.qty, 0) ?? 0, declaredObjects: null, visits: besokOf(t) ?? 2, visitsExplicit: besokOf(t) !== null });
   const perYear = k0 ? sumYear(kalkyler) : checked.perYear;
   const base = { file, path, kund, avtalNr, datum, adress, perYear, objekt: k0?.objekt ?? [], besokPerAr: k0?.besokPerAr ?? besokOf(t) ?? 2, kalkyler, info: parseInfo(t), evidence: k0?.evidence ?? checked.evidence };
-  if (!t.trim()) return { ...base, kind: avtal ? "granska" : "ej", reason: "Ingen text i PDF:en (skannad?)" };
+  if (!t.trim()) return { ...base, kind: avtal || /avtal/i.test(file) ? "granska" : "ej", reason: "Ingen text i PDF:en (skannad?)" };
+  if (/checklista\s*\/\s*protokoll/i.test(t.slice(0, 1500))) return { ...base, kind: "ej", reason: "Serviceprotokoll – inte ett avtal" };
   if (!avtal || (ej && avtal < 2)) return { ...base, kind: "ej", reason: kalkyler.length ? "Endast kalkyl – kan slås ihop med ett avtal" : ej ? "Ser ut som faktura/offert/protokoll" : "Inget avtalsord hittades" };
   const saknas = [!avtalNr && "avtalsnr", !kund && "kund", perYear === null && "pris"].filter(Boolean);
   if (kalkyler.length > 1) return { ...base, kind: "granska", reason: `${kalkyler.length} kalkyler i filen – välj vilken som ska importeras` };

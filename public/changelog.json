@@ -1,5 +1,14 @@
 [
   {
+    "datum": "2026-11-15-import-steg5",
+    "rubrik": "Kvalitetskontroll av historisk import",
+    "punkter": [
+      "Äldre kundnamn och leveransadresser läses säkrare; serviceprotokoll skiljs från avtal.",
+      "Excelmallar i XLTX-format kan väljas och släppas i importen.",
+      "Prisavvikelser kräver ett uttryckligt prisval även vid sparande; befintliga versioner bevaras."
+    ]
+  },
+  {
     "datum": "2026-11-14-import-steg4",
     "rubrik": "Prisgranskning i importen",
     "punkter": [

@@ -45,7 +45,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const folder = parts.length > 1 ? parts[parts.length - 2] ?? "" : "";
       let text = "";
       let kalkyler: Kalkyl[] = [];
-      const excel = /\.(xlsx|xls)$/i.test(file.name);
+      const excel = /\.(xlsx|xls|xltx)$/i.test(file.name);
       try {
         const bytes = await file.arrayBuffer();
         if (excel) kalkyler = await excelKalkyler(bytes, path);
@@ -123,7 +123,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       next.facility = fac.length === 1 ? fac[0]?.id ?? "" : "";
     }
     if (Object.keys(p).some((key) => !["on", "confirmed", "priceChoice"].includes(key))) next.confirmed = false;
-    if (p.kalk !== undefined || p.post !== undefined) next.priceChoice = undefined;
+    if (Object.keys(p).some((key) => !["on", "confirmed", "priceChoice"].includes(key))) next.priceChoice = undefined;
     return next;
   }));
 const priceReviewOf = (x: Item) => {
@@ -144,7 +144,7 @@ const priceReviewOf = (x: Item) => {
       const k = kalkOf(items, x);
       const src = x.kalk.startsWith(`${x.path}|`) ? "" : x.kalk.slice(0, x.kalk.lastIndexOf("|"));
       const source = items.find((y) => y.path === (src || x.path));
-      const documents = [sourceDocument(x, x.mod, /\.(xlsx|xls)$/i.test(x.file) ? "kalkyl" : "huvudavtal", x.facility === "new" ? undefined : x.facility, src ? null : k), ...(source && src ? [sourceDocument(source, source.mod, "kalkyl", x.facility === "new" ? undefined : x.facility, k)] : []), ...items.filter((y) => x.related.includes(y.path)).map((y) => sourceDocument(y, y.mod, y.kalkyler.length ? "kalkyl" : "annat"))];
+      const documents = [sourceDocument(x, x.mod, /\.(xlsx|xls|xltx)$/i.test(x.file) ? "kalkyl" : "huvudavtal", x.facility === "new" ? undefined : x.facility, src ? null : k), ...(source && src ? [sourceDocument(source, source.mod, "kalkyl", x.facility === "new" ? undefined : x.facility, k)] : []), ...items.filter((y) => x.related.includes(y.path)).map((y) => sourceDocument(y, y.mod, y.kalkyler.length ? "kalkyl" : "annat"))];
       const base = { ...x, postId: x.post, facilityId: x.facility, documents, priceChoice: x.priceChoice };
       return k ? { ...base, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, path: src ? `${x.path} + kalkyl ${src}` : x.path } : { ...base, objekt: [], perYear: x.kalkyler.length ? null : x.perYear };
     }));
@@ -158,8 +158,8 @@ const priceReviewOf = (x: Item) => {
         <h2 className="font-display text-[15px] font-semibold text-foreground">Fyll i avtal från kundmapp</h2>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Stäng"><X size={16} /></Button>
       </div>
-      <input ref={input} type="file" multiple accept=".pdf,.xlsx,.xls" className="hidden" {...{ webkitdirectory: "", directory: "" }} onChange={(e) => onPick(e.target.files)} />
-      <input ref={singleInput} type="file" multiple accept=".pdf,.xlsx,.xls" className="hidden" onChange={(e) => onPick(e.target.files)} />
+      <input ref={input} type="file" multiple accept=".pdf,.xlsx,.xls,.xltx" className="hidden" {...{ webkitdirectory: "", directory: "" }} onChange={(e) => onPick(e.target.files)} />
+      <input ref={singleInput} type="file" multiple accept=".pdf,.xlsx,.xls,.xltx" className="hidden" onChange={(e) => onPick(e.target.files)} />
       <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className={`flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border text-center ${items.length ? "p-3" : "p-6"}`}>
         {!items.length && <FolderUp size={28} className="text-muted-foreground" />}
         <p className="text-sm text-foreground">{items.length ? "Dra hit fler mappar – de läggs till i listan nedan" : "Dra hit en eller flera kundmappar (från SharePoint/OneDrive på datorn)"}</p>
@@ -232,7 +232,7 @@ const priceReviewOf = (x: Item) => {
                             </div>}
                           </div>); })()}
                         {linkageIssues(x, items.find((y) => x.kalk.startsWith(`${y.path}|`)), kalkOf(items, x)).map((issue) => <p key={issue} className="col-span-2 text-xs text-destructive sm:col-span-4">{issue}</p>)}
-                        {(x.facility === "new" || (x.post && facilitiesOf(normalizeAvtal(store[x.post]?.versions.at(-1)?.data)).length > 1)) && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">Flera serviceadresser: källor och adresser sparas; befintliga objekt och priser behålls tills prisgranskningen i steg 4.</p>}
+                        {(x.facility === "new" || (x.post && facilitiesOf(normalizeAvtal(store[x.post]?.versions.at(-1)?.data)).length > 1)) && <p className="col-span-2 text-xs text-muted-foreground sm:col-span-4">Flera serviceadresser: källor och adresser sparas; befintliga objekt och priser behålls. Pris per serviceadress är inte godkänt för import.</p>}
                         {!!kundDir(x.path) && items.filter((y) => y.path !== x.path && kundDir(y.path) === kundDir(x.path)).map((y) => <label key={y.path} className="col-span-2 flex min-w-0 gap-2 text-xs sm:col-span-4"><input type="checkbox" checked={x.related.includes(y.path)} onChange={(e) => upd(i, { related: e.target.checked ? [...x.related, y.path] : x.related.filter((p) => p !== y.path), confirmed: false })} /><span className="min-w-0 break-words">Historiskt underlag: {y.file}</span></label>)}
                         <label className="col-span-2 flex gap-2 text-xs sm:col-span-4"><input type="checkbox" checked={x.confirmed} onChange={(e) => upd(i, { confirmed: e.target.checked })} />Jag bekräftar avtal, serviceadress och valda dokument</label>
                       </div>
