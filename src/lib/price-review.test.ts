@@ -31,5 +31,5 @@ test("Herbert explicit agreement choice yields 4031 per visit and 8062 per year"
   const a = withImportedRows(emptyAvtal(), [{ name: "Takskjutport", qty: 2 }, { name: "Snabbrullport", qty: 2 }, { name: "Lastbrygga/lyftbord", qty: 2 }], 2, 8062);
   const calculated = calculate(applyPriceChoice(a, 8062, "avtal"));
   expect(calculated.perYear).toBe(8062);
-  expect(calculated.visits[0]?.price).toBe(4031);
+  expect(calculated.visits[0]?.perVisit).toBe(4031);
 });
