@@ -65,9 +65,10 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const post = automaticPost(store, h, cands);
       if (h.kalkyler.length && h.kind === "ej" && post) { h.kind = "granska"; h.reason = "Kalkyl för befintligt avtal – kontrollera pris"; }
       if (h.kind === "ok" && (cands[0]?.score ?? 0) < 60) { h.kind = "granska"; h.reason = "Osäker kundträff – kontrollera avtal"; }
-      if (!post && h.kalkyler.length) {
-        h.kind = "granska"; h.reason = "Välj befintligt avtal – kunden kunde inte identifieras";
-        cands.push(...Object.values(store).map((f) => ({ id: f.id, name: f.name, adress: f.versions.at(-1)?.data.customer.anlAdress ?? "", score: 0 })).sort((a, b) => a.name.localeCompare(b.name, "sv")));
+      // Planeringsregistret är master: utan träff där finns inget avtal att granska.
+      if (!cands.length) { h.kind = "ej"; h.reason = "Kunden finns inte i planeringsregistret"; }
+      else if (!post && h.kalkyler.length) {
+        h.kind = "granska"; h.reason = "Välj befintligt avtal – flera möjliga avtal i planeringen";
       } else if (!post && h.kind !== "ej") { h.kind = "granska"; h.reason = "Välj befintligt avtal – kund, avtalsnummer eller adress är osäker"; }
       const dup = h.avtalNr && post ? avtalNrOwner(store, h.avtalNr, post) : null;
       const fac = post ? facilitiesOf(normalizeAvtal(store[post]?.versions.at(-1)?.data)) : [];
@@ -81,6 +82,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
     setItems((prev) => {
       const merged = sameNumberDocuments([...prev, ...out.filter((x) => !prev.some((old) => old.path === x.path))]);
       for (const x of merged) if (x.reason.includes("Flera dokument har samma avtalsnummer")) { x.on = false; x.confirmed = false; }
+      for (const x of merged) if (!x.cands.length && !/^spec[\s._-]/i.test(x.file)) { x.kind = "ej"; x.reason = "Kunden finns inte i planeringsregistret"; x.on = false; }
       // Linking a file must never erase a failed parser check.
       for (const x of merged) {
         const selected = kalkOf(merged, x);
