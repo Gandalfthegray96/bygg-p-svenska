@@ -22,7 +22,7 @@ const DAY = 86_400_000;
 import { FOLLOW_UP_DAYS } from "@/lib/uppfoljning";
 export { FOLLOW_UP_DAYS };
 
-type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; ansvarig: string; days: number; ff?: Forfragan | undefined };
+type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; adress: string; ansvarig: string; days: number; ff?: Forfragan | undefined };
 
 export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onChanged: () => void }) {
   const [drag, setDrag] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
     const v = f.versions.at(-1)!;
     const a = normalizeAvtal(v.data);
     const last = [v.savedAt, ...(f.log ?? []).map((l) => l.at)].sort().at(-1)!;
-    return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((Date.now() - new Date(last).getTime()) / DAY), ff: f.forfragan };
+    return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", adress: a.customer.anlAdress ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((Date.now() - new Date(last).getTime()) / DAY), ff: f.forfragan };
   }), [store]);
 
   const move = (c: Card, s: Status) => {
@@ -91,6 +91,7 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
                     className={`space-y-1.5 rounded-lg border bg-card p-2.5 shadow-sm ${flag ? "border-destructive" : "border-border"}`}>
                     <button onClick={() => onOpen(c.id, c.name, c.v)} className="block w-full text-left">
                       <span className="block truncate text-sm font-semibold text-foreground">{c.name}</span>
+                      {c.adress && <span className="block truncate text-xs text-foreground">{c.adress}</span>}
                       <span className="block truncate text-xs text-muted-foreground">{c.avtalNr ? `Nr ${c.avtalNr}` : "Inget avtalsnr"}{c.ansvarig ? ` · ${c.ansvarig}` : ""}</span>
                     </button>
                     {c.ff && c.status === "offert" && (

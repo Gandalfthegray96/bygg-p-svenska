@@ -79,7 +79,8 @@ export function saveVersion(a: Avtal, existingId?: string): { id: string; versio
   if (!folder.contacts && shared) folder.contacts = shared;
   folder.name = name;
   const data = { ...a, attachments: a.attachments ?? (version === 1 ? cachedAttachments() : {}) };
-  folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(data) });
+  const prevStatus = folder.versions.at(-1)?.status;
+  folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(data), ...(prevStatus ? { status: prevStatus } : {}) });
   logTo(folder, version === 1 ? "skapat" : "version", version === 1 ? "Avtal skapat (v1)" : `Ny version sparad (v${version})`);
   store[folder.id] = folder;
   saveStore(store);
