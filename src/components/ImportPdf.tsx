@@ -54,7 +54,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const h = classify(text, file.name, path, folder);
       if (!excel && !text.trim() && /avtal/i.test(file.name)) { h.kind = "granska"; h.reason = "Skannat avtalsdokument – välj befintligt avtal och dokumentrelation"; }
       if (excel) {
-        const k = mergeKalkyler(kalkyler);
+        const k = mergeKalkyler(kalkyler.filter((part) => !part.del));
         Object.assign(h, { kalkyler, objekt: k.objekt, besokPerAr: k.besokPerAr, perYear: k.perYear, kind: !kalkyler.length ? "ej" : k.perYear !== null ? "ok" : "granska", reason: !kalkyler.length ? "Ingen stödd kalkyltabell hittades i Excel" : k.perYear !== null ? "Excelkalkyl med pris" : "Excelkalkyl utan pris – fyll i pris" });
         const issues = kalkyler.flatMap((calculation) => calculation.evidence?.verification.unresolvedIssues ?? []);
         if (issues.length) { h.kind = "granska"; h.reason = [...new Set(issues)].join(" "); }
@@ -73,6 +73,7 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
       const fac = post ? facilitiesOf(normalizeAvtal(store[post]?.versions.at(-1)?.data)) : [];
       const facility = fac.length === 1 ? fac[0]?.id ?? "" : "";
       if (h.kalkyler.length > 1 || fac.length > 1) { h.kind = "granska"; h.reason = "Flera kalkyler eller serviceadresser – välj koppling"; }
+      if (!excel && /^spec[\s._-]/i.test(file.name)) { h.kind = "ej"; h.reason = "Anläggningsspecifikation – bocka i den som historiskt underlag på huvudavtalet"; }
       out.push({ ...h, on: h.kind === "ok" && !!post && !dup, mod: file.lastModified || 0, status: "signerat", dup, kalk: h.kalkyler.length === 1 ? `${path}|0` : "", post, cands, facility, confirmed: false, related: [], priceChoice: undefined });
       setBusy({ n: i + 1, of: files.length });
     }

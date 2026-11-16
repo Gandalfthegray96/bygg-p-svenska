@@ -4,7 +4,7 @@ import { importNumber, priceLabel, verifyKalkyl, type KalkylEvidence, type ReadP
 export type ImportKind = "ok" | "granska" | "ej";
 export type ImportObj = { name: string; qty: number };
 /** En kalkyl (Bilaga 1-sida) — en PDF kan innehålla flera anläggningar. */
-export type Kalkyl = { namn: string; objekt: ImportObj[]; besokPerAr: number; perYear: number | null; adress?: string; evidence?: KalkylEvidence };
+export type Kalkyl = { namn: string; objekt: ImportObj[]; besokPerAr: number; perYear: number | null; adress?: string; evidence?: KalkylEvidence; /** Delkalkyl per fastighet i ett koncernavtal – räknas inte in i summan. */ del?: boolean };
 export type ImportHit = {
   file: string; path: string; kind: ImportKind; reason: string;
   kund: string; avtalNr: string; datum: string; adress: string; perYear: number | null;
