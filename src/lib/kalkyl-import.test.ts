@@ -55,3 +55,10 @@ test("FU_GS-mallen: produkter, besök och kostnad per tillfälle", () => {
   expect(JSON.stringify(k?.objekt)).toBe(JSON.stringify([{ name: "Vikport", qty: 3 }]));
   expect(k?.perYear).toBe(4414);
 });
+
+test("koncernkalkyl med fastigheter per rad ger en delkalkyl per fastighet", async () => {
+  const { facilityParts } = await import("./kalkyl-import");
+  const parts = facilityParts({ namn: "FU-kalkyl", objekt: [{ name: "Armåga 1 i Borås", qty: 2 }, { name: "Forsen", qty: 4 }, { name: "Pallas", qty: 1 }], besokPerAr: 2, perYear: 22730 });
+  expect(JSON.stringify(parts.map((p) => [p.adress, p.objekt[0]?.qty, p.perYear]))).toBe(JSON.stringify([["Armåga 1 i Borås", 2, null], ["Forsen", 4, null], ["Pallas", 1, null]]));
+  expect(facilityParts({ namn: "FU-kalkyl", objekt: [{ name: "Takskjutport", qty: 2 }, { name: "Vikport", qty: 1 }], besokPerAr: 2, perYear: 1 }).length).toBe(0);
+});

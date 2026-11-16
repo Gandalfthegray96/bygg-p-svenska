@@ -137,9 +137,15 @@ export async function excelKalkyler(bytes: ArrayBuffer, file = "Excel"): Promise
   const sheets: Record<string, unknown[][]> = {};
   for (const name of book.SheetNames) { const sh = book.Sheets[name]; if (sh) sheets[name] = XLSX.utils.sheet_to_json<unknown[]>(sh, { header: 1, defval: null }); }
   const gs = parseGsMall(sheets, file);
-  if (gs) return [gs];
+  if (gs) return [gs, ...facilityParts(gs)];
   return Object.entries(sheets).flatMap(([name, rows]) => {
     const k = parseLegacyRows(rows, name, file) ?? parseServicekalkyl(rows, name, file);
     return k ? [k] : [];
   });
+}
+const PORT_ORD = /port|vp\b|tsp|grind|dörr|bom|lucka|motor|ramp|vikport|rullport|garage|hiss|fönster|ridå|skjut|slag|pivå|automatik/i;
+/** Koncernkalkyl där varje rad är en fastighet (t.ex. "Armbåga 1 i Borås | 2"): en delkalkyl per fastighet, utan påhittat pris. */
+export function facilityParts(k: Kalkyl): Kalkyl[] {
+  if (k.objekt.length < 2 || k.objekt.some((o) => PORT_ORD.test(o.name))) return [];
+  return k.objekt.map((o) => ({ namn: `Fastighet: ${o.name}`, adress: o.name, del: true, objekt: [{ name: "Objekt", qty: o.qty }], besokPerAr: k.besokPerAr, perYear: null }));
 }
