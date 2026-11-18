@@ -5,7 +5,7 @@ import { classify, mergeKalkyler, pdfText, type ImportHit, type ImportKind, type
 import { avtalNrOwner, fyllImport, type CustomerFolder, type Status } from "@/lib/avtal-store";
 import { matchPosts, type Match } from "@/lib/import-match";
 import { facilitiesOf, normalizeAvtal, fmtKr } from "@/lib/kalkyl";
-import { automaticPost, customerDirectory, linkageIssues, sameNumberDocuments, sourceDocument } from "@/lib/import-links";
+import { automaticPost, bundleFolders, customerDirectory, linkageIssues, sameNumberDocuments, sourceDocument } from "@/lib/import-links";
 import { reviewPrice, withImportedRows, type PriceChoice } from "@/lib/price-review";
 import { excelKalkyler } from "@/lib/kalkyl-import";
 import { droppedImportFiles, supportedFile } from "@/lib/import-files";
@@ -89,6 +89,8 @@ export function ImportPdf({ store, onClose, onDone }: { store: Record<string, Cu
         const issues = selected?.evidence?.verification.unresolvedIssues ?? x.evidence?.verification.unresolvedIssues ?? [];
         if (x.kind !== "ej" && issues.length) { x.kind = "granska"; x.reason = [...new Set(issues)].join(" "); x.on = false; }
       }
+      const bundled = bundleFolders(merged);
+      merged.splice(0, merged.length, ...bundled);
       if (!prev.length) setTab(merged.some((x) => x.kind === "ok") ? "ok" : "granska");
       return merged;
     });
@@ -248,6 +250,7 @@ const priceReviewOf = (x: Item) => {
           <div className="flex flex-wrap justify-end gap-2">
             {repeatedTarget && <p role="alert" className="w-full text-sm text-destructive">Flera filer är valda till samma avtal. Välj en huvudrad och koppla övriga som underlag.</p>}
             <Button variant="outline" onClick={() => setItems([])}>Börja om</Button>
+            <Button variant="outline" disabled={!valda.some((x) => !x.confirmed && x.facility)} onClick={() => setItems((l) => l.map((x) => x.on && x.kind === "ok" && x.facility && !x.dup ? { ...x, confirmed: true } : x))}>Bekräfta alla klara</Button>
             <Button onClick={spara} disabled={!valda.length || repeatedTarget || pendingLink}>Fyll i {valda.length} avtal</Button>
           </div>
         </>

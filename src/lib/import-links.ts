@@ -73,3 +73,39 @@ export function attachImportSources(agreement: Avtal, facilityId: string, addres
   agreement.documents = [...existing.values()];
   return true;
 }
+type BundleItem = ImportHit & { mod: number; on: boolean; kalk: string; post: string; facility: string; related: string[]; cands: { score: number }[] };
+const isSpec = (file: string) => /^spec[\s._-]/i.test(file);
+const isExcel = (file: string) => /\.(xlsx|xls|xltx)$/i.test(file);
+
+/**
+ * One customer folder = one review card, but only as a proposal: when a folder holds exactly one
+ * agreement PDF matched to an existing post, the newest single-table Excel calculation becomes its
+ * calculation and the other files become source references. Nothing is merged between posts and
+ * the user still confirms each card before saving.
+ */
+export function bundleFolders<T extends BundleItem>(items: T[]): T[] {
+  const out = items.map((item) => ({ ...item }));
+  const dirs = new Map<string, T[]>();
+  for (const item of out) { const dir = customerDirectory(item.path); if (dir) dirs.set(dir, [...(dirs.get(dir) ?? []), item]); }
+  for (const group of dirs.values()) {
+    const mains = group.filter((x) => !isExcel(x.file) && !isSpec(x.file) && x.kind !== "ej" && x.post);
+    if (mains.length !== 1) continue;
+    const main = mains[0]!;
+    if (group.some((x) => x !== main && !isExcel(x.file) && !isSpec(x.file) && x.post && x.post !== main.post)) continue;
+    const calcs = group.filter((x) => isExcel(x.file) && x.kalkyler.length === 1 && (!x.post || x.post === main.post)).sort((a, b) => b.mod - a.mod);
+    if (!main.kalkyler.length && calcs[0]) main.kalk = `${calcs[0].path}|0`;
+    const sourcePath = main.kalk.slice(0, main.kalk.lastIndexOf("|"));
+    for (const x of group) {
+      if (x === main) continue;
+      if (x.path !== sourcePath && !main.related.includes(x.path)) main.related = [...main.related, x.path];
+      x.kind = "ej"; x.reason = `Ingår i mappens avtal: ${main.file}`; x.on = false;
+    }
+    const selected = calcs.find((c) => c.path === sourcePath)?.kalkyler[0];
+    const unresolved = (selected?.evidence?.verification.unresolvedIssues ?? main.evidence?.verification.unresolvedIssues ?? []).length > 0;
+    const sure = (main.cands[0]?.score ?? 0) >= 60 && !!main.facility && !unresolved && main.kalkyler.length <= 1;
+    main.kind = sure ? "ok" : "granska";
+    main.reason = sure ? `Mappens avtal${selected ? " + kalkyl" : ""} kopplade (${group.length} filer)` : `Mappens avtal – kontrollera koppling (${group.length} filer)`;
+    main.on = sure;
+  }
+  return out;
+}
