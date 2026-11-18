@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ArrowUpDown, ArrowUpRight, CheckCircle2, Clock, Coins, FilePen, FolderUp, Plus, Ban, TrendingUp, Search, UserRound, Wrench, Building2, Handshake, Hash } from "lucide-react";
+import { formOf, garantiStatus, type Avtalsform } from "@/lib/avtalsform";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Trash2 } from "lucide-react";
@@ -15,11 +16,11 @@ import { getSettings } from "@/lib/foretag-settings";
 import { FILIALER, filialFor } from "@/lib/planering";
 import { deleteAgreement, setVersionStatus, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
-type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; signedAt: string; avtalNr: string; ansvarig: string; adress: string; filial: "GBG" | "BORAS" };
+type Row = { stale: boolean; days: number; id: string; name: string; v: Version; status: Status; perYear: number; lon: ReturnType<typeof lonsamhet>; signedAt: string; avtalNr: string; ansvarig: string; adress: string; filial: "GBG" | "BORAS"; form: Avtalsform };
 export type Filter = "alla" | Status | "forsenad";
 const filLabel = (f: "GBG" | "BORAS") => FILIALER.find((x) => x.id === f)?.label ?? f;
 /** Färdigt avtal = har både avtalsnummer och pris; döljs i arbetskön tills "Se alla avtal". */
-const komplett = (r: { avtalNr: string; perYear: number }) => !!r.avtalNr.trim() && r.perYear > 0;
+const komplett = (r: { avtalNr: string; perYear: number; form?: Avtalsform }) => !!r.avtalNr.trim() && (r.perYear > 0 || r.form === "lopande");
 type Sort = "datum" | "varde" | "kund" | "filial";
 const METRIC = { v: "Värde", tb: "Täckningsbidrag", h: "Timmar" } as const;
 
@@ -64,7 +65,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
     Object.values(store).filter((f) => f.versions.length && !f.uppsagd).map((f) => {
       const v = f.versions.at(-1)!;
       const a = normalizeAvtal(v.data);
-      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a, getSettings()), signedAt: (/^\d{4}-\d{2}-\d{2}/.test(a.customer.datum ?? "") && a.customer.datum < (f.versions[0]?.savedAt ?? v.savedAt).slice(0, 10) ? a.customer.datum : undefined) ?? [...(f.log ?? [])].reverse().find((l) => l.kind === "signerat")?.at ?? v.savedAt, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "", filial: filialFor(f.planering?.filial, a.customer.anlAdress ?? "") };
+      const ans = a.customer.varRef ?? ""; return { stale: isStale(f) && canSee(ans, me), days: daysSinceActivity(f), id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, lon: lonsamhet(a, getSettings()), signedAt: (/^\d{4}-\d{2}-\d{2}/.test(a.customer.datum ?? "") && a.customer.datum < (f.versions[0]?.savedAt ?? v.savedAt).slice(0, 10) ? a.customer.datum : undefined) ?? [...(f.log ?? [])].reverse().find((l) => l.kind === "signerat")?.at ?? v.savedAt, avtalNr: a.customer.avtalNr ?? "", ansvarig: a.customer.varRef ?? "", adress: a.customer.anlAdress ?? "", filial: filialFor(f.planering?.filial, a.customer.anlAdress ?? ""), form: formOf(a) };
     }), [store, me]);
 
   const nKomplett = rows.filter(komplett).length;
@@ -88,8 +89,9 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
   const kpi = { arr: sum((l) => l.intakt), tb: sum((l) => l.tb), h: sum((l) => l.hours), trips: sum((l) => l.trips), obj: sum((l) => l.objekt) };
   const tg = kpi.arr > 0 ? (kpi.tb / kpi.arr) * 100 : 0;
   const DAY = 86_400_000;
-  const fornyelse = act.map((r) => ({ r, slut: new Date(new Date(r.signedAt).getTime() + 5 * 365 * DAY) }))
-    .filter((x) => x.slut.getTime() - Date.now() < 180 * DAY).sort((a, b) => +a.slut - +b.slut);
+  void DAY;
+  const fornyelse = act.flatMap((r) => { const g = garantiStatus({ avtalsform: r.form }, r.signedAt); return g?.flagga ? [{ r, slut: g.slut, utgatt: g.utgatt }] : []; })
+    .sort((a, b) => +a.slut - +b.slut);
   const forsenade = rows.filter((r) => r.stale).sort((a, b) => b.days - a.days);
   const first = act.reduce((m, r) => (r.signedAt < m ? r.signedAt : m), new Date().toISOString());
   const allMonths = (() => { const d = new Date(first), n = new Date(); return Math.max(6, (n.getFullYear() - d.getFullYear()) * 12 + n.getMonth() - d.getMonth() + 1); })();
@@ -213,7 +215,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
             ))}
             {fornyelse.map(({ r, slut }) => (
               <li key={"r" + r.id}><button onClick={() => onOpen(r.id, r.name, r.v)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted">
-                <RefreshCw size={15} className="shrink-0 text-info" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{slut.getTime() < Date.now() ? "Förnyelse · 5 år passerat" : "Förnyelse · " + slut.toLocaleDateString("sv-SE")}</span></span>
+                <RefreshCw size={15} className="shrink-0 text-info" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{r.name}</span><span className="text-xs text-muted-foreground">{slut.getTime() < Date.now() ? "Garantiservice · 5 år passerat – erbjud FU-avtal" : "Garantiservice · 4 år passerat – slutar " + slut.toLocaleDateString("sv-SE")}</span></span>
               </button></li>
             ))}
             {utanNr.map((r) => (
@@ -312,7 +314,7 @@ export function Hem({ store, onOpen, onNew, onChanged, me = { role: null, name: 
                 {x.stale && <span className="inline-flex shrink-0 items-center gap-1 font-medium text-destructive" title={`${x.days} dagar sedan skickat`}><AlertTriangle size={12} />{x.days} d</span>}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3 lg:contents">
-                <div className="lg:text-right"><p className="text-[11px] text-muted-foreground lg:hidden">Årsvärde</p><p className="text-sm font-semibold tabular-nums text-foreground">{fmtKr(x.perYear)}</p></div>
+                <div className="lg:text-right"><p className="text-[11px] text-muted-foreground lg:hidden">Årsvärde</p><p className="text-sm font-semibold tabular-nums text-foreground">{x.form === "lopande" ? "Löpande räkning" : fmtKr(x.perYear)}</p>{x.form === "garanti" && (() => { const g = garantiStatus({ avtalsform: "garanti" }, x.signedAt); return g && <p className={`text-[11px] ${g.flagga ? "font-medium text-destructive" : "text-muted-foreground"}`}>Garanti · år {g.ar} av 5</p>; })()}</div>
                 <div className="text-right lg:text-right" title="Täckningsbidrag per år (internt)"><p className="text-[11px] text-muted-foreground lg:hidden">TB / TG</p><p className="text-sm font-medium tabular-nums text-success">{fmtKr(Math.round(x.lon.tb))}</p><p className="text-[11px] tabular-nums text-muted-foreground">TG {pct(x.lon.tg)}</p></div>
               </div>
               <div className="mt-3 lg:mt-0">

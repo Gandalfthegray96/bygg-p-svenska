@@ -83,6 +83,7 @@ async function bilaga1(a: Avtal): Promise<PDFDocument> {
 
   const kr = (n: number) => new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + " kr";
   const lines: [string, number][] = [];
+  if (a.avtalsform === "lopande") { y -= 4; txt(`Faktureras löpande enligt prislista med ${a.rabattTim} % avtalsrabatt på timpriset.`, x0, wA + wB, "left", bold); return doc; }
   if (a.show.visit) for (const v of k.visits) lines.push([k.visits.length > 1 ? `Kostnad servicetillfälle ${v.k} (exkl. moms):` : "Kostnad per servicetillfälle (exkl. moms):", v.perVisit]);
   if (a.show.year) lines.push(["Kostnad per år (exkl. moms):", k.perYear]);
   if (a.show.total5) lines.push(["Kostnad 5 år garantiservice (exkl. moms):", k.total5]);

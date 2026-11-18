@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode, type CSSProperties } from "react";
+import { AVTALSFORMER, formOf } from "@/lib/avtalsform";
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { Tidslinje } from "@/components/Aktivitet";
@@ -662,6 +663,17 @@ function App() {
                     <p className="mt-1 font-display text-3xl font-bold tabular-nums text-foreground">{fmtKr(k.perYear)}</p>
                     <p className="mt-2 text-sm text-muted-foreground">5 år: <b className="text-foreground">{fmtKr(k.total5)}</b></p>
                   </div>
+                </Card>
+                <Card title="Avtalsform">
+                  <div className="grid gap-2" role="radiogroup" aria-label="Avtalsform">
+                    {AVTALSFORMER.map((f) => (
+                      <label key={f.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2.5 text-sm ${formOf(a) === f.id ? "border-primary bg-accent" : "border-border"}`}>
+                        <input type="radio" name="avtalsform" checked={formOf(a) === f.id} onChange={() => setA((p) => ({ ...p, avtalsform: f.id, ...(f.id === "garanti" ? { show: { ...p.show, total5: true } } : {}), ...(f.id === "lopande" && formOf(p) !== "lopande" ? { rabattTim: 10 } : {}) }))} className="mt-0.5 h-4 w-4 accent-primary" />
+                        <span><span className="block font-medium text-foreground">{f.label}</span><span className="text-xs text-muted-foreground">{f.hint}</span></span>
+                      </label>
+                    ))}
+                  </div>
+                  {formOf(a) === "lopande" && <p className="mt-2 text-xs text-muted-foreground">Besöken planeras som vanligt men debiteras löpande med {fmtNum(a.rabattTim)} % rabatt på timpriset (ändras under Prislista).</p>}
                 </Card>
                 <Card title="Priser i avtalet (Bilaga 1)">
                   <div className="space-y-2 text-sm">

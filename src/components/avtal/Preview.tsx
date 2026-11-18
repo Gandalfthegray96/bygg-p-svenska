@@ -169,11 +169,12 @@ export function Preview({ a }: { a: Avtal }) {
         <table className="doc-table doc-sum">
           <tbody>
             <tr><td>Totalt antal objekt</td><td className="r">{k.totalQty} st</td></tr>
-            {a.show.visit && k.visits.map((v) => (
+            {a.avtalsform === "lopande" && <tr className="b"><td colSpan={2}>Service utförs enligt objektlistan och faktureras löpande per nedlagd tid och material enligt prislistan (Bilaga 2) med {a.rabattTim} % avtalsrabatt på timpriset.</td></tr>}
+            {a.avtalsform !== "lopande" && a.show.visit && k.visits.map((v) => (
               <tr key={v.k}><td>{visitLabel(v.k)}</td><td className="r">{fmtKr(v.perVisit)}</td></tr>
             ))}
-            {a.show.year && <tr><td>Kostnad per år exkl. moms</td><td className="r">{fmtKr(k.perYear)}</td></tr>}
-            {a.show.total5 && <tr className="b"><td>Kostnad 5 år garantiservice exkl. moms</td><td className="r">{fmtKr(k.total5)}</td></tr>}
+            {a.avtalsform !== "lopande" && a.show.year && <tr><td>Kostnad per år exkl. moms</td><td className="r">{fmtKr(k.perYear)}</td></tr>}
+            {a.avtalsform !== "lopande" && a.show.total5 && <tr className="b"><td>Kostnad 5 år garantiservice exkl. moms</td><td className="r">{fmtKr(k.total5)}</td></tr>}
           </tbody>
         </table>
         <Footer />

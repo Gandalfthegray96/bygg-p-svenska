@@ -151,7 +151,7 @@ export function Planering({ store, onChanged }: { store: Record<string, Customer
                         {v?.lista && <div className="break-words text-foreground">{v.lista}</div>}
                         <div className="flex flex-wrap gap-x-3 gap-y-1">
                           <span>Besök {i + 1}</span><span>{fmtH(v?.hours ?? 0)} h</span><span>{v?.trips ?? 0} framk.</span>
-                          <span className="font-medium text-foreground">{fmtKr(v?.pris ?? 0)} exkl. moms</span>
+                          {r.a.avtalsform === "lopande" ? <span className="rounded bg-info/15 px-1.5 font-medium text-info">Löpande debitering</span> : <span className="font-medium text-foreground">{fmtKr(v?.pris ?? 0)} exkl. moms</span>}
                           {r.avtalNr && <span>{r.avtalNr}</span>}
                           {filter === "alla" && r.plan.filial && <span>{FILIALER.find((x) => x.id === r.plan.filial)?.label}</span>}
                           {b.klar && <span className="font-medium text-foreground">Ärende skapat i Mobigo</span>}

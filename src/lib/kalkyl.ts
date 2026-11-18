@@ -100,6 +100,8 @@ export type Avtal = {
   rabattMaterial: number;
   adjust: string;
   show: ShowPrices;
+  /** fast = löpande FU-avtal (standard), garanti = 5-års garantiservice, lopande = löpande räkning */
+  avtalsform?: "fast" | "garanti" | "lopande";
   /** Avtalsspecifika tillägg/avvikelser från standardvillkoren (säljaren skriver). */
   sarskildaVillkor?: string;
   /** Avtalsspecifik text per rubrik i originalavtalet (id → text). Saknas = standardtext. */
