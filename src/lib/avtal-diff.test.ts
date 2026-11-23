@@ -1,8 +1,7 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import { emptyAvtal, newRow } from "./kalkyl";
 import { diffAvtal, diffPlanering, sentence } from "./avtal-diff";
 
-describe("aktivitetslogg", () => {
   test("tillagd port beskrivs med namn", () => {
     const a = emptyAvtal();
     const b = structuredClone(a);
@@ -20,4 +19,3 @@ describe("aktivitetslogg", () => {
     const a = emptyAvtal();
     expect(diffAvtal(a, structuredClone(a)).length).toBe(0);
   });
-});
