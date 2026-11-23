@@ -4,7 +4,7 @@ import { AVTALSFORMER, formOf } from "@/lib/avtalsform";
 import { CoverPreview, Preview } from "@/components/avtal/Preview";
 import { type Avtal, type Customer, type ObjRow, calculate, emptyAvtal, fmtKr, fmtNum, newRow, normalizeAvtal, OBJEKT_TYPER } from "@/lib/kalkyl";
 import { Tidslinje } from "@/components/Aktivitet";
-import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
+import { loadLastNr, nextFromRegister, saveLastNr } from "@/lib/avtalsnr";
 import { addNote, deleteNote, avtalNrOwner, type CustomerFolder, type Status, deleteVersion, loadDraft, loadStore, markDownloaded, saveDraft, saveVersion, setVersionStatus } from "@/lib/avtal-store";
 import { KanbanSquare, Archive, BarChart3, FilePlus2, UserPlus, CalendarDays, ClipboardList, House, Building2, ChevronDown, ChevronUp, Coins, Copy, Eye, FileCheck2, FileSpreadsheet, FileText, FolderOpen, Settings, Zap, Mail, Plus, RotateCcw, Save, ScrollText, Search, Trash2, User, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -244,7 +244,7 @@ function App() {
   }, [stale.length]);
   const badge = (id: Tab) => (id === "hem" || id === "pipeline") && stale.length > 0
     ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">{stale.length}</span> : null;
-  const startNew = async () => { try { const n = emptyAvtal(); n.attachments = await fetchAttachments(); n.customer.avtalNr = nextAvtalNr(loadLastNr()); { const k = loadKontakt(); if (k.namn) n.customer.varRef = k.namn; } setA(n); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); } catch { setToast("Kunde inte hämta bilagor. Försök igen."); } };
+  const startNew = async () => { try { const n = emptyAvtal(); n.attachments = await fetchAttachments(); n.customer.avtalNr = nextFromRegister(loadLastNr(), Object.values(loadStore()).map((f) => f.versions.at(-1)?.data.customer.avtalNr ?? "")); { const k = loadKontakt(); if (k.namn) n.customer.varRef = k.namn; } setA(n); setCurrentVersion(undefined); setCurrentId(undefined); setTab("kund"); setConfirmNew(false); setToast("Nytt tomt avtal"); } catch { setToast("Kunde inte hämta bilagor. Försök igen."); } };
 
   useEffect(() => {
     const d = loadDraft();

@@ -95,7 +95,7 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
   };
   const saveNr = () => {
     if (!nr.trim()) return;
-    saveLastNr(nr);
+    saveLastNr(nr, true);
     onToast(`Nästa nya avtal får nummer ${nextAvtalNr(nr) || "–"}`);
   };
 
