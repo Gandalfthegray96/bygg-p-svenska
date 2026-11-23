@@ -4,6 +4,7 @@ import { pushKey, pushShared } from "./cloud-sync";
 import { cachedAttachments } from "./bilagor";
 import { type Avtal, type LinkedDocument, facilitiesOf, calculate, clampVisits, emptyAvtal, fmtKr, newRow, normalizeAvtal } from "./kalkyl";
 import { attachImportSources } from "./import-links";
+import { diffAvtal, diffContacts, diffPlanering, sentence } from "./avtal-diff";
 
 export type Status = "offert" | "utkast" | "skickat" | "forhandling" | "signerat" | "forlorat";
 export type Version = { version: number; savedAt: string; data: Avtal; status?: Status; downloadedAt?: string };
@@ -23,11 +24,19 @@ const STORE_KEY = "uc-avtal-store";
 const DRAFT_KEY = "uc-avtal-draft";
 
 let actor = "";
-if (typeof window !== "undefined") {
-  void supabase.auth.getSession().then(({ data }) => { actor = data.session?.user.email ?? ""; });
-  supabase.auth.onAuthStateChange((_e, s) => { actor = s?.user.email ?? ""; });
+let actorFull = "";
+async function loadActor(uid: string | undefined, email: string | undefined) {
+  actor = email ?? ""; actorFull = "";
+  if (!uid) return;
+  const { data } = await supabase.from("profiles").select("name").eq("id", uid).maybeSingle();
+  actorFull = data?.name?.trim() ?? "";
 }
-const actorName = () => actor.split("@")[0] || "Okänd";
+if (typeof window !== "undefined") {
+  void supabase.auth.getSession().then(({ data }) => loadActor(data.session?.user.id, data.session?.user.email));
+  supabase.auth.onAuthStateChange((_e, s) => { setTimeout(() => void loadActor(s?.user.id, s?.user.email), 0); });
+}
+/** Inloggad persons riktiga namn från profilen (fallback: e-postens början). */
+export const actorName = () => actorFull || actor.split("@")[0] || "Okänd";
 
 function logTo(f: CustomerFolder, kind: ActivityKind, text: string) {
   (f.log ??= []).push({ id: crypto.randomUUID(), at: new Date().toISOString(), by: actorName(), kind, text });
@@ -81,7 +90,9 @@ export function saveVersion(a: Avtal, existingId?: string): { id: string; versio
   const data = { ...a, attachments: a.attachments ?? (version === 1 ? cachedAttachments() : {}) };
   const prevStatus = folder.versions.at(-1)?.status;
   folder.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(data), ...(prevStatus ? { status: prevStatus } : {}) });
-  logTo(folder, version === 1 ? "skapat" : "version", version === 1 ? "Avtal skapat (v1)" : `Ny version sparad (v${version})`);
+  const prevData = folder.versions.at(-2)?.data;
+  const changes = prevData ? diffAvtal(normalizeAvtal(prevData), normalizeAvtal(data)) : [];
+  logTo(folder, version === 1 ? "skapat" : "version", version === 1 ? `${actorName()} skapade avtalet (v1)` : changes.length ? `${sentence(actorName(), changes)} (v${version})` : `${actorName()} sparade ny version utan ändringar (v${version})`);
   store[folder.id] = folder;
   saveStore(store);
   return { id: folder.id, version };
@@ -110,7 +121,7 @@ export function sagUpp(id: string, u: { datum: string; orsak: string; notering: 
   const f = store[id];
   if (!f) return;
   f.uppsagd = { ...u, by: actorName(), at: new Date().toISOString() };
-  logTo(f, "notering", `Avtal uppsagt ${u.datum} – ${u.orsak}${u.notering ? `: ${u.notering}` : ""}`);
+  logTo(f, "notering", `${actorName()} sade upp avtalet ${u.datum} – ${u.orsak}${u.notering ? `: ${u.notering}` : ""}`);
   saveStore(store);
 }
 
@@ -119,7 +130,7 @@ export function angraUppsagning(id: string) {
   const f = store[id];
   if (!f?.uppsagd) return;
   delete f.uppsagd;
-  logTo(f, "notering", "Uppsägning ångrad");
+  logTo(f, "notering", `${actorName()} ångrade uppsägningen`);
   saveStore(store);
 }
 
@@ -145,16 +156,18 @@ export function saveDraft(a: Avtal) {
   pushKey(DRAFT_KEY, raw);
 }
 
-const STATUS_TEXT: Record<Status, string> = { offert: "Flyttad till Att skapa offert", skickat: "Avtal skickat", signerat: "Avtal signerat", utkast: "Återställt till utkast", forhandling: "Uppföljning / förhandling", forlorat: "Avtal förlorat / avböjt" };
+
+const STATUS_LABEL: Record<Status, string> = { offert: "Att skapa offert", utkast: "Utkast", skickat: "Skickat", forhandling: "Förhandling", signerat: "Signerat", forlorat: "Förlorat" };
 
 export function setVersionStatus(id: string, version: number, status: Status) {
   const store = loadStore();
   const f = store[id];
   const v = f?.versions.find((x) => x.version === version);
   if (!f || !v) return;
-  if ((v.status ?? "utkast") === status) return;
+  const prev = v.status ?? "utkast";
+  if (prev === status) return;
   v.status = status;
-  logTo(f, status, `${STATUS_TEXT[status]} (v${version})`);
+  logTo(f, status, `${actorName()} flyttade avtalet från ${STATUS_LABEL[prev]} till ${STATUS_LABEL[status]} (v${version})`);
   saveStore(store);
 }
 
@@ -165,7 +178,7 @@ export function markDownloaded(id: string, version: number, what: string) {
   const v = f?.versions.find((x) => x.version === version);
   if (!f || !v) return;
   v.downloadedAt = new Date().toISOString();
-  logTo(f, "nedladdat", `${what} nedladdad (v${version})`);
+  logTo(f, "nedladdat", `${actorName()} laddade ner ${what} (v${version})`);
   saveStore(store);
 }
 
@@ -179,7 +192,7 @@ export function indexeraBatch(ids: string[], pct: number, scale: (a: Avtal) => A
     if (!f || !last) continue;
     const version = last.version + 1;
     f.versions.push({ version, savedAt: new Date().toISOString(), data: structuredClone(scale(normalizeAvtal(last.data))), status: last.status ?? "utkast" });
-    logTo(f, "version", `Indexreglering +${String(pct).replace(".", ",")} % (v${version})`);
+    logTo(f, "version", `${actorName()} indexreglerade +${String(pct).replace(".", ",")} % – nytt pris ${fmtKr(calculate(normalizeAvtal(f.versions.at(-1)!.data)).perYear)}/år (tidigare ${fmtKr(calculate(normalizeAvtal(last.data)).perYear)}/år) (v${version})`);
     n++;
   }
   saveStore(store);
@@ -208,7 +221,11 @@ export function deleteNote(id: string, noteId: string) {
 export function setCustomerContacts(name: string, contacts: Contact[]) {
   const key = customerKey(name);
   const store = loadStore();
-  for (const f of Object.values(store)) if (customerKey(f.name) === key) f.contacts = contacts;
+  for (const f of Object.values(store)) if (customerKey(f.name) === key) {
+    const changes = diffContacts(f.contacts, contacts);
+    f.contacts = contacts;
+    if (changes.length) logTo(f, "notering", sentence(actorName(), changes));
+  }
   saveStore(store);
 }
 
@@ -289,7 +306,9 @@ export function setPlanering(id: string, p: Planering) {
   const store = loadStore();
   const f = store[id];
   if (!f) return;
+  const changes = diffPlanering(f.planering, p);
   f.planering = p;
+  if (changes.length) logTo(f, "notering", sentence(actorName(), changes));
   saveStore(store);
 }
 
