@@ -30,3 +30,4 @@
 - Import document relationships use import-links.ts: never merge by agreement number, directory or modification time; confirm each target/facility, preserve source references, and keep multi-facility prices/rows unchanged until reviewed.
 - Price-changing imports must also require an explicit decision in fyllImport, not just the UI, so alternate callers cannot bypass price review; document-only imports preserve existing adjustments.
 - Agreement numbering uses the highest number in the explicitly selected personal series and the loaded shared register; automatic saves may only advance that series, so editing historical or colleague agreements cannot replace it.
+- Pipeline expiry is display-only via pipeline-visibility.ts, using the signing activity timestamp (legacy fallback: first version in the current signed run), so subsequent edits do not restart the window or affect planning/status.

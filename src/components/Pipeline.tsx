@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { calculate, fmtKr, normalizeAvtal } from "@/lib/kalkyl";
+import { visibleInPipeline } from "@/lib/pipeline-visibility";
 import { addNote, createForfragan, forfraganText, setVersionStatus, type Forfragan, type CustomerFolder, type Status, type Version } from "@/lib/avtal-store";
 
 const COLS: { id: Status; label: string; cls: string }[] = [
@@ -25,6 +26,11 @@ export { FOLLOW_UP_DAYS };
 type Card = { id: string; name: string; v: Version; status: Status; perYear: number; avtalNr: string; adress: string; ansvarig: string; days: number; ff?: Forfragan | undefined };
 
 export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, CustomerFolder>; onOpen: (id: string, name: string, v: Version) => void; onChanged: () => void }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [drag, setDrag] = useState<string | null>(null);
   const [over, setOver] = useState<Status | null>(null);
   const [nyOpen, setNyOpen] = useState(false);
@@ -46,12 +52,13 @@ export function Pipeline({ store, onOpen, onChanged }: { store: Record<string, C
     <div className="space-y-1"><Label htmlFor={`ff-${k}`}>{label}</Label><Input id={`ff-${k}`} type={type} value={ny[k]} onChange={(e) => setNy({ ...ny, [k]: e.target.value })} /></div>
   );
 
-  const cards = useMemo<Card[]>(() => Object.values(store).filter((f) => f.versions.length).map((f) => {
-    const v = f.versions.at(-1)!;
+  const cards = useMemo<Card[]>(() => Object.values(store).filter((f) => visibleInPipeline(f, now)).flatMap((f) => {
+    const v = f.versions.at(-1);
+    if (!v) return [];
     const a = normalizeAvtal(v.data);
-    const last = [v.savedAt, ...(f.log ?? []).map((l) => l.at)].sort().at(-1)!;
-    return { id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", adress: a.customer.anlAdress ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((Date.now() - new Date(last).getTime()) / DAY), ff: f.forfragan };
-  }), [store]);
+    const last = [v.savedAt, ...(f.log ?? []).map((l) => l.at)].sort().at(-1) ?? v.savedAt;
+    return [{ id: f.id, name: f.name, v, status: v.status ?? "utkast", perYear: calculate(a).perYear, avtalNr: a.customer.avtalNr ?? "", adress: a.customer.anlAdress ?? "", ansvarig: a.customer.varRef ?? "", days: Math.floor((now - new Date(last).getTime()) / DAY), ff: f.forfragan }];
+  }), [store, now]);
 
   const move = (c: Card, s: Status) => {
     if (c.status === "offert" && s !== "offert" && c.ff) {

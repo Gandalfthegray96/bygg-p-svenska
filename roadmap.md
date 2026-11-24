@@ -1,5 +1,8 @@
 # Roadmap
 
+## Pipeline
+- [ ] Dölj signerade avtal efter 30 dagar endast i Pipeline; behåll status och planering, verifiera tester och inloggad vy.
+
 ## Avtalsnumrering
 - [x] Fortsätt efter högsta nummer i vald serie och skydda serien från äldre avtal.
 - [x] Återställde Alexsanders serie till ALS_A0119; verifierade ALS_A0120 i Inställningar och nytt avtal inloggat, sex tester godkända. Tidigare arbetsutkast återställt utan nya registerposter.

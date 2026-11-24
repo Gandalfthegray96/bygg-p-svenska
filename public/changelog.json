@@ -1,5 +1,13 @@
 [
   {
+    "datum": "2026-11-24-pipeline",
+    "rubrik": "Renare säljpipeline",
+    "punkter": [
+      "Signerade avtal döljs från Pipeline efter 30 dagar och finns kvar i Avtalsöversikt och Planeringen.",
+      "Tiden räknas från övergången till Signerat, inte från senare ändringar."
+    ]
+  },
+  {
     "datum": "2026-11-23-avtalsnummer",
     "rubrik": "Säkrare avtalsnumrering",
     "punkter": [
