@@ -1,5 +1,9 @@
 # Roadmap
 
+## Avtalsnumrering
+- [x] Fortsätt efter högsta nummer i vald serie och skydda serien från äldre avtal.
+- [x] Återställde Alexsanders serie till ALS_A0119; verifierade ALS_A0120 i Inställningar och nytt avtal inloggat, sex tester godkända. Tidigare arbetsutkast återställt utan nya registerposter.
+
 ## Historisk avtalsimport – godkänd stegplan
 - [x] Steg 1: bakåtkompatibla serviceadresser och källmetadata.
 - [x] Steg 2: fyra kalkylformat bevarade; pristyp, källposition, objektkontroller och PDF-adressgränser införda. Verifierat inloggad filinläsning med Herbert, CO_BE166 och två verkliga Excelkalkyler utan att spara några avtalsändringar.

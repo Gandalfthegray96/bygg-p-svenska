@@ -1,5 +1,13 @@
 [
   {
+    "datum": "2026-11-23-avtalsnummer",
+    "rubrik": "Säkrare avtalsnumrering",
+    "punkter": [
+      "Nya avtal fortsätter efter det högsta numret i din valda nummerserie.",
+      "Äldre avtal och kollegors avtalsnummer ändrar inte din nummerserie."
+    ]
+  },
+  {
     "datum": "2026-11-15-import-steg5",
     "rubrik": "Kvalitetskontroll av historisk import",
     "punkter": [

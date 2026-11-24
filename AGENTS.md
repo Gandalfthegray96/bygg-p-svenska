@@ -29,3 +29,4 @@
 - Import parsers use import-evidence.ts for explicit price units, source positions and independent quantity/price checks; conflicting prices remain unresolved and never modify calculate().
 - Import document relationships use import-links.ts: never merge by agreement number, directory or modification time; confirm each target/facility, preserve source references, and keep multi-facility prices/rows unchanged until reviewed.
 - Price-changing imports must also require an explicit decision in fyllImport, not just the UI, so alternate callers cannot bypass price review; document-only imports preserve existing adjustments.
+- Agreement numbering uses the highest number in the explicitly selected personal series and the loaded shared register; automatic saves may only advance that series, so editing historical or colleague agreements cannot replace it.

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { enablePush, pushSupported } from "@/lib/push";
-import { loadLastNr, nextAvtalNr, saveLastNr } from "@/lib/avtalsnr";
+import { loadLastNr, nextFromRegister, saveLastNr } from "@/lib/avtalsnr";
 import { lockApp } from "./AppGate";
 import { loadKontakt, saveKontakt } from "@/lib/kontakt";
 import { Bilagor } from "./Bilagor";
@@ -94,10 +94,11 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
     onToast(err ? "Kunde inte spara: " + err.message : "Sparat – gäller för alla användare");
   };
   const saveNr = () => {
-    if (!nr.trim()) return;
+    if (!nextNr) return;
     saveLastNr(nr, true);
-    onToast(`Nästa nya avtal får nummer ${nextAvtalNr(nr) || "–"}`);
+    onToast(`Nästa nya avtal får nummer ${nextNr}`);
   };
+  const nextNr = nextFromRegister(nr, Object.values(store).map((f) => f.versions.at(-1)?.data.customer.avtalNr ?? ""));
 
   const permText: Record<string, string> = { granted: "Aktiverade på den här enheten", denied: "Blockerade i webbläsaren – tillåt notiser i webbläsarens inställningar", default: "Inte aktiverade ännu", unsupported: "Stöds inte av den här webbläsaren" };
 
@@ -139,10 +140,10 @@ export function Installningar({ open, onClose, isAdmin, onToast, onOpenUsers, on
             </div>
           </Sektion>
           <Sektion icon={Hash} title="Mitt senaste avtalsnummer">
-            <p className="mb-2 text-sm text-muted-foreground">Nästa nya avtal får nästa nummer automatiskt{nr && nextAvtalNr(nr) ? ` (${nextAvtalNr(nr)})` : ""}.</p>
+            <p className="mb-2 text-sm text-muted-foreground">Nästa nya avtal får nästa nummer automatiskt{nextNr ? ` (${nextNr})` : ""}.</p>
             <div className="flex gap-2">
-              <input className="ds-input min-w-0 flex-1" value={nr} placeholder="t.ex. ALS_A0114" onChange={(e) => setNr(e.target.value)} />
-              <Button variant="outline" disabled={!nr.trim()} onClick={saveNr}>Spara</Button>
+              <input className="ds-input min-w-0 flex-1" aria-label="Mitt senaste avtalsnummer" value={nr} placeholder="t.ex. ALS_A0114" onChange={(e) => setNr(e.target.value)} />
+              <Button variant="outline" disabled={!nextNr} onClick={saveNr}>Spara</Button>
             </div>
           </Sektion>
           {isAdmin && (
