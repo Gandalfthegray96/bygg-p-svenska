@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Pipeline
-- [ ] Dölj signerade avtal efter 30 dagar endast i Pipeline; behåll status och planering, verifiera tester och inloggad vy.
+- [x] Dölj signerade avtal efter 30 dagar endast i Pipeline; status och planering orörda, fyra tester godkända.
 
 ## Avtalsnumrering
 - [x] Fortsätt efter högsta nummer i vald serie och skydda serien från äldre avtal.
