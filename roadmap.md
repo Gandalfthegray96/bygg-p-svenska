@@ -1,5 +1,8 @@
 # Roadmap
 
+## Betalningstid
+- [x] Snabbval och fritext per avtal, gemensam dokumenttext, PDF och aktivitetslogg; åtta tester och inloggad kontroll på dator/telefon godkända. PDF-text och lokal versionshistorik verifierade med molnskrivningar blockerade; inga kundavtal ändrade.
+
 ## Pipeline
 - [x] Dölj signerade avtal efter 30 dagar endast i Pipeline; status och planering orörda, fyra tester godkända.
 

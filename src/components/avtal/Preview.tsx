@@ -2,6 +2,7 @@ const cover = { url: "/pdf/avtal-cover.jpg" };
 const header = { url: "/pdf/avtal-header.jpg" };
 import { KLAUSULER, klausulText } from "@/lib/klausuler";
 import { type Avtal, calculate, fmtKr, rabattText } from "@/lib/kalkyl";
+import { betalningsrad } from "@/lib/betalningsvillkor";
 
 // Bilaga 2 – Prislista 2026 Q2 (fasta listpriser, påverkar inte kalkylen)
 const PRISLISTA: [string, string][] = [
@@ -210,7 +211,7 @@ export function Preview({ a }: { a: Avtal }) {
           </tbody>
         </table>
         <p><b>{rabattText(a)}</b><br />(gäller samtliga lagerförda reservdelar)</p>
-        <p>Betalningstid: 30 dagar netto.<br />Material faktureras vid leverans.<br />Arbete faktureras löpande.</p>
+        <p>{betalningsrad(a)}<br />Material faktureras vid leverans.<br />Arbete faktureras löpande.</p>
         <p>Leveransvillkor: Allmänna leveransbestämmelser Port 19 och Port 07A.</p>
         <p>Priserna gäller från och med avtalsdatum tillsvidare. Vi förbehåller oss rätten att justera priser utan föregående avisering till följd av förändringar i kostnader, råvarupriser eller andra marknadsförhållanden.</p>
         <Footer />

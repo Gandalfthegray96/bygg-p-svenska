@@ -98,6 +98,8 @@ export type Avtal = {
   /** Rabatt i prislistan (Bilaga 2) – påverkar inte avtalspriset */
   rabattTim: number;
   rabattMaterial: number;
+  /** Avtalsspecifik betalningstid i Bilaga 2; saknas = originalvillkor. */
+  betalningstid?: string;
   adjust: string;
   show: ShowPrices;
   /** fast = löpande FU-avtal (standard), garanti = 5-års garantiservice, lopande = löpande räkning */

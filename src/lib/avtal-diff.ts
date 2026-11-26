@@ -1,5 +1,6 @@
 import type { Avtal, ObjRow } from "./kalkyl";
 import { calculate, fmtKr } from "./kalkyl";
+import { betalningstid } from "./betalningsvillkor";
 
 type Contact = { id: string; name: string; roll: string; tel: string; epost: string };
 type PlanBesok = { vecka: number | null; klar?: boolean };
@@ -36,6 +37,7 @@ export function diffAvtal(prev: Avtal, next: Avtal): string[] {
   const nums: [keyof Avtal, string, string][] = [["hourRate", "timpris", " kr"], ["tripFee", "framkörning", " kr"], ["discount", "rabatt på arbete", " %"], ["rabattTim", "timrabatt i prislistan", " %"], ["rabattMaterial", "materialrabatt", " %"]];
   for (const [k, label, unit] of nums) if (prev[k] !== next[k]) out.push(`ändrade ${label} från ${num(Number(prev[k] ?? 0))}${unit} till ${num(Number(next[k] ?? 0))}${unit}`);
   if ((prev.adjust ?? "") !== (next.adjust ?? "")) out.push(`ändrade utjämning från ${v(prev.adjust)} till ${v(next.adjust)}`);
+  if (betalningstid(prev) !== betalningstid(next)) out.push(`ändrade betalningstid från "${betalningstid(prev)}" till "${betalningstid(next)}"`);
   if ((prev.avtalsform ?? "fast") !== (next.avtalsform ?? "fast")) out.push(`ändrade avtalsform från ${FORM[prev.avtalsform ?? "fast"]} till ${FORM[next.avtalsform ?? "fast"]}`);
   if (JSON.stringify(prev.show) !== JSON.stringify(next.show)) out.push("ändrade prisvisningen i avtalet");
   if ((prev.sarskildaVillkor ?? "") !== (next.sarskildaVillkor ?? "")) out.push("ändrade särskilda villkor");

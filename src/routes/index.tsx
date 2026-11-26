@@ -28,6 +28,7 @@ import { Installningar } from "@/components/Installningar";
 import { fetchAttachments } from "@/lib/bilagor";
 import { Klausuler } from "@/components/avtal/Klausuler";
 import { AvtalVillkor } from "@/components/avtal/AvtalVillkor";
+import { BETALNINGSDAGAR, betalningstid } from "@/lib/betalningsvillkor";
 
 function PdfPreview({ a }: { a: Avtal }) {
   const [pages, setPages] = useState<string[]>([]);
@@ -631,6 +632,17 @@ function App() {
                     <NumField label="Prislista: rabatt material (%)" value={a.rabattMaterial} onChange={(n) => setA((p) => ({ ...p, rabattMaterial: Math.min(100, n) }))} />
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">Visas i avtalets prislista (Bilaga 2) för löpande arbeten och material.</p>
+                  <div className="mt-4 space-y-2">
+                    <label htmlFor="betalningstid" className="text-sm font-medium">Betalningstid (Bilaga 2)</label>
+                    <div className="flex flex-wrap gap-2" role="group" aria-label="Betalningstid snabbval">
+                      {BETALNINGSDAGAR.map((dagar) => (
+                        <Button key={dagar} type="button" size="sm" variant={betalningstid(a) === `${dagar} dagar netto` ? "default" : "outline"} aria-pressed={betalningstid(a) === `${dagar} dagar netto`} onClick={() => setA((p) => ({ ...p, betalningstid: `${dagar} dagar netto` }))}>
+                          {dagar} dagar
+                        </Button>
+                      ))}
+                    </div>
+                    <input id="betalningstid" className="ds-input w-full" value={a.betalningstid ?? betalningstid(a)} placeholder="30 dagar netto" onChange={(e) => setA((p) => ({ ...p, betalningstid: e.target.value }))} />
+                  </div>
                 </Card>
                 <Card title="Egen PDF för detta avtal">
                   <AvtalVillkor a={a} setA={setA} />

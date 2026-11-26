@@ -31,3 +31,4 @@
 - Price-changing imports must also require an explicit decision in fyllImport, not just the UI, so alternate callers cannot bypass price review; document-only imports preserve existing adjustments.
 - Agreement numbering uses the highest number in the explicitly selected personal series and the loaded shared register; automatic saves may only advance that series, so editing historical or colleague agreements cannot replace it.
 - Pipeline expiry is display-only via pipeline-visibility.ts, using the signing activity timestamp (legacy fallback: first version in the current signed run), so subsequent edits do not restart the window or affect planning/status.
+- Payment terms use betalningsvillkor.ts across editor, print and audit; PDF replaces only explicitly edited terms on a located readable row and refuses export on failure, preserving immutable originals and avoiding silent mismatches.

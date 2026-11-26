@@ -5,6 +5,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { type Avtal, calculate, rabattText } from "@/lib/kalkyl";
 import { KLAUSULER, klausulText, sidaAndrad } from "./klausuler";
 import { attachmentBytes } from "./bilagor";
+import { betalningsrad } from "./betalningsvillkor";
 
 // Arial-kompatibelt typsnitt (Liberation Sans, samma mått som Arial) för ifyllda fält
 let arialBytes: ArrayBuffer | undefined;
@@ -166,6 +167,38 @@ async function hittaRabattRad(bytes: Uint8Array): Promise<{ x: number; y: number
   return null;
 }
 
+/** Explicit overrides only: historical/custom PDFs remain unchanged unless edited. */
+async function skrivBetalningstid(pris: PDFDocument, a: Avtal) {
+  if (!a.betalningstid?.trim()) return;
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+  const source = await pdfjs.getDocument({ data: await pris.save() }).promise;
+  try {
+    for (let i = 1; i <= source.numPages; i++) {
+      const tc = await (await source.getPage(i)).getTextContent();
+      const items = tc.items.filter((it): it is import("pdfjs-dist/types/src/display/api").TextItem => "str" in it);
+      const label = items.find((it) => /betalningstid\s*:/i.test(it.str));
+      if (!label) continue;
+      const x = label.transform[4] ?? 0, y = label.transform[5] ?? 0;
+      const row = items.filter((it) => Math.abs((it.transform[5] ?? 0) - y) < 2 && (it.transform[4] ?? 0) >= x);
+      const page = pris.getPage(i - 1);
+      const font = await arial(pris);
+      const text = betalningsrad(a);
+      const originalSize = Math.abs(label.transform[3] ?? 10) || 10;
+      const width = page.getWidth() - x - 24;
+      const size = Math.min(originalSize, originalSize * width / Math.max(1, font.widthOfTextAtSize(text, originalSize)));
+      if (size < 6) throw new Error("Betalningsvillkoret är för långt för prislistans textrad. Korta texten före PDF-export.");
+      const right = Math.max(x + width, ...row.map((it) => (it.transform[4] ?? 0) + it.width));
+      page.drawRectangle({ x: x - 1, y: y - 2, width: right - x + 2, height: originalSize + 3, color: rgb(1, 1, 1) });
+      page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
+      return;
+    }
+    throw new Error("Betalningstid kunde inte hittas i den valda prislistan. Välj en prislista med en läsbar Betalningstid-rad före PDF-export.");
+  } finally {
+    await source.destroy();
+  }
+}
+
 export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {}): Promise<Uint8Array> {
   const c = a.customer;
   const k = calculate(a);
@@ -218,6 +251,7 @@ export async function buildAvtalPdf(a: Avtal, opts: { signTags?: boolean } = {})
     }
   }
 
+  await skrivBetalningstid(pris, a);
   const out = await PDFDocument.create();
   const add = async (src: PDFDocument, idx: number[]) => (await out.copyPages(src, idx)).forEach((p) => out.addPage(p));
   await add(fsb, fsb.getPageIndices());   // Försättsblad

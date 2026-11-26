@@ -1,5 +1,13 @@
 [
   {
+    "datum": "2026-11-26-betalningstid",
+    "rubrik": "Justerbar betalningstid",
+    "punkter": [
+      "Välj 14, 30, 45 eller 60 dagar netto eller skriv egna betalningsvillkor under Pris.",
+      "Valet visas i prislistan och PDF-exporten, och ändringar sparas i aktivitetsloggen."
+    ]
+  },
+  {
     "datum": "2026-11-24-pipeline",
     "rubrik": "Renare säljpipeline",
     "punkter": [
